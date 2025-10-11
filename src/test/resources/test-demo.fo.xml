@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fo:root xmlns:fo="http://www.w3.org/1999/XSL/Format">
+    <fo:layout-master-set>
+        <fo:simple-page-master master-name="standard" margin="14mm,0">
+            <fo:region-body margin="26mm,14mm" column-count="2" column-gap="5mm"/>
+            <fo:region-before region-name="standard-before" extent="24mm" background-color="#eeaaaaaa"/>
+            <fo:region-after region-name="standard-after" extent="24mm" background-color="#eeaaaaaa"/>
+            <fo:region-start region-name="standard-start" extent="11mm" background-color="#aaeeaaaa"/>
+            <fo:region-end region-name="standard-end" extent="11mm" background-color="#aaeeaaaa"/>
+        </fo:simple-page-master>
+
+        <fo:page-sequence-master master-name="Inhalt-Seiten">
+            <fo:repeatable-page-master-alternatives>
+                <fo:conditional-page-master-reference
+                        master-reference="standard"
+                        page-position="any"/>
+            </fo:repeatable-page-master-alternatives>
+        </fo:page-sequence-master>
+    </fo:layout-master-set>
+
+    <fo:page-sequence master-reference="Inhalt-Seiten" force-page-count="even">
+        <fo:static-content flow-name="standard-before">
+            <fo:block-container absolute-position="fixed" top="0" left="0" right="0" bottom="0"
+                                background-image="/data/hivevm/doc/pd/pd-background.png">
+                <fo:block></fo:block>
+            </fo:block-container>
+            <fo:block-container absolute-position="absolute" top="0" left="1mm"
+                                font-family="corporate" font-size="9pt" line-height="5mm">
+                <fo:block>Vertraulich | Confidenziale</fo:block>
+                <fo:block>Reserviert | Riservato</fo:block>
+                <fo:block>Intern | Interno</fo:block>
+                <fo:block>Öffentlich | Pubblico</fo:block>
+            </fo:block-container>
+            <fo:block-container absolute-position="absolute" top="0" left="47mm"
+                                font-family="corporate" font-size="9pt" line-height="5mm">
+                <fo:block font-family="material">&#59445;</fo:block>
+                <fo:block font-family="material">&#59445;</fo:block>
+                <fo:block font-family="material">&#59444;</fo:block>
+                <fo:block font-family="material">&#59445;</fo:block>
+            </fo:block-container>
+
+            <fo:block-container absolute-position="absolute" top="24mm"
+                                border-bottom="solid 0.8px #000000">
+                <fo:block></fo:block>
+            </fo:block-container>
+        </fo:static-content>
+
+        <fo:static-content flow-name="standard-after">
+            <fo:block-container absolute-position="absolute" top="2mm"
+                                font-family="corporate" font-size="9pt" line-height="1.3em">
+                <fo:block text-align="center"><fo:inline font-weight="bold">Company Name</fo:inline>| Address | Web | E-Mail</fo:block>
+                <fo:block text-align="center">Impressum</fo:block>
+                <fo:block text-align="center">Information</fo:block>
+            </fo:block-container>
+            <fo:block-container absolute-position="absolute" top="18mm" left="1mm"
+                                font-family="CorporateS" font-size="9pt" line-height="1.3em">
+                <fo:block font-weight="bold">Version|e: YEAR.XX</fo:block>
+            </fo:block-container>
+            <fo:block-container absolute-position="absolute" top="18mm" right="1mm"
+                                font-family="CorporateS" font-size="9pt" line-height="1.3em">
+                <fo:block font-weight="bold" text-align="right">Seite | Pagina 1 | 1</fo:block>
+            </fo:block-container>
+        </fo:static-content>
+
+        <fo:flow flow-name="xsl-region-body">
+            <fo:block text-align="justify" space-after=".5em">
+                Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
+                Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
+                Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi.
+                Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat.
+                Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis.
+                At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, At accusam aliquyam diam diam dolore dolores duo eirmod eos erat, et nonumy sed tempor et et invidunt justo labore Stet clita ea et gubergren, kasd magna no rebum. sanctus sea sed takimata ut vero voluptua. est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat.
+                Consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus.
+                Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
+                Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
+                Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi.
+                Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo
+            </fo:block>
+        </fo:flow>
+    </fo:page-sequence>
+</fo:root>

@@ -1,0 +1,29 @@
+@startuml
+left to right direction
+class Foo {
++ field1
++ field2
+}
+
+class Bar {
++ field3
++ field4
+}
+
+class User {
+  id : INTEGER
+  ..
+  other_id : INTEGER
+}
+
+class Email {
+  id : INTEGER
+  ..
+  user_id : INTEGER
+  address : INTEGER
+}
+
+Foo::field1 --> Bar::field3 : foo
+Foo::field2 --> Bar::field4 : bar
+User::id *-- Email::user_id
+@enduml

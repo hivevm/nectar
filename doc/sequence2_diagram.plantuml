@@ -1,0 +1,50 @@
+@startuml
+hide footbox
+actor Caller
+box "MultiAsyncExecutableTask"
+    participant "Task1" as T1
+    participant "Task2" as T2
+    participant "Task3" as T3
+end box
+participant REST
+
+Caller -> T1 : execute()
+activate T1
+
+T1 -> REST : GET
+
+T1 -> T2 : execute()
+deactivate T1
+activate T2
+
+T2 -> REST : GET
+
+T2 -> T3 : execute()
+deactivate T2
+activate T3
+
+T3 -> REST :  GET
+
+Caller <-- T3 : return
+deactivate T3
+
+...500 ms...
+
+T1 <-- REST : 200 OK
+activate T1
+
+T1 --> T2 : Result.ok()
+deactivate T1
+
+T2 <-- REST : 200 OK
+activate T2
+
+T2 --> T3 : Result.ok()
+deactivate T2
+
+T3 <-- REST : 200 OK
+activate T3
+
+Caller <-- T3 : Result.ok()
+deactivate T3
+@enduml

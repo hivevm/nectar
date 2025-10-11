@@ -16,3 +16,12 @@ Thumbs.db
 
 # Session artifacts — plans, handoff notes, scratch files (AGENTS.md, section 4)
 .scratch/
+
+/bin
+/build
+.classpath
+.gradle
+.project
+.settings
+/classes/
+/target/

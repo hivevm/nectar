@@ -1,0 +1,123 @@
+plugins {
+    id 'com.gradle.plugin-publish' version '2.0.0'
+    id 'org.hivevm.doc' version '1.2.0'
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+}
+
+
+// Apply the java-library plugin to add support for Java Library
+apply plugin: 'java'
+apply plugin: 'java-library'
+apply plugin: 'java-gradle-plugin'
+
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+
+version = '1.2.0'
+group = 'org.hivevm'
+
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+
+allprojects {
+    tasks.withType(Javadoc).all {
+        enabled = false
+    }
+}
+
+
+dependencies {
+    implementation gradleApi()
+
+    // https://mvnrepository.com/artifact/org.jspecify/jspecify
+    implementation 'org.jspecify:jspecify:1.0.0'
+
+    // https://mvnrepository.com/artifact/org.apache.xmlgraphics/fop
+    implementation 'org.apache.xmlgraphics:fop:2.11'
+    // https://mvnrepository.com/artifact/org.commonmark/commonmark
+    implementation 'org.commonmark:commonmark:0.27.0'
+    // https://mvnrepository.com/artifact/org.commonmark/commonmark-ext-task-list-items
+    implementation 'org.commonmark:commonmark-ext-task-list-items:0.27.0'
+
+    // https://mvnrepository.com/artifact/guru.nidi/graphviz-java
+    implementation 'guru.nidi:graphviz-java:0.18.1'
+    // https://mvnrepository.com/artifact/com.eclipsesource.j2v8/j2v8
+    implementation 'com.eclipsesource.j2v8:j2v8:6.2.1'
+    // https://mvnrepository.com/artifact/com.eclipsesource.j2v8/j2v8_win32_x86_64
+    runtimeOnly 'com.eclipsesource.j2v8:j2v8_win32_x86_64:4.6.0'
+    // https://mvnrepository.com/artifact/com.eclipsesource.j2v8/j2v8_linux_x86_64
+    runtimeOnly 'com.eclipsesource.j2v8:j2v8_linux_x86_64:4.6.0'
+
+    // https://mvnrepository.com/artifact/net.sourceforge.plantuml/plantuml-mit
+    implementation 'net.sourceforge.plantuml:plantuml-mit:1.2025.9'
+
+    // https://mvnrepository.com/artifact/com.google.code.gson/gson
+    implementation 'com.google.code.gson:gson:2.13.2'
+
+    // https://mvnrepository.com/artifact/org.jruby.joni/joni
+    implementation 'org.jruby.joni:joni:2.2.6'
+    // https://mvnrepository.com/artifact/org.jruby.jcodings/jcodings
+    implementation 'org.jruby.jcodings:jcodings:1.0.63'
+
+    // Use JUnit test framework
+    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:6.0.0'
+    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:6.0.0'
+    // https://mvnrepository.com/artifact/org.junit.platform/junit-platform-runner
+    testImplementation("org.junit.platform:junit-platform-runner:1.14.0")
+}
+
+
+sourceSets {
+    main {
+        java {
+            srcDirs += 'src/main/gradle'
+        }
+        resources {
+        }
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'HiveVM Document'
+        attributes 'Implementation-Version': project.version
+    }
+}
+
+
+// Configured to publish your plugin to the plugin portal
+gradlePlugin {
+    website = 'https://www.hivevm.org'
+    vcsUrl = 'https://github.com/hivevm/doc.git'
+    plugins {
+        create("gradle") {
+            id = 'org.hivevm.doc'
+            displayName = 'HiveVM Doc'
+            description = 'HiveVM PDF document generator'
+            implementationClass = 'org.hivevm.doc.GradlePlugin'
+            description = "Gradle plugin to convert Markdown & AsciiDoc into a PDF!"
+            tags.set(["hivevm", "common mark", "document generator"])
+        }
+    }
+}
+
+
+markdown {
+    template = ':DEFAULT:'
+    source = '.'
+}

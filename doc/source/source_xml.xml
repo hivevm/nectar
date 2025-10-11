@@ -1,0 +1,124 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE template>
+<template width="210mm" height="297mm" font-family="ubuntu">
+    <font name="ubuntu">
+        <font-metric uri=":fonts/ubuntu/UbuntuSans-Regular.ttf"/>
+        <font-metric uri=":fonts/ubuntu/UbuntuSans-Bold.ttf" bold="true"/>
+        <font-metric uri=":fonts/ubuntu/UbuntuSans-Italic.ttf" italic="true"/>
+        <font-metric uri=":fonts/ubuntu/UbuntuSans-BoldItalic.ttf" bold="true" italic="true"/>
+    </font>
+    <font name="victor">
+        <font-metric uri=":fonts/victor/VictorMono-Medium.ttf"/>
+        <font-metric uri=":fonts/victor/VictorMono-Bold.ttf" bold="true"/>
+        <font-metric uri=":fonts/victor/VictorMono-MediumItalic.ttf" italic="true"/>
+        <font-metric uri=":fonts/victor/VictorMono-BoldItalic.ttf" bold="true" italic="true"/>
+    </font>
+    <font name="material" codepoints=":fonts/MaterialIcons-Regular.ttf.codepoints">
+        <font-metric uri=":fonts/MaterialIcons-Regular.ttf"/>
+    </font>
+
+    <style match="subtitle" color="white" font-weight="bold" font-size="26pt" break-after="page" line-height="1.4em"/>
+    <style match="h1" color="#130806" font-weight="bold" text-align="left" break-after="page" font-size="42pt"
+           line-height="1.1em"/>
+    <style match="h[2-6]" font-size="24pt" font-weight="bold" line-height="1.2em" text-align="start"
+           keep-with-next="always"
+           color="#130806" space-before="1em * 0.8,1em,1em * 1.2" space-after="0.5em * 0.8,0.5em,0.5em * 1.2"/>
+
+    <style match="p" line-height="1.4em" space-before="0.5em" space-after="0.5em" text-align="justify"/>
+    <style match="block" line-height="1.4em" margin-left="0.15in" padding-left="0.7em" border-left="3pt solid #ffbe35"/>
+    <style match="link" color="#9c8b54"/>
+
+    <style match="info" margin="0" padding="0.2em,1em" background="#bde5f8" keep-with-next="always"
+           border=".5px solid #5bc2f3" border-left=".1in solid #5bc2f3" border-radius=".2em"
+           space-before="1.6em,2em,2.4em" space-after="1.6em,2em,2.4em"/>
+    <style match="success" margin="0" padding="0.2em,1em" background="#dff2bf" keep-with-next="always"
+           border=".5px solid #4f8a10" border-left=".1in solid #4f8a10" border-radius=".2em"
+           space-before="1.6em,2em,2.4em" space-after="1.6em,2em,2.4em"/>
+    <style match="warning" margin="0" padding="0.2em,1em" background="#ffedbd" keep-with-next="always"
+           border=".5px solid #ffbe35" border-left=".1in solid #ffbe35" border-radius=".2em"
+           space-before="1.6em,2em,2.4em" space-after="1.6em,2em,2.4em"/>
+    <style match="error" margin="0" padding="0.2em,1em" background="#f78082" keep-with-next="always"
+           border=".5px solid #cc0013" border-left=".1in solid #cc0013" border-radius=".2em"
+           space-before="1.6em,2em,2.4em" space-after="1.6em,2em,2.4em"/>
+    <style match="code" text-align="start" line-height="1em" keep-with-next="always"
+           padding="0.1in" font-family="victor" font-size="9pt"
+           space-before="0.8em,1em,1.2em" space-after="0.8em,1em,1.2em"/>
+    <style match="styled" padding="0.2em,0.2em"
+           font-family="ubuntu" background="#eeeeee"
+           border="0.5pt solid #aaaaaa" border-radius="0.2em"/>
+
+    <page name="cover" padding="210mm,0,70mm,2.7in" background=":background.jpg">
+        <region position="top" extent="297mm">
+            <column top="187mm" left="2.5in" right="0" bottom="70mm" background="#130806">
+                <column top="0" left="0.2in" right="0.2in" bottom="0">
+                    <row color="#cfa721" font-size="48pt" font-weight="bold" line-height="1.4em">User Manual</row>
+                </column>
+            </column>
+        </region>
+    </page>
+
+    <page name="title" padding="15cm,1in,10cm,1in" background="#cfa721">
+        <region position="top" extent="107mm">
+            <column top="1in" left="1in" color="#130806" font-weight="bold" text-align="left" font-size="256pt"
+                    line-height="1.5em">
+                <row>
+                    {{$CHAPTER}}
+                </row>
+            </column>
+        </region>
+        <region position="bottom" extent="107mm" column-count="2" column-gap="12pt">
+            <column top=".15in" left="1in" right="1in">
+                <br style="solid" size="1pt" color="#000000"/>
+            </column>
+        </region>
+    </page>
+
+    <page name="odd" padding="0.75in">
+        <region position="top" extent="8mm">
+            <column top="0mm" left="130mm" right="10mm" bottom="0mm" background="#cfa721">
+                <row color="#130806" font-size="13pt" text-align="center" top="0.2em">{{$TITLE}}</row>
+            </column>
+        </region>
+        <region position="bottom" extent="10mm">
+            <column top="0mm" left="190mm" right="10mm" bottom="0mm" background="#cfa721">
+                <row color="#130806" text-align="center" top="0.5em">{{$PAGE_NUMBER}}</row>
+            </column>
+        </region>
+    </page>
+
+    <page name="even" padding="0.75in">
+        <region position="top" extent="8mm">
+            <column top="0mm" left="10mm" right="130mm" bottom="0mm" background="#cfa721">
+                <row color="#130806" font-size="13pt" text-align="center" top="0.2em">{{$TITLE}}</row>
+            </column>
+        </region>
+        <region position="bottom" extent="10mm">
+            <column top="0mm" left="10mm" right="190mm" bottom="0mm" background="#cfa721">
+                <row color="#130806" text-align="center" top="0.5em">{{$PAGE_NUMBER}}</row>
+            </column>
+        </region>
+    </page>
+
+    <page name="blank"/>
+
+    <page-set name="book">
+        <page-entry name="cover" match="First"/>
+        <page-entry name="odd" match="Odd"/>
+        <page-entry name="even" match="Even"/>
+        <page-entry name="blank" match="Blank"/>
+    </page-set>
+
+    <page-set name="chapter">
+        <page-entry name="title" match="First"/>
+        <page-entry name="odd" match="Odd"/>
+        <page-entry name="even" match="Even"/>
+        <page-entry name="blank" match="Blank"/>
+    </page-set>
+
+    <page-set name="standard">
+        <page-entry name="odd" match="Odd"/>
+        <page-entry name="even" match="Even"/>
+        <page-entry name="blank" match="Blank"/>
+    </page-set>
+</template>

@@ -1,0 +1,7 @@
+H2_SELECT =
+    'SELECT' [ 'TOP' term ] [ 'DISTINCT' | 'ALL' ] selectExpression {',' selectExpression} \
+    'FROM' tableExpression {',' tableExpression} [ 'WHERE' expression ] \
+    [ 'GROUP BY' expression {',' expression} ] [ 'HAVING' expression ] \
+    [ ( 'UNION' [ 'ALL' ] | 'MINUS' | 'EXCEPT' | 'INTERSECT' ) select ] [ 'ORDER BY' order {',' order} ] \
+    [ 'LIMIT' expression [ 'OFFSET' expression ] [ 'SAMPLE_SIZE' rowCountInt ] ] \
+    [ 'FOR UPDATE' ];
