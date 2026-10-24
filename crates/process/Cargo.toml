@@ -1,0 +1,12 @@
+[package]
+name = "nectar-process"
+description = "Nectar code engine that renders diagrams through local commands"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+nectar-core = { version = "0.1.0", path = "../core" }
+serde = { version = "1.0.229", features = ["derive"] }
+toml = "1.1.8"
