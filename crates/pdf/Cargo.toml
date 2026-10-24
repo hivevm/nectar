@@ -1,0 +1,16 @@
+[package]
+name = "nectar-pdf"
+description = "Nectar PDF renderer, typesetting with Typst"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+nectar-core = { version = "0.1.0", path = "../core" }
+typst = "0.15.1"
+typst-layout = "0.15.1"
+typst-pdf = "0.15.1"
+
+[dev-dependencies]
+tempfile = "3.27.0"
