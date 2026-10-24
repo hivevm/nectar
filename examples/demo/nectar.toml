@@ -1,0 +1,18 @@
+title = "Nectar Demo"
+
+[[document]]
+source = "content/manual.md"
+
+[vars]
+version = "0.1.0"
+
+[engine.process.dot]
+command = "dot"
+args = ["-Tsvg"]
+languages = ["dot"]
+
+[engine.process.plantuml]
+command = "plantuml"
+args = ["-tsvg", "-pipe"]
+languages = { uml = "uml", ebnf = "ebnf", regex = "regex", jsongraph = "json" }
+input = "@start{lang}\n!pragma layout smetana\n{code}\n@end{lang}"

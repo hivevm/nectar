@@ -1,0 +1,42 @@
+{
+  // Nectar under CodeLLDB. Both configurations build the CLI first and ask for the project
+  // directory, the one that holds nectar.toml.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "nectar serve",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": ["build", "--bin=nectar", "--package=nectar"],
+        "filter": { "name": "nectar", "kind": "bin" }
+      },
+      "args": ["-C", "${input:project}", "serve"],
+      "cwd": "${workspaceFolder}",
+      "serverReadyAction": {
+        "pattern": "serving on (http://\\S+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
+    },
+    {
+      "name": "nectar build",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": ["build", "--bin=nectar", "--package=nectar"],
+        "filter": { "name": "nectar", "kind": "bin" }
+      },
+      "args": ["-C", "${input:project}", "build"],
+      "cwd": "${workspaceFolder}"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "project",
+      "type": "promptString",
+      "description": "Nectar project directory (holds nectar.toml)",
+      "default": "examples/demo"
+    }
+  ]
+}
