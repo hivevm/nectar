@@ -1,12 +1,50 @@
 {
   "name": "HiveVM Doc",
-  "image": "eclipse-temurin:21",
-  "onCreateCommand": "apt update && apt install git libxrender1 libxtst6 libxi6 -y",
+  "image": "mcr.microsoft.com/devcontainers/base:debian",
+
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "21",
+      "jdkDistro": "tem",
+      "installGradle": false
+    },
+    // Nectar engine: rustup stable with rustfmt, clippy, rust-src and rust-analyzer.
+    "ghcr.io/devcontainers/features/rust:1": {}
+  },
+
+  // Nectar development server (live reload).
+  "forwardPorts": [1313],
+  "portsAttributes": {
+    "1313": { "label": "nectar serve", "onAutoForward": "notify" }
+  },
+
+  // System packages, Graphviz and PlantUML; see the script.
+  "onCreateCommand": "bash .devcontainer/setup.sh",
+
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+
+  "remoteUser": "vscode",
+  "mounts": [
+    "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind"
+  ],
+
+  // Runs on the host before the container is created. Ensures the bind-mount source for the agent
+  // config exists, so Docker does not auto-create it as a root-owned directory (which breaks
+  // credential writes inside the container).
+  "initializeCommand": "mkdir -p ${localEnv:HOME}/.claude",
+
+  "shutdownAction": "stopContainer",
+
   "customizations": {
+    // VS Code extensions installed inside the container
     "vscode": {
       "extensions": [
+        "anthropic.claude-code",
         "vscjava.vscode-java-pack",
-        "github.vscode-github-actions"
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "vadimcn.vscode-lldb"
       ]
     }
   }
