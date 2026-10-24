@@ -1,0 +1,223 @@
+//! Nectar command line. This is the one place that composes the core with the HTML renderer and
+//! the code engines, so every command uses the same set.
+
+use std::net::{IpAddr, SocketAddr};
+use std::path::{Path, PathBuf};
+use std::process::ExitCode;
+use std::sync::Arc;
+use std::time::Instant;
+
+use anyhow::{Context, Result, anyhow, bail};
+use clap::{Parser, Subcommand};
+use nectar_core::{CodeEngine, Config, Diagnostic, Project, Severity};
+use nectar_html::{HtmlRenderer, PrintRenderer};
+use nectar_pdf::PdfRenderer;
+use nectar_process::Process;
+use nectar_railroad::Railroad;
+use nectar_server::{OpenProject, ServeOptions};
+use nectar_textmate::{DEFAULT_THEME, TextMate};
+
+const DEFAULT_PORT: u16 = 1313;
+
+#[derive(Parser)]
+#[command(name = "nectar", version, about = "Turns Markdown sources into HTML")]
+struct Cli {
+    /// Project root, the directory that holds nectar.toml
+    #[arg(long, short = 'C', default_value = ".", global = true)]
+    root: PathBuf,
+
+    #[command(subcommand)]
+    command: Command,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    /// Build the site into the output directory
+    Build {
+        /// Output directory; overrides `output` in nectar.toml
+        #[arg(long, short)]
+        output: Option<PathBuf>,
+
+        /// Include files marked as draft
+        #[arg(long)]
+        drafts: bool,
+    },
+
+    /// Serve the site over local HTTP, rebuild on changes and reload the browser
+    Serve {
+        /// Port; overrides `port` under [serve] in nectar.toml (default 1313)
+        #[arg(long, short)]
+        port: Option<u16>,
+
+        /// Address to listen on; overrides `bind` under [serve] (default 127.0.0.1)
+        #[arg(long)]
+        bind: Option<IpAddr>,
+
+        /// Leave out files marked as draft
+        #[arg(long)]
+        no_drafts: bool,
+    },
+}
+
+fn main() -> ExitCode {
+    let cli = Cli::parse();
+    let result = match cli.command {
+        Command::Build { output, drafts } => build(&cli.root, output, drafts),
+        Command::Serve {
+            port,
+            bind,
+            no_drafts,
+        } => serve(&cli.root, port, bind, !no_drafts),
+    };
+    match result {
+        Ok(code) => code,
+        Err(e) => {
+            eprintln!("error: {e:#}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn build(root: &Path, output: Option<PathBuf>, drafts: bool) -> Result<ExitCode> {
+    let started = Instant::now();
+    let project = open(root, drafts)?;
+    let web = HtmlRenderer {
+        print_view: true,
+        pdf: true,
+    };
+    let build = project.build(&[&web, &PrintRenderer, &PdfRenderer]);
+    report(&build.diagnostics);
+    if build.has_errors() {
+        eprintln!("build failed");
+        return Ok(ExitCode::FAILURE);
+    }
+
+    let dir = output.unwrap_or_else(|| root.join(&project.config().output));
+    build
+        .write_to(&dir)
+        .with_context(|| format!("cannot write to {}", dir.display()))?;
+    eprintln!(
+        "{} files written to {} in {} ms",
+        build.files.len(),
+        dir.display(),
+        started.elapsed().as_millis()
+    );
+    Ok(ExitCode::SUCCESS)
+}
+
+fn serve(root: &Path, port: Option<u16>, bind: Option<IpAddr>, drafts: bool) -> Result<ExitCode> {
+    // The configuration may be broken at start; the server then shows why and keeps watching.
+    let config = Config::load(root).ok();
+    let setting = |name: &str| config.as_ref().and_then(|c| c.serve.get(name).cloned());
+    let port = match port {
+        Some(port) => port,
+        None => match setting("port").and_then(|v| v.as_integer()) {
+            Some(port) => u16::try_from(port).context("[serve] port is out of range")?,
+            None => DEFAULT_PORT,
+        },
+    };
+    let bind = match bind {
+        Some(bind) => bind,
+        None => match setting("bind") {
+            Some(value) => value
+                .as_str()
+                .and_then(|text| text.parse().ok())
+                .context("[serve] bind must be an IP address")?,
+            None => IpAddr::from([127, 0, 0, 1]),
+        },
+    };
+    let ignore = config.map(|c| vec![c.output]).unwrap_or_default();
+
+    let project_root = root.to_path_buf();
+    let open: OpenProject = Box::new(move || {
+        open(&project_root, drafts).map_err(|e| Diagnostic::error(format!("{e:#}"), None))
+    });
+    let options = ServeOptions {
+        root: root.to_path_buf(),
+        address: SocketAddr::new(bind, port),
+        ignore,
+    };
+    let runtime = tokio::runtime::Runtime::new()?;
+    let renderers: nectar_server::Renderers = Arc::new(vec![
+        Box::new(HtmlRenderer {
+            print_view: true,
+            pdf: true,
+        }),
+        Box::new(PrintRenderer),
+        Box::new(PdfRenderer),
+    ]);
+    runtime.block_on(nectar_server::serve(open, renderers, options))?;
+    Ok(ExitCode::SUCCESS)
+}
+
+fn open(root: &Path, drafts: bool) -> Result<Project> {
+    let mut project = Project::load(root).map_err(|d| anyhow!("{d}"))?;
+    project.set_include_drafts(drafts);
+    for engine in engines(project.config())? {
+        project.add_engine(engine);
+    }
+    Ok(project)
+}
+
+/// The code engines configured under `[engine]`: every `[engine.process.<name>]` first, then
+/// the built-in railroad engine and TextMate highlighting, each on unless `enabled = false`.
+fn engines(config: &Config) -> Result<Vec<Box<dyn CodeEngine>>> {
+    let mut engines: Vec<Box<dyn CodeEngine>> = Vec::new();
+    for key in config.engine.keys() {
+        if !["process", "railroad", "textmate"].contains(&key.as_str()) {
+            bail!("unknown engine [engine.{key}]");
+        }
+    }
+    let enabled = |name: &str| {
+        config
+            .engine
+            .get(name)
+            .and_then(|table| table.get("enabled"))
+            .and_then(toml::Value::as_bool)
+            .unwrap_or(true)
+    };
+
+    if let Some(processes) = config.engine.get("process") {
+        let processes = processes
+            .as_table()
+            .context("[engine.process] must be a table")?;
+        for (name, settings) in processes {
+            let settings = settings
+                .as_table()
+                .with_context(|| format!("[engine.process.{name}] must be a table"))?;
+            let engine = Process::from_table(name, settings)
+                .map_err(|e| anyhow!("[engine.process.{name}]: {e}"))?;
+            engines.push(Box::new(engine));
+        }
+    }
+
+    if enabled("railroad") {
+        engines.push(Box::new(Railroad));
+    }
+
+    if enabled("textmate") {
+        let theme = config
+            .engine
+            .get("textmate")
+            .and_then(|table| table.get("theme"))
+            .and_then(toml::Value::as_str)
+            .unwrap_or(DEFAULT_THEME);
+        let engine = TextMate::new(theme).map_err(|e| anyhow!("[engine.textmate]: {e}"))?;
+        engines.push(Box::new(engine));
+    }
+    Ok(engines)
+}
+
+fn report(diagnostics: &[Diagnostic]) {
+    for diagnostic in diagnostics {
+        eprintln!("{diagnostic}");
+    }
+    let errors = diagnostics
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .count();
+    let warnings = diagnostics.len() - errors;
+    if !diagnostics.is_empty() {
+        eprintln!("{errors} errors, {warnings} warnings");
+    }
+}

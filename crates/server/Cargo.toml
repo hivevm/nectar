@@ -1,0 +1,17 @@
+[package]
+name = "nectar-server"
+description = "Nectar development server with live reload"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow = "1.0.104"
+axum = "0.8.9"
+nectar-core = { version = "0.1.0", path = "../core" }
+notify = "8.2.0"
+notify-debouncer-full = "0.7.0"
+percent-encoding = "2.3.2"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "net", "sync", "signal"] }
+tokio-stream = { version = "0.1.19", features = ["sync"] }
