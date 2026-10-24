@@ -1,5 +1,8 @@
 # Markdown for PDF generation {#Markdown_for_PDF_generation}
 
+> **Nectar** turns the same Markdown into a website, with a local server that reloads on every
+> change; see the [Nectar guide](doc/nectar/README.md).
+
 The plugin supports the creation of beautiful PDF's from markdown. Create a simple gradle project with the Gradle
 Wrapper and configure *build.gradle* and *settings.gradle*.
 
@@ -373,10 +376,10 @@ Our implementation allows to define placeholders for font symbols. The symbol na
 
 @web@ @mobile@ @config@ @link@
 
-As font the [Material Icons Font][3] is used.
+As font the [Material Icons Font][material-icons] is used.
 
 
-[3]: https://material.io/resources/icons/ "Material Icons Font"
+[material-icons]: https://material.io/resources/icons/ "Material Icons Font"
 
 ### Formatted Code
 
