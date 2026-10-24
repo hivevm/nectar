@@ -1,0 +1,16 @@
+[package]
+name = "nectar-core"
+description = "Nectar core: turns Markdown sources into a format-neutral document"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+comrak = { version = "0.57.0", default-features = false, features = ["attributes"] }
+regex = "1.13.1"
+serde = { version = "1.0.229", features = ["derive"] }
+toml = "1.1.8"
+
+[dev-dependencies]
+tempfile = "3.27.0"
