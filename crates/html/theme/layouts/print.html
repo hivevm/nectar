@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ document.title }} · Print</title>
+<link rel="stylesheet" href="{{ theme }}style.css">
+<link rel="stylesheet" href="{{ theme }}print.css">
+<style>
+  @page { size: {{ print.size }}; margin: {{ print.margin }}; }
+</style>
+<script src="{{ theme }}print/paged.polyfill.min.js"></script>
+<script>
+  class NectarPrint extends Paged.Handler {
+    // Paged.js waits for every image on a page to report that it has loaded. Browsers do not
+    // always report that for images copied onto a page, which would stop the layout; wait two
+    // seconds at most.
+    layout(wrapper, layout) {
+      if (layout.awaitImageLoaded.limited) return;
+      const wait = layout.awaitImageLoaded.bind(layout);
+      layout.awaitImageLoaded = (image) =>
+        Promise.race([wait(image), new Promise((resolve) => setTimeout(resolve, 2000))]);
+      layout.awaitImageLoaded.limited = true;
+    }
+
+    // The preview styles go in after the layout: Paged.js rewrites the styles it reads.
+    afterRendered() {
+      const style = document.createElement("style");
+      style.textContent = `@media screen {
+        body.print { background: #e6e6ec; }
+        .pagedjs_pages { padding: 8mm 0; }
+        .pagedjs_page { margin: 0 auto 8mm; background: #ffffff; box-shadow: 0 1px 6px rgb(0 0 0 / 0.18); }
+      }`;
+      document.head.append(style);
+    }
+  }
+  Paged.registerHandlers(NectarPrint);
+</script>
+</head>
+<body class="print{% if print.chapter_pages %} chapter-pages{% endif %}{% if watermark %} watermark{% endif %}"{% if watermark %} style="--watermark: url('{{ watermark }}')"{% endif %}>
+{% if print.cover %}
+<section class="cover">
+  {% if cover_image %}<img class="cover-image" src="{{ cover_image }}" alt="">{% endif %}
+  <p class="cover-site">{{ site.title }}</p>
+  <h1 class="cover-title">{{ document.title }}</h1>
+  {% if print.subtitle %}<p class="cover-subtitle">{{ print.subtitle }}</p>{% endif %}
+</section>
+{% else %}
+<p class="document-title">{{ document.title }}</p>
+{% endif %}
+{% if contents %}
+<nav class="print-contents" aria-label="Contents">
+  <h2>Contents</h2>
+  <ul>
+    {% for item in contents %}
+    <li class="level-{{ item.level }}"><a href="{{ item.url }}">{{ item.title }}</a></li>
+    {% endfor %}
+  </ul>
+</nav>
+{% endif %}
+<main class="markdown print-document">
+{{ content }}
+</main>
+</body>
+</html>

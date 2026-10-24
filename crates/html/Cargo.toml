@@ -1,0 +1,16 @@
+[package]
+name = "nectar-html"
+description = "Nectar HTML renderer and default theme"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+minijinja = { version = "3.0.3", features = ["serde"] }
+nectar-core = { version = "0.1.0", path = "../core" }
+serde = { version = "1.0.229", features = ["derive"] }
+toml = "1.1.8"
+
+[dev-dependencies]
+tempfile = "3.27.0"

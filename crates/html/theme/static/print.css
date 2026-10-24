@@ -1,0 +1,149 @@
+/* Print view: CSS paged media, laid out into pages by Paged.js. Content styles come from
+   style.css; this file adds the page, its margins and the parts of a printed document. */
+
+/* Pages */
+
+@page {
+  @top-left {
+    content: string(title);
+    color: var(--gray-500);
+    font-family: var(--text-font);
+    font-size: 8.5pt;
+  }
+  @top-right {
+    content: string(chapter);
+    color: var(--gray-500);
+    font-family: var(--text-font);
+    font-size: 8.5pt;
+  }
+  @bottom-center {
+    content: counter(page);
+    color: var(--gray-500);
+    font-family: var(--text-font);
+    font-size: 9pt;
+  }
+  @footnote {
+    margin-top: 4mm;
+    padding-top: 2mm;
+    border-top: 0.5pt solid var(--gray-200);
+  }
+}
+
+@page cover {
+  margin: 0;
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @bottom-center { content: none; }
+}
+
+@page front {
+  @top-right { content: none; }
+}
+
+@page chapter-title {
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @bottom-center { content: none; }
+}
+
+body.print {
+  min-width: 0;
+  font-size: 10.5pt;
+  line-height: 1.5;
+}
+
+/* Cover */
+
+.cover {
+  page: cover;
+  break-after: page;
+  padding: 80mm 25mm 0;
+}
+
+.cover-image { display: block; max-width: 100%; max-height: 90mm; margin-bottom: 15mm; }
+.cover-site { margin: 0 0 4mm; color: var(--gray-500); font-size: 11pt; letter-spacing: 0.08em; text-transform: uppercase; }
+.cover-title {
+  string-set: title content(text);
+  margin: 0;
+  padding-top: 6mm;
+  border-top: 2.5mm solid var(--brand);
+  color: var(--heading-color);
+  font-size: 34pt;
+  line-height: 1.15;
+}
+.cover-subtitle { margin: 6mm 0 0; color: var(--body-font-color); font-size: 15pt; }
+
+.document-title { string-set: title content(text); display: none; }
+
+/* Contents, with page numbers */
+
+.print-contents { page: front; break-after: page; }
+.print-contents h2 { margin-top: 0; }
+.print-contents ul { list-style: none; margin: 0; padding: 0; }
+.print-contents li { margin: 1.5mm 0; }
+.print-contents .level-2 { font-weight: 600; margin-top: 3mm; }
+.print-contents .level-3 { padding-left: 6mm; }
+.print-contents a { display: flex; color: inherit; text-decoration: none; }
+.print-contents a::after {
+  content: target-counter(attr(href), page);
+  margin-left: auto;
+  padding-left: 4mm;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Document */
+
+.print-document { max-width: none; padding: 0; }
+.print-document > section.chapter { break-before: page; }
+.print-document h1, .print-document h2 { string-set: chapter content(text); }
+.print-document h1, .print-document h2, .print-document h3, .print-document h4 { break-after: avoid; }
+.print-document a { color: inherit; text-decoration-color: var(--gray-500); }
+/* Only small things avoid breaks: Paged.js loops forever on an element taller than a page that
+   must not break. */
+.print-document tr { break-inside: avoid; }
+.print-document pre.code { white-space: pre-wrap; overflow-wrap: anywhere; }
+.print-document thead { display: table-header-group; }
+.print-document img { max-width: 100%; max-height: 180mm; object-fit: contain; }
+
+/* Chapter title pages: the number large, the title below */
+
+/* Paged.js parses no selector lists inside functions, so each heading has its own selector. */
+.chapter-pages .print-document > section.chapter > h1:first-child,
+.chapter-pages .print-document > section.chapter > h2:first-child {
+  page: chapter-title;
+  break-after: page;
+  padding-top: 60mm;
+  border: none;
+  font-size: 28pt;
+}
+.chapter-pages .print-document > section.chapter > h1:first-child .number,
+.chapter-pages .print-document > section.chapter > h2:first-child .number {
+  display: block;
+  margin-bottom: 6mm;
+  color: var(--brand);
+  font-size: 120pt;
+  line-height: 1;
+}
+
+/* Footnotes at the foot of the page */
+
+.footnote {
+  float: footnote;
+  font-size: 8.5pt;
+  line-height: 1.4;
+}
+
+/* Watermark behind every page but the cover */
+
+.watermark .pagedjs_page:not(.pagedjs_cover_page) .pagedjs_pagebox {
+  background-image: var(--watermark);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 60%;
+}
+
+/* The preview on screen, pages on a grey desk, comes from layouts/print.html. */
+
+@media print {
+  body.print { background: none; }
+}

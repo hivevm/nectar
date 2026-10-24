@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% if page.title != site.title %}{{ page.title }} · {% endif %}{{ site.title }}</title>
+<link rel="stylesheet" href="{{ theme }}style.css">
+</head>
+<body>
+<input type="checkbox" class="toggle" id="menu-control" hidden>
+<input type="checkbox" class="toggle" id="toc-control" hidden>
+<div class="book-container">
+  <aside class="book-menu" aria-label="Menu">
+    <div class="book-menu-content">
+      <p class="book-brand"><a href="{{ document.url }}">{{ site.title }}</a></p>
+      {% if menu %}
+      <nav class="book-menu-tree" aria-label="Contents">
+        <ul>
+          {% for item in menu recursive %}
+          <li>
+            {% if item.children %}<input type="checkbox" class="toggle" id="{{ item.id }}"{% if item.open %} checked{% endif %} hidden>{% endif %}
+            <div class="book-menu-item">
+              <a href="{{ item.url }}"{% if item.current %} class="active" aria-current="page"{% endif %}>{{ item.title }}</a>
+              {% if item.children %}<label for="{{ item.id }}" class="book-menu-arrow" title="Open or close"><span class="symbol">chevron_right</span></label>{% endif %}
+            </div>
+            {% if item.children %}<ul>{{ loop(item.children) }}</ul>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </nav>
+      {% endif %}
+      {% if documents|length > 1 %}
+      <nav class="book-documents" aria-label="Documents">
+        <p class="book-menu-title">Documents</p>
+        <ul>
+          {% for item in documents %}<li><a href="{{ item.url }}">{{ item.title }}</a></li>{% endfor %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+  </aside>
+
+  <header class="book-header">
+    <label for="menu-control" title="Menu"><span class="symbol">menu</span></label>
+    <p class="book-brand"><a href="{{ document.url }}">{{ site.title }}</a></p>
+    {% if toc %}<label for="toc-control" title="Table of contents"><span class="symbol">toc</span></label>{% else %}<span></span>{% endif %}
+  </header>
+
+  <div class="book-page">
+    {% if pdf %}<a class="book-print" href="{{ pdf }}" title="PDF"><span class="symbol">picture_as_pdf</span></a>{% endif %}
+    {% if print %}<a class="book-print" href="{{ print }}" title="Print view"><span class="symbol">print</span></a>{% endif %}
+    {% if breadcrumb %}
+    <nav class="book-breadcrumbs" aria-label="Breadcrumbs">
+      <ul>
+        {% for item in breadcrumb %}<li><a href="{{ item.url }}">{{ item.title }}</a></li>{% endfor %}
+        <li><span aria-current="page">{{ page.title }}</span></li>
+      </ul>
+    </nav>
+    {% endif %}
+
+    <main class="markdown">
+      {{ content }}
+      {% if contents %}
+      <nav class="contents" aria-label="Contents">
+        <h2 class="contents-title">Contents</h2>
+        <ul>
+          {% for item in contents %}
+          <li class="level-{{ item.level }}"><a href="{{ item.url }}">{{ item.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </nav>
+      {% endif %}
+    </main>
+
+    {% if prev or next %}
+    <footer class="book-footer">
+      <nav class="book-pager" aria-label="Pages">
+        <span>{% if prev %}<a href="{{ prev.url }}" rel="prev"><span class="symbol">arrow_back</span> {{ prev.title }}</a>{% endif %}</span>
+        <span>{% if next %}<a href="{{ next.url }}" rel="next">{{ next.title }} <span class="symbol">arrow_forward</span></a>{% endif %}</span>
+      </nav>
+    </footer>
+    {% endif %}
+
+    <label for="menu-control" class="book-menu-overlay" aria-hidden="true"></label>
+  </div>
+
+  {% if toc %}
+  <aside class="book-toc" aria-label="Table of contents">
+    <div class="book-toc-content">
+      <nav>
+        <ul>
+          {% for heading in toc %}
+          <li class="level-{{ heading.level }}"><a href="#{{ heading.id }}">{{ heading.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </nav>
+    </div>
+  </aside>
+  {% endif %}
+</div>
+</body>
+</html>
