@@ -278,8 +278,10 @@ pre.code code { padding: 0; background: none; border: none; }
 mark { background: rgb(255 214 20 / 0.35); padding: 0 0.1em; }
 
 .table { overflow-x: auto; margin: var(--space-16) 0; }
-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-th, td { padding: var(--space-8) var(--space-16); border: 1px solid var(--gray-200); text-align: start; vertical-align: top; overflow-wrap: anywhere; }
+/* The widths from the delimiter row are a preference: with the automatic layout no column gets
+   narrower than its longest word, and a table too wide for the page scrolls. */
+table { width: 100%; border-collapse: collapse; table-layout: auto; }
+th, td { padding: var(--space-8) var(--space-16); border: 1px solid var(--gray-200); text-align: start; vertical-align: top; overflow-wrap: normal; }
 thead th { color: var(--heading-color); font-weight: 600; }
 
 li.task { list-style: none; margin-left: -1.3rem; }

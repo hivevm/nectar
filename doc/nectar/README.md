@@ -79,7 +79,7 @@ Nectar reads CommonMark with these additions:
 
 | Feature | Write |
 |---|---|
-| Tables | GFM tables; the number of `-` in a column's delimiter sets its relative width |
+| Tables | GFM tables; the number of `-` in a column's delimiter sets its relative width; on the website no column gets narrower than its longest word |
 | Alerts | `!n`, `!s`, `!w`, `!e` at the start of a line; several paragraphs as `!!w` … `!!` |
 | Highlight | `//text//` |
 | Underline | `____text____` |

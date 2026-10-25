@@ -82,7 +82,7 @@ On top of CommonMark:
 
 | Feature | Syntax |
 |---|---|
-| Tables | GFM pipe tables; the number of `-` in a delimiter cell sets the column's relative width |
+| Tables | GFM pipe tables; the number of `-` in a delimiter cell sets the column's relative width (in HTML a preference: no column gets narrower than its longest word) |
 | Image attributes | `![alt](img.png){width=50% height=4cm align=center}` |
 | Alerts | `!n`, `!s`, `!w`, `!e` at line start; multi-line as `!!w` … `!!`; also `> [!NOTE]` |
 | Highlight | `//text//` |
