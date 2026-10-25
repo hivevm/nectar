@@ -1,6 +1,6 @@
 # ADR-0008: Cargo builds and tests Nectar, rustfmt, Clippy and cargo-deny are its first sensors, run by one script
 
-- **Status:** 🟡 proposed
+- **Status:** 🟢 accepted
 - **Date:** 2026-10-25
 - **Deciders:** Markus Brigl
 - **Applies to:** `Cargo.toml`, `deny.toml`, `scripts/check-build.sh`, `scripts/check-all.sh`, the `build` job of `.github/workflows/checks.yml`, and the Build, Test & Run section of `README.md`

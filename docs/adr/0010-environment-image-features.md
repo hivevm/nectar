@@ -1,6 +1,6 @@
 # ADR-0010: The Dev Container is a base image with Features and a setup script, and the work needs no containers
 
-- **Status:** 🟡 proposed
+- **Status:** 🟢 accepted
 - **Date:** 2026-10-25
 - **Deciders:** Markus Brigl
 - **Applies to:** `.devcontainer/`, and every change that would have the work start or reach a container

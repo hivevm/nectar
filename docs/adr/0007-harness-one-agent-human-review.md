@@ -1,6 +1,6 @@
 # ADR-0007: One coding agent implements, the maintainer reviews every change, nothing runs unattended
 
-- **Status:** 🟡 proposed
+- **Status:** 🟢 accepted
 - **Date:** 2026-10-25
 - **Deciders:** Markus Brigl
 - **Applies to:** every change, every agent session, the specification, the ADR record, and the release workflows under `.github/workflows/`

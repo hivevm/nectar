@@ -1,6 +1,6 @@
 # ADR-0011: The workflows reference every action by its full commit SHA, kept current by Dependabot
 
-- **Status:** 🟡 proposed
+- **Status:** 🟢 accepted
 - **Date:** 2026-10-25
 - **Deciders:** Markus Brigl
 - **Applies to:** every `uses:` line under `.github/workflows/`, `.github/dependabot.yml`, and `scripts/check-all.sh`
