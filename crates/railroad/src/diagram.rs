@@ -12,8 +12,8 @@ pub enum Node {
     Choice(Vec<Node>),
     /// A branch without elements.
     Line,
-    /// `element`, then back along `separator` (or an empty track) for repetitions. The
-    /// cardinality counts the passes back.
+    /// `element`, then back along `separator` (or an empty track) for repetitions. `min` and
+    /// `max` count the passes through `element`, at least one.
     Loop {
         element: Box<Node>,
         separator: Option<Box<Node>>,
@@ -44,16 +44,16 @@ pub fn to_node(expression: &Expression) -> Node {
             max,
         } => {
             let element = to_node(expression);
-            let passes_back = max.map(|max| max.saturating_sub(1));
+            // An element that occurs at most once needs no loop.
+            let repeated = if *max == Some(1) {
+                element
+            } else {
+                loop_node(element, None, (*min).max(1), *max)
+            };
             if *min == 0 {
-                let repeated = if max.is_none_or(|max| max > 1) {
-                    loop_node(element, None, 0, passes_back)
-                } else {
-                    element
-                };
                 Node::Choice(vec![repeated, Node::Line])
             } else {
-                loop_node(element, None, min - 1, passes_back)
+                repeated
             }
         }
         Expression::Sequence(expressions) => sequence(expressions),
@@ -91,15 +91,20 @@ fn sequence(expressions: &[Expression]) -> Node {
                     nodes.push(loop_node(
                         to_node(expression),
                         Some(to_node(&parts[0])),
-                        *min,
-                        *max,
+                        min + 1,
+                        max.map(|max| max + 1),
                     ));
                     i += 2;
                     continue;
                 }
                 Expression::Rule(name) if matches!(expression, Expression::Rule(own) if own == name) =>
                 {
-                    nodes.push(loop_node(to_node(expression), None, *min, *max));
+                    nodes.push(loop_node(
+                        to_node(expression),
+                        None,
+                        min + 1,
+                        max.map(|max| max + 1),
+                    ));
                     i += 2;
                     continue;
                 }
@@ -131,9 +136,9 @@ mod tests {
         assert_eq!(node("r = [a];"), Node::Choice(vec![a.clone(), Node::Line]));
         assert_eq!(
             node("r = {a};"),
-            Node::Choice(vec![loop_node(a.clone(), None, 0, None), Node::Line])
+            Node::Choice(vec![loop_node(a.clone(), None, 1, None), Node::Line])
         );
-        assert_eq!(node("r = a+;"), loop_node(a, None, 0, None));
+        assert_eq!(node("r = a+;"), loop_node(a, None, 1, None));
     }
 
     #[test]
@@ -143,13 +148,33 @@ mod tests {
         assert_eq!(
             node("r = a {',' a} b;"),
             Node::Sequence(vec![
-                loop_node(a.clone(), Some(comma), 0, None),
+                loop_node(a.clone(), Some(comma), 1, None),
                 text(TextKind::Rule, "b")
             ])
         );
         assert_eq!(
             node("r = x a a*;"),
-            Node::Sequence(vec![text(TextKind::Rule, "x"), loop_node(a, None, 0, None)])
+            Node::Sequence(vec![text(TextKind::Rule, "x"), loop_node(a, None, 1, None)])
+        );
+    }
+
+    #[test]
+    fn loops_count_the_passes() {
+        let a = text(TextKind::Rule, "a");
+        assert_eq!(node("r = 3 * a;"), loop_node(a.clone(), None, 3, Some(3)));
+        assert_eq!(
+            node("r = 3 * [a];"),
+            Node::Choice(vec![loop_node(a.clone(), None, 1, Some(3)), Node::Line])
+        );
+        assert_eq!(node("r = 1 * a;"), a);
+        assert_eq!(
+            node("r = a 2 * (',' a);"),
+            Node::Sequence(vec![loop_node(
+                a,
+                Some(text(TextKind::Literal, ",")),
+                3,
+                Some(3)
+            )])
         );
     }
 

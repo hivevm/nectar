@@ -137,12 +137,15 @@ impl Layouts {
                 min,
                 max,
             } => {
-                let cardinality = (*min > 0 || max.is_some()).then(|| {
-                    let text = match max {
-                        Some(max) => format!("{min}..{max}"),
-                        None => format!("{min}..N"),
-                    };
-                    let width = LOOP_FONT.width(&text) + 2;
+                // The passes through the element, unless it is just "once or more".
+                let text = match max {
+                    None if *min <= 1 => None,
+                    None => Some(format!("≥{min}×")),
+                    Some(max) if max == min => Some(format!("{min}×")),
+                    Some(max) => Some(format!("{min}..{max}×")),
+                };
+                let cardinality = text.map(|text| {
+                    let width = LOOP_FONT.width(&text) + 6;
                     (text, width)
                 });
                 let inner = self.get(element);

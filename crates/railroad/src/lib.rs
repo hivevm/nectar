@@ -91,6 +91,19 @@ mod tests {
     }
 
     #[test]
+    fn loop_labels_count_the_passes() {
+        let svg = to_svg("r = 3 * a b+ 2 * [c] 2 * d {e};").unwrap();
+        assert!(svg.contains(">3×</text>"), "{svg}");
+        assert!(svg.contains(">1..2×</text>"), "{svg}");
+        assert!(svg.contains(">2×</text>"), "{svg}");
+        assert_eq!(
+            svg.matches("×</text>").count(),
+            3,
+            "plain repetitions have no label: {svg}"
+        );
+    }
+
+    #[test]
     fn escapes_text() {
         let svg = to_svg("r = 'a<b' \"it's\";").unwrap();
         assert!(svg.contains(">a&lt;b</text>"));

@@ -181,7 +181,8 @@ The core defines the port and knows no engine. Engines are adapters in crates of
 | `nectar-process` | as configured, such as `dot`, `uml`, `ebnf`, `regex`, `jsongraph` | a local command (`dot`, `plantuml`) |
 
 The railroad engine draws every rule of a block under its name and stacks the drawings into one
-SVG. A rule reference written as `\` continues a rule on a new line. Text boxes are sized with
+SVG. A rule reference written as `\` continues a rule on a new line. A loop is labelled with
+the number of passes through it (`3×`, `1..3×`, `≥2×`); "once or more" has no label. Text boxes are sized with
 Verdana metrics, and texts are stretched to their box, so the drawing does not depend on the
 fonts of the viewer.
 

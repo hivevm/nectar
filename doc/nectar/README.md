@@ -104,7 +104,8 @@ The info string of a fenced code block picks an engine:
 
 - Every language with a TextMate grammar is highlighted, from `rust` and `java` to `yaml` and
   `sql`.
-- `railroad` draws railroad diagrams from (E)BNF; `\` continues a rule on a new line.
+- `railroad` draws railroad diagrams from (E)BNF; `\` continues a rule on a new line, and a
+  loop is labelled with the number of passes, such as `3×` for `3 * a`.
 - `dot`, `uml`, `ebnf`, `regex` and `jsongraph` are drawn by Graphviz and PlantUML, once they
   are configured (see below).
 
