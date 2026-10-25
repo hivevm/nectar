@@ -5,6 +5,9 @@ use serde::Deserialize;
 
 use crate::diagnostic::{Diagnostic, Origin};
 
+/// Environment variables with this prefix are variables of the documents.
+pub const ENVIRONMENT_PREFIX: &str = "NECTAR_";
+
 /// The name of the project configuration file in the project root.
 pub const CONFIG_FILE: &str = "nectar.toml";
 
@@ -95,6 +98,24 @@ impl Config {
         to_strings(&self.vars)
     }
 
+    /// The configured variables, overridden by environment variables with the prefix
+    /// `NECTAR_`: `NECTAR_VERSION` sets `{{VERSION}}`. Other environment variables stay out of
+    /// reach, so nothing secret ends up in a page by accident.
+    pub fn variables_with_environment(
+        &self,
+        environment: impl IntoIterator<Item = (String, String)>,
+    ) -> BTreeMap<String, String> {
+        let mut vars = self.variables();
+        for (name, value) in environment {
+            if let Some(name) = name.strip_prefix(ENVIRONMENT_PREFIX)
+                && !name.is_empty()
+            {
+                vars.insert(name.to_string(), value);
+            }
+        }
+        vars
+    }
+
     /// The output directory of a document, relative to the output root, without slashes at
     /// either end.
     pub fn document_path(&self, index: usize) -> String {
@@ -122,4 +143,27 @@ pub(crate) fn to_strings(values: &BTreeMap<String, toml::Value>) -> BTreeMap<Str
             (name.clone(), text)
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn environment_variables_with_the_prefix_override_the_configuration() {
+        let config: Config = toml::from_str(
+            "[[document]]\nsource = \"a.md\"\n[vars]\nVERSION = \"1.0\"\nname = \"Doc\"\n",
+        )
+        .unwrap();
+        let environment = [
+            ("NECTAR_VERSION".to_string(), "2.0".to_string()),
+            ("NECTAR_".to_string(), "ignored".to_string()),
+            ("HOME".to_string(), "/home/secret".to_string()),
+        ];
+        let vars = config.variables_with_environment(environment);
+        assert_eq!(vars["VERSION"], "2.0");
+        assert_eq!(vars["name"], "Doc");
+        assert!(!vars.contains_key("HOME"));
+        assert!(!vars.contains_key(""));
+    }
 }

@@ -96,7 +96,7 @@ On top of CommonMark:
 | Heading ids | `# Heading {#id}` |
 | Internal links | `[text](#id)`, `[text](#heading-slug)` or `[text](#Heading Text)` |
 | Symbols | `@name@`, a named glyph of the theme's symbol font |
-| Variables | `{{name}}` or `{{name;format}}` (format ignored), from `nectar.toml` and front matter; unknown names stay as written and are reported outside code |
+| Variables | `{{name}}` or `{{name;format}}` (format ignored), from `nectar.toml`, environment variables `NECTAR_<name>` and front matter, each overriding the one before; unknown names stay as written and are reported outside code |
 | Code | fenced with ` ``` ` or `~~~`; the info string selects the code engine |
 
 ## Document model
@@ -378,7 +378,6 @@ as a GitHub release. The user guide is `doc/nectar/README.md`.
 
 ## Open points
 
-- Environment variables as a source for `{{name}}`, and which ones.
 - Light and dark highlighting: passes would store styles for two themes.
 - Symbols beyond the default theme: `@name@` is a ligature name of the theme's symbol font; the
   default theme ships Material Icons.

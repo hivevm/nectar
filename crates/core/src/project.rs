@@ -71,7 +71,7 @@ impl Project {
 
     /// Loads every start document and runs the transform passes.
     pub fn documents(&self) -> Documents {
-        let vars = self.config.variables();
+        let vars = self.config.variables_with_environment(std::env::vars());
         let mut loader = Loader::new(&self.root, &vars, self.include_drafts);
         let mut documents = Vec::new();
         let mut diagnostics = Vec::new();

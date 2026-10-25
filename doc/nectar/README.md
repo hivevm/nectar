@@ -91,7 +91,7 @@ Nectar reads CommonMark with these additions:
 | Heading ids | `## Heading {#id}` |
 | Internal links | `[text](#id)`, `[text](#Heading text)`, `[text](other.md#heading)` |
 | Symbols | `@name@`, a [Material Icons](https://fonts.google.com/icons) name such as `@web@` |
-| Variables | `{{name}}` or `{{name;format}}` (the format is ignored), from `[vars]` in `nectar.toml` or the front matter; unknown names stay as written and are reported unless they stand in code |
+| Variables | `{{name}}` or `{{name;format}}` (the format is ignored), from `[vars]` in `nectar.toml`, environment variables `NECTAR_<name>` or the front matter, each overriding the one before; unknown names stay as written and are reported unless they stand in code |
 | Comments | `[comment]: # (not shown)` |
 
 Headings are numbered (`1.`, `1.2.`, …) below the top level, and the first page of a document
