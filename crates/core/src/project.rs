@@ -5,6 +5,7 @@ use std::sync::Mutex;
 
 use crate::config::{CONFIG_FILE, Config};
 use crate::diagnostic::{Diagnostic, Severity};
+use crate::download::Downloader;
 use crate::engine::CodeEngine;
 use crate::load::{Loader, read_bytes_inside};
 use crate::model::Document;
@@ -18,6 +19,7 @@ pub struct Project {
     engines: Vec<Box<dyn CodeEngine>>,
     include_drafts: bool,
     cache: EngineCache,
+    downloader: Downloader,
 }
 
 /// The documents of a project after all transform passes.
@@ -48,6 +50,7 @@ impl Project {
             engines: Vec::new(),
             include_drafts: false,
             cache: Mutex::new(HashMap::new()),
+            downloader: Downloader::new(),
         })
     }
 
@@ -67,6 +70,11 @@ impl Project {
     /// Whether files with `draft = true` are part of the documents.
     pub fn set_include_drafts(&mut self, include: bool) {
         self.include_drafts = include;
+    }
+
+    /// Whether images from the web stay links instead of being downloaded.
+    pub fn set_offline(&mut self, offline: bool) {
+        self.downloader.set_offline(offline);
     }
 
     /// Loads every start document and runs the transform passes.
@@ -90,12 +98,14 @@ impl Project {
                 root,
                 footnotes: Vec::new(),
                 assets: BTreeMap::new(),
+                downloads: BTreeMap::new(),
             };
             passes::run(
                 &mut document,
                 &self.root,
                 &self.engines,
                 &self.cache,
+                &self.downloader,
                 &mut diagnostics,
             );
             documents.push(document);
@@ -146,6 +156,10 @@ impl Project {
         }
         for document in &documents {
             for (source, target) in &document.assets {
+                if let Some(bytes) = document.downloads.get(source) {
+                    files.insert(target.clone(), bytes.clone());
+                    continue;
+                }
                 match read_bytes_inside(&self.root, source) {
                     Ok(bytes) => {
                         files.insert(target.clone(), bytes);

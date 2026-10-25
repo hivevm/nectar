@@ -24,6 +24,9 @@ pub struct Document {
     pub footnotes: Vec<Footnote>,
     /// Local files the document refers to: source path to output path, both relative.
     pub assets: BTreeMap<PathBuf, PathBuf>,
+    /// The content of assets that are no project files, such as downloaded images, by their
+    /// source path in `assets`.
+    pub downloads: BTreeMap<PathBuf, Vec<u8>>,
 }
 
 /// The content of one source file. The start document is the root chapter; every include adds a

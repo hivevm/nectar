@@ -310,3 +310,40 @@ fn print_view_can_be_turned_off_and_reports_bad_settings() {
     let build = Project::load(root).unwrap().build(&[&web, &PrintRenderer]);
     assert!(build.has_errors(), "{:?}", build.diagnostics);
 }
+
+#[test]
+fn images_from_data_uris_become_files_of_the_site() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
+    write(
+        root,
+        "main.md",
+        "# Manual\n\n![dot](data:image/png;base64,iVBORw0KGgo=)\n\n![web](https://example.org/a.png)\n",
+    );
+
+    let mut project = Project::load(root).unwrap();
+    project.set_offline(true);
+    let build = project.build(&[&HtmlRenderer::default()]);
+    assert!(build.diagnostics.is_empty(), "{:?}", build.diagnostics);
+    let file = build
+        .files
+        .keys()
+        .find(|path| path.starts_with("_remote") && path.extension().is_some_and(|e| e == "png"))
+        .expect("the data URI is a file of the site")
+        .clone();
+    assert_eq!(build.files[&file], b"\x89PNG\r\n\x1a\n");
+    let index = page(&build, "index.html");
+    assert!(
+        // URLs use `/` on every platform.
+        index.contains(&format!(
+            "src=\"{}\"",
+            file.to_string_lossy().replace('\\', "/")
+        )),
+        "{index}"
+    );
+    assert!(
+        index.contains("src=\"https://example.org/a.png\""),
+        "offline keeps the link: {index}"
+    );
+}

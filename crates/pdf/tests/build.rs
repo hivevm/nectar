@@ -73,3 +73,66 @@ fn pdf_can_be_turned_off_and_reports_bad_settings() {
         build.diagnostics
     );
 }
+
+#[test]
+fn embeds_data_uri_images_and_reports_what_is_left_out() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(root, "nectar.toml", b"[[document]]\nsource = \"main.md\"\n");
+    let encoded = base64(PNG);
+    write(
+        root,
+        "main.md",
+        format!(
+            "# Manual\n\n![logo](data:image/png;base64,{encoded})\n\n<div>raw</div>\n\n![web](https://example.org/a.png)\n\nGet [the file](files/data.zip).\n"
+        )
+        .as_bytes(),
+    );
+    write(root, "files/data.zip", b"zip");
+
+    let mut project = Project::load(root).unwrap();
+    project.set_offline(true);
+    let build = project.build(&[&PdfRenderer]);
+    let messages: Vec<&str> = build
+        .diagnostics
+        .iter()
+        .map(|d| d.message.as_str())
+        .collect();
+    assert_eq!(messages.len(), 2, "{messages:?}");
+    assert!(
+        messages.iter().any(|m| m.contains("raw HTML")),
+        "{messages:?}"
+    );
+    assert!(
+        messages
+            .iter()
+            .any(|m| m.contains("https://example.org/a.png")),
+        "{messages:?}"
+    );
+    assert!(
+        build
+            .diagnostics
+            .iter()
+            .all(|d| d.origin.as_ref().is_some_and(|o| o.line > 0))
+    );
+    assert!(build.files[Path::new("print/main.pdf")].starts_with(b"%PDF-"));
+}
+
+fn base64(bytes: &[u8]) -> String {
+    const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut text = String::new();
+    for chunk in bytes.chunks(3) {
+        let n = chunk
+            .iter()
+            .enumerate()
+            .fold(0u32, |n, (i, b)| n | (u32::from(*b) << (16 - 8 * i)));
+        for i in 0..4 {
+            if i <= chunk.len() {
+                text.push(ALPHABET[(n >> (18 - 6 * i) & 63) as usize] as char);
+            } else {
+                text.push('=');
+            }
+        }
+    }
+    text
+}

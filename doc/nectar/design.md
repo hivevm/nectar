@@ -115,6 +115,17 @@ Highlighted code holds lines of tokens, each with a resolved style (colour, back
 italic, underline, strikethrough). A graphic holds SVG, an alternative text and the source it was
 generated from.
 
+## Images from the web
+
+Images belong to the documentation wherever they come from. After the assets are collected, the
+download pass fetches images with `http(s)` URLs and decodes `data:` URIs. An image must arrive
+with an image media type, within 30 seconds and 20 MB and after at most five redirects. It is
+stored with the document as an asset at `<document>/_remote/<hash>.<extension>`, its bytes kept
+in the document, so every renderer includes it like a local image: the website serves it from
+its own output, the PDF embeds it. The project fetches each URL once; a rebuild under
+`nectar serve` reuses it. A failed download is reported and the image keeps its URL. `--offline`
+fetches nothing.
+
 ## Embedded files
 
 An image that stands alone in its paragraph and points to a local file that is not a picture
@@ -257,7 +268,9 @@ text always as Typst strings, so nothing in a document is read as Typst markup; 
 their section numbers and labels for internal links; footnotes as Typst footnotes; highlighted
 code with the colours of the code engine; graphics as SVG files. Typst compiles the source in a
 world held in memory, with the bundled fonts (Ubuntu Sans, Victor Mono, Material Icons) and the
-document's images. Errors name the line of generated source they point to. The settings of
+document's images. Errors name the line of generated source they point to. The PDF reports what it leaves out:
+raw HTML and images that are no assets; links to local files point to the copied file, relative
+to the PDF. The settings of
 `[document.print]` apply as for the print view; `pdf = false` turns the PDF off. Typst's caches
 keep rebuilds under `nectar serve` short.
 

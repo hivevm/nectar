@@ -26,6 +26,10 @@ struct Cli {
     #[arg(long, short = 'C', default_value = ".", global = true)]
     root: PathBuf,
 
+    /// Keep images from the web as links instead of downloading them
+    #[arg(long, global = true)]
+    offline: bool,
+
     #[command(subcommand)]
     command: Command,
 }
@@ -62,12 +66,12 @@ enum Command {
 fn main() -> ExitCode {
     let cli = Cli::parse();
     let result = match cli.command {
-        Command::Build { output, drafts } => build(&cli.root, output, drafts),
+        Command::Build { output, drafts } => build(&cli.root, output, drafts, cli.offline),
         Command::Serve {
             port,
             bind,
             no_drafts,
-        } => serve(&cli.root, port, bind, !no_drafts),
+        } => serve(&cli.root, port, bind, !no_drafts, cli.offline),
     };
     match result {
         Ok(code) => code,
@@ -78,9 +82,9 @@ fn main() -> ExitCode {
     }
 }
 
-fn build(root: &Path, output: Option<PathBuf>, drafts: bool) -> Result<ExitCode> {
+fn build(root: &Path, output: Option<PathBuf>, drafts: bool, offline: bool) -> Result<ExitCode> {
     let started = Instant::now();
-    let project = open(root, drafts)?;
+    let project = open(root, drafts, offline)?;
     let web = HtmlRenderer {
         print_view: true,
         pdf: true,
@@ -105,7 +109,13 @@ fn build(root: &Path, output: Option<PathBuf>, drafts: bool) -> Result<ExitCode>
     Ok(ExitCode::SUCCESS)
 }
 
-fn serve(root: &Path, port: Option<u16>, bind: Option<IpAddr>, drafts: bool) -> Result<ExitCode> {
+fn serve(
+    root: &Path,
+    port: Option<u16>,
+    bind: Option<IpAddr>,
+    drafts: bool,
+    offline: bool,
+) -> Result<ExitCode> {
     // The configuration may be broken at start; the server then shows why and keeps watching.
     let config = Config::load(root).ok();
     let setting = |name: &str| config.as_ref().and_then(|c| c.serve.get(name).cloned());
@@ -130,7 +140,7 @@ fn serve(root: &Path, port: Option<u16>, bind: Option<IpAddr>, drafts: bool) -> 
 
     let project_root = root.to_path_buf();
     let open: OpenProject = Box::new(move || {
-        open(&project_root, drafts).map_err(|e| Diagnostic::error(format!("{e:#}"), None))
+        open(&project_root, drafts, offline).map_err(|e| Diagnostic::error(format!("{e:#}"), None))
     });
     let options = ServeOptions {
         root: root.to_path_buf(),
@@ -150,9 +160,10 @@ fn serve(root: &Path, port: Option<u16>, bind: Option<IpAddr>, drafts: bool) -> 
     Ok(ExitCode::SUCCESS)
 }
 
-fn open(root: &Path, drafts: bool) -> Result<Project> {
+fn open(root: &Path, drafts: bool, offline: bool) -> Result<Project> {
     let mut project = Project::load(root).map_err(|d| anyhow!("{d}"))?;
     project.set_include_drafts(drafts);
+    project.set_offline(offline);
     for engine in engines(project.config())? {
         project.add_engine(engine);
     }

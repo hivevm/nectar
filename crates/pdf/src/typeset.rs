@@ -9,11 +9,11 @@ use std::fmt::Write;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 
-use nectar_core::PrintSettings;
 use nectar_core::model::{
     AlertKind, Align, Block, BlockKind, Chapter, Document, Footnote, Graphic, HighlightedCode,
     Image, Inline, Table, Target, TokenStyle,
 };
+use nectar_core::{Diagnostic, Origin, PrintSettings, pdf_file};
 
 const BRAND: &str = "#f2b408";
 const LINK: &str = "#946300";
@@ -124,6 +124,10 @@ pub(crate) struct Typesetter<'a> {
     pub files: HashMap<String, Vec<u8>>,
     /// Project files to load, by absolute virtual path.
     pub wanted: BTreeMap<String, PathBuf>,
+    /// What the PDF leaves out.
+    pub diagnostics: Vec<Diagnostic>,
+    /// Origin of the block being written.
+    origin: Origin,
 }
 
 impl<'a> Typesetter<'a> {
@@ -138,6 +142,8 @@ impl<'a> Typesetter<'a> {
             footnotes_written: HashSet::new(),
             files: HashMap::new(),
             wanted: BTreeMap::new(),
+            diagnostics: Vec::new(),
+            origin: Origin::default(),
         }
     }
 
@@ -234,6 +240,7 @@ impl<'a> Typesetter<'a> {
     }
 
     fn block(&mut self, block: &Block, top: bool) {
+        self.origin = block.origin.clone();
         match &block.kind {
             BlockKind::Chapter(chapter) => self.chapter(chapter, top),
             BlockKind::Heading(heading) => {
@@ -326,7 +333,7 @@ impl<'a> Typesetter<'a> {
                 self.block(inner, false);
                 self.out.push_str("\n];");
             }
-            BlockKind::Html(_) => {}
+            BlockKind::Html(_) => self.left_out("raw HTML is left out of the PDF"),
         }
     }
 
@@ -452,10 +459,12 @@ impl<'a> Typesetter<'a> {
 
     fn image(&mut self, image: &Image, block: bool) {
         let path = match &image.target {
-            Target::Asset(path) => match self.document.assets.get(path) {
-                Some(_) => virtual_path(path),
-                None => return self.text(&image.alt),
-            },
+            Target::Asset(path) if self.document.assets.contains_key(path) => virtual_path(path),
+            Target::External(url) => {
+                let shown: String = url.chars().take(80).collect();
+                self.left_out(&format!("the image {shown} is not embedded in the PDF"));
+                return self.text(&image.alt);
+            }
             _ => return self.text(&image.alt),
         };
         self.wanted
@@ -501,7 +510,14 @@ impl<'a> Typesetter<'a> {
                 let destination = match &link.target {
                     Target::External(url) => Some(string(url)),
                     Target::Anchor(id) => self.labels.get(id).map(|label| format!("<{label}>")),
-                    Target::File { .. } | Target::Asset(_) => None,
+                    // A local file, where it lies in the output relative to the PDF.
+                    Target::Asset(path) => self.document.assets.get(path).map(|output| {
+                        string(&relative_url(
+                            &pdf_file(self.document),
+                            &output.to_string_lossy(),
+                        ))
+                    }),
+                    Target::File { .. } => None,
                 };
                 match destination {
                     Some(destination) if !link.content.is_empty() => {
@@ -526,7 +542,7 @@ impl<'a> Typesetter<'a> {
             }
             Inline::SoftBreak => self.out.push_str("#\" \";"),
             Inline::LineBreak => self.out.push_str("#linebreak();"),
-            Inline::Html(_) => {}
+            Inline::Html(_) => self.left_out("raw HTML is left out of the PDF"),
         }
     }
 
@@ -559,6 +575,11 @@ impl<'a> Typesetter<'a> {
         }
     }
 
+    fn left_out(&mut self, message: &str) {
+        self.diagnostics
+            .push(Diagnostic::warning(message, Some(self.origin.clone())));
+    }
+
     fn wrap(&mut self, function: &str, children: &[Inline]) {
         let _ = write!(self.out, "#{function}[");
         self.inlines(children);
@@ -588,6 +609,24 @@ fn collect_labels(chapter: &Chapter, labels: &mut HashMap<String, String>) {
             _ => {}
         }
     }
+}
+
+/// The URL of output file `to`, relative to output file `from`. Both use `/`.
+fn relative_url(from: &str, to: &str) -> String {
+    let to = to.replace('\\', "/");
+    let mut from_dirs: Vec<&str> = from.split('/').collect();
+    from_dirs.pop();
+    let to_parts: Vec<&str> = to.split('/').collect();
+    let (to_dirs, to_file) = to_parts.split_at(to_parts.len() - 1);
+    let common = from_dirs
+        .iter()
+        .zip(to_dirs)
+        .take_while(|(a, b)| a == b)
+        .count();
+    let mut parts = vec![".."; from_dirs.len() - common];
+    parts.extend(&to_dirs[common..]);
+    parts.extend(to_file);
+    parts.join("/")
 }
 
 /// The absolute virtual path of a project file.

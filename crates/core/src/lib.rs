@@ -6,6 +6,7 @@
 
 mod config;
 mod diagnostic;
+mod download;
 mod engine;
 mod load;
 pub mod model;

@@ -99,6 +99,15 @@ Headings are numbered (`1.`, `1.2.`, …) below the top level, and the first pag
 lists the contents of the whole document. `numbered = false` and `contents = false` in the
 `[[document]]` table turn either off.
 
+## Images
+
+Images are part of the documentation wherever they come from. Local images are copied into
+the output; images from the web (`https://…`) and `data:` URIs are downloaded or decoded during
+the build, stored in `<document>/_remote/` and served from there, and the PDF embeds them all.
+A download takes at most 30 seconds and 20 MB, must be an image, and happens once per
+`nectar serve` session. An image that cannot be fetched keeps its link and is reported.
+`--offline` keeps images from the web as links.
+
 ## Code and diagrams
 
 The info string of a fenced code block picks an engine:
@@ -205,7 +214,8 @@ A theme is a directory `themes/<name>/` with `layouts/page.html`, a
 ## Diagnostics
 
 Problems are reported with file and line. `nectar build` fails on errors and lists warnings;
-`nectar serve` also shows them in a panel on every page and keeps watching.
+`nectar serve` also shows them in a panel on every page and keeps watching. The PDF reports what
+it leaves out: raw HTML, and images it could not embed.
 
 ## Editor
 

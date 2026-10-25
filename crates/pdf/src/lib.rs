@@ -110,7 +110,12 @@ fn render_document(
         watermark.as_deref(),
     );
 
+    output.diagnostics.append(&mut typesetter.diagnostics);
     for (path, source) in std::mem::take(&mut typesetter.wanted) {
+        if let Some(bytes) = document.downloads.get(&source) {
+            files.insert(path, bytes.clone());
+            continue;
+        }
         match ctx.read(&source) {
             Ok(bytes) => {
                 files.insert(path, bytes);

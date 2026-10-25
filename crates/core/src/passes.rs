@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use crate::diagnostic::{Diagnostic, Origin};
+use crate::download::{Downloader, download_images};
 use crate::engine::{CodeEngine, EngineOutput};
 use crate::model::{
     Block, BlockKind, Chapter, Document, Footnote, Inline, Link, Target, block_inlines_mut,
@@ -21,6 +22,7 @@ pub(crate) fn run(
     root: &Path,
     engines: &[Box<dyn CodeEngine>],
     cache: &EngineCache,
+    downloader: &Downloader,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
     assign_ids(document, diagnostics);
@@ -28,6 +30,7 @@ pub(crate) fn run(
     number_footnotes(document);
     resolve_links(document, diagnostics);
     collect_assets(document, root, diagnostics);
+    download_images(document, downloader, diagnostics);
     run_code_engines(document, engines, cache, diagnostics);
 }
 
@@ -541,6 +544,7 @@ mod tests {
             root,
             footnotes: Vec::new(),
             assets: std::collections::BTreeMap::new(),
+            downloads: std::collections::BTreeMap::new(),
         };
         let mut diagnostics = loader.diagnostics;
         run(
@@ -548,6 +552,7 @@ mod tests {
             dir.path(),
             &[],
             &Mutex::new(HashMap::new()),
+            &Downloader::new(),
             &mut diagnostics,
         );
         (document, diagnostics)
