@@ -56,7 +56,8 @@ another Markdown file as a chapter; consecutive lines of such links include one 
 
 With `split = "chapter"` (the default) every chapter becomes a page of its own, with breadcrumbs
 and previous/next links. The menu shows the chapters as a tree whose branches open and close;
-the branches along the current page are open. With `split = "none"` the whole document is one
+the branches along the current page are open, and the menu remembers the branches you opened
+while the browser tab stays open. With `split = "none"` the whole document is one
 page and the menu tree lists its headings.
 
 ### Front matter

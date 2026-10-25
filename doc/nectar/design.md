@@ -211,7 +211,9 @@ The HTML renderer lives in `nectar-html`. Per start document it either writes on
 whole document or one page per chapter (`split`, default `"chapter"`). With chapters on pages of
 their own, the menu, table of contents and previous/next links come from the include tree, and
 internal links resolve across pages. The menu is a tree of the chapters; each branch opens and
-closes without scripts, and the branches along the current page are open when it loads. A
+closes without scripts, and the branches along the current page are open when it loads. A small
+script remembers the branches opened in a browser tab (`sessionStorage`); without it the menu
+works the same and just forgets. A
 document on a single page shows its headings of levels 2 and 3 in the tree instead.
 
 The output is laid out as follows:

@@ -98,5 +98,23 @@
   </aside>
   {% endif %}
 </div>
+<script>
+  // Remembers the open branches of the menu for this tab. The branches along the current page
+  // are always open; without scripts the menu works the same and just forgets.
+  (() => {
+    const tree = document.querySelector(".book-menu-tree");
+    if (!tree) return;
+    const key = "nectar-menu:" + (document.querySelector(".book-brand a")?.href ?? "");
+    let open = {};
+    try { open = JSON.parse(sessionStorage.getItem(key) || "{}"); } catch (e) {}
+    for (const toggle of tree.querySelectorAll("input.toggle")) {
+      if (!toggle.defaultChecked && open[toggle.id]) toggle.checked = true;
+      toggle.addEventListener("change", () => {
+        open[toggle.id] = toggle.checked;
+        try { sessionStorage.setItem(key, JSON.stringify(open)); } catch (e) {}
+      });
+    }
+  })();
+</script>
 </body>
 </html>
