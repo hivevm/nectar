@@ -134,7 +134,9 @@ rediscovered as a rejected alternative in an ADR.
   provides: a local process on the command line, whatever the host offers in WebAssembly. Nectar
   works without them and degrades as G-5 says.
 - The licence is BSD-3-Clause; every dependency and everything bundled, themes, fonts, TextMate
-  grammars and Paged.js among them, carries a compatible licence.
+  grammars and Paged.js among them, carries a compatible licence. The one exception is `giallo`,
+  the highlighter behind the TextMate code engine, under EUPL-1.2: a release names it and where
+  its source is.
 - One maintainer works with one coding agent.
 - Nectar is distributed as binaries in GitHub releases, with SHA-256 checksums, and possibly as a
   Dev Container Feature; not on crates.io and not on npm.
