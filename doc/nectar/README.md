@@ -94,6 +94,11 @@ Nectar reads CommonMark with these additions:
 | Symbols | `@name@`, a [Material Icons](https://fonts.google.com/icons) name such as `@web@` |
 | Variables | `{{name}}` or `{{name;format}}` (the format is ignored), from `[vars]` in `nectar.toml`, environment variables `NECTAR_<name>` or the front matter, each overriding the one before; unknown names stay as written and are reported unless they stand in code |
 | Comments | `[comment]: # (not shown)` |
+| Page break | `---`, `___` or `***` on a line of its own: a new page in the print view and the PDF, a rule on the website |
+
+Raw HTML, such as `<file>` written in a sentence, is shown as text and reported, so nothing in
+a source disappears into the page as markup. `html = true` in `nectar.toml` passes it to the
+website instead; the PDF still leaves it out and reports it.
 
 Headings are numbered (`1.`, `1.2.`, …) below the top level, and the first page of a document
 lists the contents of the whole document. `numbered = false` and `contents = false` in the
@@ -170,6 +175,7 @@ command is missing or fails, the block stays plain code and Nectar reports a war
 | `[[document]] numbered` | Section numbers, default `true` |
 | `[[document]] contents` | Contents of the whole document on its first page, default `true` |
 | `[vars]` | Values for `{{name}}` |
+| `html` | `true` passes raw HTML to the website; default `false`, which shows it as text |
 | `[engine.…]` | Code engines, see above |
 | `[serve] port`, `bind` | Address of `nectar serve`, default `127.0.0.1:1313` |
 | `[document.print]` | Print view, see below |
@@ -215,8 +221,9 @@ A theme is a directory `themes/<name>/` with `layouts/page.html`, a
 ## Diagnostics
 
 Problems are reported with file and line. `nectar build` fails on errors and lists warnings;
-`nectar serve` also shows them in a panel on every page and keeps watching. The PDF reports what
-it leaves out: raw HTML, and images it could not embed.
+`nectar serve` also shows them in a panel on every page and keeps watching. Raw HTML shown as text
+is reported, and the PDF reports what it leaves out: raw HTML where `html = true`, and images it
+could not embed.
 
 ## Editor
 

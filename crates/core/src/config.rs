@@ -25,6 +25,9 @@ pub struct Config {
     pub documents: Vec<DocumentConfig>,
     #[serde(default)]
     pub vars: BTreeMap<String, toml::Value>,
+    /// Whether raw HTML in the sources reaches the website; without it, it is shown as text.
+    #[serde(default)]
+    pub html: bool,
     /// Engine tables, read by the shell that composes the adapters.
     #[serde(default)]
     pub engine: toml::Table,

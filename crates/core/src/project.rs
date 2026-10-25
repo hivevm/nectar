@@ -112,6 +112,7 @@ impl Project {
                 &self.engines,
                 &self.cache,
                 &self.downloader,
+                self.config.html,
                 &mut diagnostics,
             );
             documents.push(document);

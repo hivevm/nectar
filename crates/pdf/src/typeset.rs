@@ -313,10 +313,9 @@ impl<'a> Typesetter<'a> {
                 self.out.push_str(");");
             }
             BlockKind::Table(table) => self.table(table),
-            BlockKind::ThematicBreak => {
-                self.out
-                    .push_str("#line(length: 100%, stroke: 0.5pt + luma(200));");
-            }
+            // A thematic break starts a new page in print, as the documents written for the
+            // former Gradle plugin expect; the website shows a rule.
+            BlockKind::ThematicBreak => self.out.push_str("#pagebreak(weak: true)\n"),
             BlockKind::Code(code) => {
                 let _ = write!(
                     self.out,

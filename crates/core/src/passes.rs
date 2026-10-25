@@ -23,8 +23,12 @@ pub(crate) fn run(
     engines: &[Box<dyn CodeEngine>],
     cache: &EngineCache,
     downloader: &Downloader,
+    allow_html: bool,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
+    if !allow_html {
+        raw_html_as_text(document, diagnostics);
+    }
     assign_ids(document, diagnostics);
     number_headings(document);
     number_footnotes(document);
@@ -32,6 +36,39 @@ pub(crate) fn run(
     collect_assets(document, root, diagnostics);
     download_images(document, downloader, diagnostics);
     run_code_engines(document, engines, cache, diagnostics);
+}
+
+/// Shows raw HTML as the text it was written as, so that `<file>` in a sentence stays visible
+/// instead of reaching a page as markup (G-9). One warning per block that holds any.
+fn raw_html_as_text(document: &mut Document, diagnostics: &mut Vec<Diagnostic>) {
+    visit_blocks_mut(&mut document.root.blocks, &mut |block| {
+        let mut found = false;
+        if let BlockKind::Html(html) = &mut block.kind {
+            let mut inlines = Vec::new();
+            for line in html.trim_end().lines() {
+                if !inlines.is_empty() {
+                    inlines.push(Inline::LineBreak);
+                }
+                inlines.push(Inline::Text(line.to_string()));
+            }
+            block.kind = BlockKind::Paragraph(inlines);
+            found = true;
+        }
+        block_inlines_mut(block, &mut |inlines| {
+            visit_inlines_mut(inlines, &mut |inline| {
+                if let Inline::Html(html) = inline {
+                    *inline = Inline::Text(std::mem::take(html));
+                    found = true;
+                }
+            });
+        });
+        if found {
+            diagnostics.push(Diagnostic::warning(
+                "raw HTML shown as text; set html = true in nectar.toml to pass it through",
+                Some(block.origin.clone()),
+            ));
+        }
+    });
 }
 
 /// Turns a heading text into an id: lower case, words joined by `-`.
@@ -553,6 +590,7 @@ mod tests {
             &[],
             &Mutex::new(HashMap::new()),
             &Downloader::new(),
+            false,
             &mut diagnostics,
         );
         (document, diagnostics)

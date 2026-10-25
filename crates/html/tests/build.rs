@@ -412,3 +412,48 @@ fn highlighted_code_carries_light_and_dark_colours() {
         "tokens without colour inherit: {index}"
     );
 }
+
+// Verifies: G-9
+#[test]
+fn raw_html_is_text_unless_the_project_allows_it() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
+    write(
+        root,
+        "main.md",
+        "# Manual\n\nRun `nectar` with -c <file>.\n\n<div>block</div>\n",
+    );
+
+    let build = Project::load(root)
+        .unwrap()
+        .build(&[&HtmlRenderer::default()]);
+    let html = page(&build, "index.html");
+    assert!(html.contains("-c &lt;file&gt;."), "{html}");
+    assert!(html.contains("&lt;div&gt;block&lt;/div&gt;"), "{html}");
+    let warnings: Vec<_> = build
+        .diagnostics
+        .iter()
+        .map(|d| (d.message.as_str(), d.origin.as_ref().map(|o| o.line)))
+        .collect();
+    assert_eq!(warnings.len(), 2, "{warnings:?}");
+    assert!(
+        warnings
+            .iter()
+            .all(|(m, line)| m.contains("raw HTML shown as text") && line.is_some()),
+        "{warnings:?}"
+    );
+
+    write(
+        root,
+        "nectar.toml",
+        "html = true\n[[document]]\nsource = \"main.md\"\n",
+    );
+    let build = Project::load(root)
+        .unwrap()
+        .build(&[&HtmlRenderer::default()]);
+    let html = page(&build, "index.html");
+    assert!(html.contains("-c <file>."), "{html}");
+    assert!(html.contains("<div>block</div>"), "{html}");
+    assert!(build.diagnostics.is_empty(), "{:?}", build.diagnostics);
+}

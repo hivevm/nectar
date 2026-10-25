@@ -78,7 +78,12 @@ fn pdf_can_be_turned_off_and_reports_bad_settings() {
 fn embeds_data_uri_images_and_reports_what_is_left_out() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();
-    write(root, "nectar.toml", b"[[document]]\nsource = \"main.md\"\n");
+    // With html = true raw HTML reaches the renderers, and the PDF reports it (G-4).
+    write(
+        root,
+        "nectar.toml",
+        b"html = true\n[[document]]\nsource = \"main.md\"\n",
+    );
     let encoded = base64(PNG);
     write(
         root,
@@ -100,7 +105,7 @@ fn embeds_data_uri_images_and_reports_what_is_left_out() {
         .collect();
     assert_eq!(messages.len(), 2, "{messages:?}");
     assert!(
-        messages.iter().any(|m| m.contains("raw HTML")),
+        messages.iter().any(|m| m.contains("raw HTML is left out")),
         "{messages:?}"
     );
     assert!(
@@ -135,4 +140,32 @@ fn base64(bytes: &[u8]) -> String {
         }
     }
     text
+}
+
+/// The pages of a PDF, counted by their page objects.
+fn pages(pdf: &[u8]) -> usize {
+    let text = String::from_utf8_lossy(pdf).replace("/Type /", "/Type/");
+    text.matches("/Type/Page").count() - text.matches("/Type/Pages").count()
+}
+
+#[test]
+fn a_thematic_break_starts_a_new_page() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(
+        root,
+        "nectar.toml",
+        b"[[document]]\nsource = \"main.md\"\ncontents = false\n[document.print]\ncover = false\n",
+    );
+    write(root, "main.md", b"# Manual\n\nBefore.\n\nAfter.\n");
+    let build = Project::load(root).unwrap().build(&[&PdfRenderer]);
+    let without = pages(&build.files[Path::new("print/main.pdf")]);
+
+    write(root, "main.md", b"# Manual\n\nBefore.\n\n---\n\nAfter.\n");
+    let build = Project::load(root).unwrap().build(&[&PdfRenderer]);
+    assert!(build.diagnostics.is_empty(), "{:?}", build.diagnostics);
+    assert_eq!(
+        pages(&build.files[Path::new("print/main.pdf")]),
+        without + 1
+    );
 }

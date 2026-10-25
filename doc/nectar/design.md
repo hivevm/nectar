@@ -99,6 +99,8 @@ On top of CommonMark:
 | Symbols | `@name@`, a named glyph of the theme's symbol font |
 | Variables | `{{name}}` or `{{name;format}}` (format ignored), from `nectar.toml`, environment variables `NECTAR_<name>` and front matter, each overriding the one before; unknown names stay as written and are reported outside code |
 | Code | fenced with ` ``` ` or `~~~`; the info string selects the code engine |
+| Page break | a thematic break, `---`, `___` or `***`: a new page in print, a rule on the website |
+| Raw HTML | shown as text and reported unless `html = true` in `nectar.toml`; the HTML renderers then pass it through and the PDF leaves it out |
 
 ## Document model
 
@@ -160,7 +162,9 @@ pub trait Pass {
 }
 ```
 
-The core runs its passes in a fixed order, once per build, independent of the output format.
+The core runs its passes in a fixed order, once per build, independent of the output format. The
+first turns raw HTML into text unless `html = true`, so the renderers only see raw HTML the project
+allowed.
 
 ### Code engines
 
@@ -253,14 +257,14 @@ URLs between output files are relative, so the output also works when opened fro
 ### Print renderer
 
 `PrintRenderer`, also in `nectar-html`, writes every document as one file at
-`<document>/print/index.html`. It uses the same block writer as the HTML renderer, so content
-looks alike, and adds a cover, the contents and running headers and footers through CSS paged
-media (`layouts/print.html`, `static/print.css`). Footnotes stand where they are referenced and
-float to the foot of the page. Paged.js, bundled with the theme, lays the file out into pages in
-the browser; the same file is the preview on screen and the source for printing or saving as
-PDF. A small handler limits how long Paged.js waits for an image to report that it has loaded,
-since a page that never reports would stop the layout. The web pages link to the print view
-when the HTML renderer runs with `print_view`.
+`<document>/print/index.html`. It uses the same block writer as the HTML renderer, so content looks
+alike, and adds a cover, the contents and running headers and footers through CSS paged media
+(`layouts/print.html`, `static/print.css`). Footnotes stand where they are referenced and float to
+the foot of the page. Paged.js, bundled with the theme, lays the file out into pages in the browser;
+the same file is the preview on screen and the source for printing or saving as PDF. A thematic
+break starts a new page, as in the PDF. A small handler limits how long Paged.js waits for an image
+to report that it has loaded, since a page that never reports would stop the layout. The web pages
+link to the print view when the HTML renderer runs with `print_view`.
 
 Settings come from `[document.print]` (`enabled`, `size`, `margin`, `cover`, `subtitle`,
 `cover_image`, `chapter_pages`, `watermark`), which the core passes on as a table without
@@ -277,6 +281,7 @@ always as Typst strings, so nothing in a document is read as Typst markup; headi
 section numbers and labels for internal links; footnotes as Typst footnotes; highlighted code with
 the colours of the code engine; graphics as SVG files. Typst compiles the source in a world held in
 memory, with the bundled fonts (Ubuntu Sans, Victor Mono, Material Icons) and the document's images.
+A thematic break starts a new page, as documents written for the former Gradle plugin expect.
 Errors name the line of generated source they point to. The PDF reports what it leaves out: raw HTML
 and images that are no assets; links to local files point to the copied file, relative to the PDF.
 The settings of `[document.print]` apply as for the print view; `pdf = false` turns the PDF off.
