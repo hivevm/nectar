@@ -347,3 +347,68 @@ fn images_from_data_uris_become_files_of_the_site() {
         "offline keeps the link: {index}"
     );
 }
+
+struct Colours;
+
+impl CodeEngine for Colours {
+    fn name(&self) -> &str {
+        "colours"
+    }
+
+    fn supports(&self, language: &str) -> bool {
+        language == "x"
+    }
+
+    fn render(&self, language: &str, _code: &str) -> Result<EngineOutput, EngineError> {
+        use nectar_core::model::{HighlightedCode, Token, TokenStyle};
+        let style = |color: Option<&str>| TokenStyle {
+            color: color.map(str::to_string),
+            ..TokenStyle::default()
+        };
+        Ok(EngineOutput::Highlighted(HighlightedCode {
+            language: language.to_string(),
+            foreground: Some("#111111".into()),
+            background: Some("#ffffff".into()),
+            dark_foreground: Some("#eeeeee".into()),
+            dark_background: Some("#000000".into()),
+            lines: vec![vec![
+                Token {
+                    text: "key".into(),
+                    style: style(Some("#aa0000")),
+                    dark: Some(style(None)),
+                },
+                Token {
+                    text: " plain".into(),
+                    style: style(None),
+                    dark: Some(style(None)),
+                },
+            ]],
+        }))
+    }
+}
+
+#[test]
+fn highlighted_code_carries_light_and_dark_colours() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
+    write(root, "main.md", "# Main\n\n```x\nkey plain\n```\n");
+
+    let mut project = Project::load(root).unwrap();
+    project.add_engine(Box::new(Colours));
+    let build = project.build(&[&HtmlRenderer::default()]);
+    let index = page(&build, "index.html");
+    assert!(
+        index.contains("style=\"--fg:#111111;--bg:#ffffff;--dfg:#eeeeee;--dbg:#000000;\""),
+        "{index}"
+    );
+    // A colour of either theme brings both; the dark one falls back to the dark foreground.
+    assert!(
+        index.contains("<span style=\"--c:#aa0000;--dc:#eeeeee;\">key</span>"),
+        "{index}"
+    );
+    assert!(
+        index.contains("</span> plain</code>"),
+        "tokens without colour inherit: {index}"
+    );
+}

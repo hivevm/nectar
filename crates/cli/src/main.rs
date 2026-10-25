@@ -15,7 +15,7 @@ use nectar_pdf::PdfRenderer;
 use nectar_process::Process;
 use nectar_railroad::Railroad;
 use nectar_server::{OpenProject, ServeOptions};
-use nectar_textmate::{DEFAULT_THEME, TextMate};
+use nectar_textmate::{DEFAULT_DARK_THEME, DEFAULT_THEME, TextMate};
 
 const DEFAULT_PORT: u16 = 1313;
 
@@ -207,13 +207,19 @@ fn engines(config: &Config) -> Result<Vec<Box<dyn CodeEngine>>> {
     }
 
     if enabled("textmate") {
-        let theme = config
-            .engine
-            .get("textmate")
-            .and_then(|table| table.get("theme"))
-            .and_then(toml::Value::as_str)
-            .unwrap_or(DEFAULT_THEME);
-        let engine = TextMate::new(theme).map_err(|e| anyhow!("[engine.textmate]: {e}"))?;
+        let setting = |name: &str| {
+            config
+                .engine
+                .get("textmate")
+                .and_then(|table| table.get(name))
+                .and_then(toml::Value::as_str)
+        };
+        let theme = setting("theme").unwrap_or(DEFAULT_THEME);
+        // An empty dark theme turns the colours for dark colour schemes off.
+        let dark_theme =
+            Some(setting("dark_theme").unwrap_or(DEFAULT_DARK_THEME)).filter(|t| !t.is_empty());
+        let engine =
+            TextMate::new(theme, dark_theme).map_err(|e| anyhow!("[engine.textmate]: {e}"))?;
         engines.push(Box::new(engine));
     }
     Ok(engines)

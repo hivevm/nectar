@@ -112,7 +112,8 @@ The document model is a tree that knows nothing of Markdown or of any output for
   markers. A link written as a reference link carries the number of its footnote.
 
 Highlighted code holds lines of tokens, each with a resolved style (colour, background, bold,
-italic, underline, strikethrough). A graphic holds SVG, an alternative text and the source it was
+italic, underline, strikethrough), and a second style when the engine highlighted with a dark
+theme as well. A graphic holds SVG, an alternative text and the source it was
 generated from.
 
 ## Images from the web
@@ -217,6 +218,11 @@ holds the files, the project files it read and its diagnostics.
 
 A renderer maps nodes to its format and does not repeat work done by passes: it writes tokens of
 highlighted code as styled spans and embeds graphics as they are.
+
+The website follows the system's colour scheme: the default theme has a dark variant, and
+highlighted code carries the colours of both TextMate themes (`theme`, `dark_theme`, by default
+`github-light` and `github-dark`) as custom properties, from which the stylesheet picks. The
+print view and the PDF stay light.
 
 The HTML renderer lives in `nectar-html`. Per start document it either writes one page for the
 whole document or one page per chapter (`split`, default `"chapter"`). With chapters on pages of
@@ -394,6 +400,5 @@ as a GitHub release. The user guide is `doc/nectar/README.md`.
 
 ## Open points
 
-- Light and dark highlighting: passes would store styles for two themes.
 - Symbols beyond the default theme: `@name@` is a ligature name of the theme's symbol font; the
   default theme ships Material Icons.

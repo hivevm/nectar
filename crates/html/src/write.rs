@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 use nectar_core::model::{
     AlertKind, Align, Block, BlockKind, Footnote, Graphic, HighlightedCode, Image, Inline, Table,
-    Target, TokenStyle,
+    Target, Token,
 };
 
 use crate::relative_url;
@@ -188,13 +188,21 @@ impl PageWriter<'_> {
         self.out.push_str("</tbody></table></div>\n");
     }
 
+    /// Colours go in as custom properties: `--fg`, `--bg` for the block, `--c`, `--cb` for a
+    /// token, and the same with a `d` for the dark theme. The stylesheet picks the pair for the
+    /// colour scheme; a token without a colour inherits the block's.
     fn highlighted(&mut self, code: &HighlightedCode) {
         let mut style = String::new();
-        if let Some(color) = &code.foreground {
-            let _ = write!(style, "color:{color};");
-        }
-        if let Some(background) = &code.background {
-            let _ = write!(style, "background-color:{background};");
+        let properties = [
+            ("--fg", &code.foreground),
+            ("--bg", &code.background),
+            ("--dfg", &code.dark_foreground),
+            ("--dbg", &code.dark_background),
+        ];
+        for (name, value) in properties {
+            if let Some(value) = value {
+                let _ = write!(style, "{name}:{value};");
+            }
         }
         let _ = write!(
             self.out,
@@ -206,7 +214,7 @@ impl PageWriter<'_> {
                 self.out.push('\n');
             }
             for token in line {
-                let style = token_style(&token.style);
+                let style = token_style(token, code);
                 if style.is_empty() {
                     self.out.push_str(&escape(&token.text));
                 } else {
@@ -392,13 +400,35 @@ impl PageWriter<'_> {
     }
 }
 
-fn token_style(style: &TokenStyle) -> String {
+fn token_style(token: &Token, code: &HighlightedCode) -> String {
+    let style = &token.style;
     let mut css = String::new();
-    if let Some(color) = &style.color {
-        let _ = write!(css, "color:{color};");
-    }
-    if let Some(background) = &style.background {
-        let _ = write!(css, "background-color:{background};");
+    match &token.dark {
+        // Both colours, as soon as either theme gives the token one of its own.
+        Some(dark) => {
+            if style.color.is_some() || dark.color.is_some() {
+                let light = style.color.as_ref().or(code.foreground.as_ref());
+                let dark = dark.color.as_ref().or(code.dark_foreground.as_ref());
+                if let (Some(light), Some(dark)) = (light, dark) {
+                    let _ = write!(css, "--c:{light};--dc:{dark};");
+                }
+            }
+            if style.background.is_some() || dark.background.is_some() {
+                let light = style.background.as_ref().or(code.background.as_ref());
+                let dark = dark.background.as_ref().or(code.dark_background.as_ref());
+                if let (Some(light), Some(dark)) = (light, dark) {
+                    let _ = write!(css, "--cb:{light};--dcb:{dark};");
+                }
+            }
+        }
+        None => {
+            if let Some(color) = &style.color {
+                let _ = write!(css, "--c:{color};");
+            }
+            if let Some(background) = &style.background {
+                let _ = write!(css, "--cb:{background};");
+            }
+        }
     }
     if style.bold {
         css.push_str("font-weight:bold;");

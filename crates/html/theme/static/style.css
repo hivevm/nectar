@@ -293,6 +293,10 @@ img.align-left { float: left; margin: 0 1rem 1rem 0; }
 
 figure { margin: var(--space-16) 0; }
 figure.graphic { text-align: center; }
+
+/* Highlighted code: the colours come as custom properties per block and token. */
+pre.highlighted { color: var(--fg); background-color: var(--bg); }
+pre.highlighted span { color: var(--c); background-color: var(--cb); }
 figure.listing figcaption { margin-top: -0.5rem; color: var(--gray-500); font-size: 0.9rem; }
 
 h1 .number, h2 .number, h3 .number, h4 .number, h5 .number, h6 .number { color: var(--gray-500); }
@@ -322,6 +326,33 @@ hr { height: 1px; border: none; background: var(--gray-200); }
 .footnotes { margin-top: 3rem; padding-top: 0.5rem; border-top: 1px solid var(--gray-200); font-size: var(--font-size-smaller); }
 
 .documents li { margin: 0.4rem 0; font-size: 1.15rem; }
+
+/* Dark colour scheme, following the system. The print view keeps the light one. */
+:root { color-scheme: light dark; }
+:root.print { color-scheme: light; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.print) {
+    --body-background: #17171c;
+    --body-font-color: #c8c8d2;
+    --heading-color: #f2f2f7;
+    --color-link: #f2b408;
+    --color-link-hover: #ffd35c;
+    --gray-100: #22222a;
+    --gray-200: #34343f;
+    --gray-500: #9a9ab0;
+
+    --color-accent-note: #6b9bff;
+    --color-accent-tip: #6cc35a;
+    --color-accent-warning: #f2b408;
+    --color-accent-caution: #ff6b81;
+  }
+  :root:not(.print) pre.highlighted { color: var(--dfg, var(--fg)); background-color: var(--dbg, var(--bg)); }
+  :root:not(.print) pre.highlighted span { color: var(--dc, var(--c)); background-color: var(--dcb, var(--cb)); }
+  /* Diagrams draw dark lines on a transparent ground; they keep a light one. */
+  :root:not(.print) figure.graphic img { padding: var(--space-8); background: #ffffff; border-radius: var(--border-radius); }
+  :root:not(.print) mark { color: inherit; background: rgb(242 180 8 / 0.3); }
+}
 
 /* Responsive: menu and table of contents fold away (menu + content * 1.2 + toc). */
 

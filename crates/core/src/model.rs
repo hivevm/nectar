@@ -137,6 +137,9 @@ pub struct HighlightedCode {
     pub language: String,
     pub foreground: Option<String>,
     pub background: Option<String>,
+    /// Colours of a dark theme, when the engine highlighted with one as well.
+    pub dark_foreground: Option<String>,
+    pub dark_background: Option<String>,
     pub lines: Vec<Vec<Token>>,
 }
 
@@ -144,6 +147,8 @@ pub struct HighlightedCode {
 pub struct Token {
     pub text: String,
     pub style: TokenStyle,
+    /// The style in the dark theme, when there is one.
+    pub dark: Option<TokenStyle>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]

@@ -135,7 +135,8 @@ The file extension picks the engine: `.java` is highlighted as Java, `.rs` as Ru
 
 ```toml
 [engine.textmate]
-theme = "github-light"            # any of the ~60 bundled themes
+theme      = "github-light"       # any of the ~60 bundled themes
+dark_theme = "github-dark"        # for a dark colour scheme; "" turns it off
 
 [engine.railroad]
 enabled = true                    # on by default
