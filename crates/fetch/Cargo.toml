@@ -1,0 +1,11 @@
+[package]
+name = "nectar-fetch"
+description = "Nectar fetcher that downloads images from the web over HTTP"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+nectar-core = { version = "0.1.0", path = "../core" }
+ureq = "3.5.0"

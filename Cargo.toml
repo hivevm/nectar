@@ -5,6 +5,7 @@ members = [
     "crates/html",
     "crates/textmate",
     "crates/process",
+    "crates/fetch",
     "crates/railroad",
     "crates/pdf",
     "crates/server",

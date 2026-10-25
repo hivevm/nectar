@@ -7,17 +7,12 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use std::time::Duration;
 
 use crate::diagnostic::Diagnostic;
+use crate::fetch::Fetcher;
 use crate::model::{
     Document, Inline, Target, block_inlines_mut, visit_blocks_mut, visit_inlines_mut,
 };
-
-/// Most a single image may take, in time and size.
-const TIMEOUT: Duration = Duration::from_secs(30);
-const MAX_BYTES: u64 = 20 * 1024 * 1024;
-const MAX_REDIRECTS: u32 = 5;
 
 /// Where downloaded images are kept, below the document's output directory.
 pub(crate) const DIRECTORY: &str = "_remote";
@@ -28,8 +23,9 @@ pub(crate) struct Download {
     pub bytes: Vec<u8>,
 }
 
-/// Fetches images, each URL once per project.
+/// Fetches images through the project's fetcher, each URL once per project.
 pub(crate) struct Downloader {
+    fetcher: Option<Box<dyn Fetcher>>,
     offline: bool,
     cache: Mutex<HashMap<String, Result<Download, String>>>,
 }
@@ -37,9 +33,14 @@ pub(crate) struct Downloader {
 impl Downloader {
     pub fn new() -> Self {
         Self {
+            fetcher: None,
             offline: false,
             cache: Mutex::new(HashMap::new()),
         }
+    }
+
+    pub fn set_fetcher(&mut self, fetcher: Box<dyn Fetcher>) {
+        self.fetcher = Some(fetcher);
     }
 
     pub fn set_offline(&mut self, offline: bool) {
@@ -47,7 +48,7 @@ impl Downloader {
     }
 
     /// The image at `url`, or why it is not available. `None` when nothing is to be fetched:
-    /// the URL is no image source, or the project is offline.
+    /// the URL is no image source, the project is offline, or it has no fetcher.
     fn get(&self, url: &str) -> Option<Result<Download, String>> {
         if let Some(data) = url.strip_prefix("data:") {
             return Some(decode_data_uri(data));
@@ -56,10 +57,11 @@ impl Downloader {
         if !(lower.starts_with("http://") || lower.starts_with("https://")) || self.offline {
             return None;
         }
+        let fetcher = self.fetcher.as_deref()?;
         if let Some(result) = self.cache.lock().unwrap().get(url) {
             return Some(result.clone());
         }
-        let result = fetch(url);
+        let result = fetch(fetcher, url);
         self.cache
             .lock()
             .unwrap()
@@ -68,29 +70,16 @@ impl Downloader {
     }
 }
 
-fn fetch(url: &str) -> Result<Download, String> {
-    let agent: ureq::Agent = ureq::Agent::config_builder()
-        .timeout_global(Some(TIMEOUT))
-        .max_redirects(MAX_REDIRECTS)
-        .build()
-        .into();
-    let mut response = agent.get(url).call().map_err(|e| e.to_string())?;
-    let content_type = response
-        .headers()
-        .get("content-type")
-        .and_then(|value| value.to_str().ok())
-        .unwrap_or_default()
-        .to_ascii_lowercase();
+fn fetch(fetcher: &dyn Fetcher, url: &str) -> Result<Download, String> {
+    let fetched = fetcher.fetch(url).map_err(|e| e.to_string())?;
+    let content_type = fetched.content_type.to_ascii_lowercase();
     let Some(extension) = image_extension(&content_type, url) else {
         return Err(format!("the server sent '{content_type}', not an image"));
     };
-    let bytes = response
-        .body_mut()
-        .with_config()
-        .limit(MAX_BYTES)
-        .read_to_vec()
-        .map_err(|e| e.to_string())?;
-    Ok(Download { extension, bytes })
+    Ok(Download {
+        extension,
+        bytes: fetched.bytes,
+    })
 }
 
 /// The file extension for an image media type; `None` for anything else.
@@ -192,50 +181,60 @@ pub(crate) fn download_images(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::{Read, Write};
-    use std::net::TcpListener;
+    use crate::fetch::{FetchError, Fetched};
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
-    /// Serves one HTTP response per connection, `count` times.
-    fn serve(content_type: &'static str, body: &'static [u8], count: usize) -> String {
-        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-        let address = listener.local_addr().unwrap();
-        std::thread::spawn(move || {
-            for stream in listener.incoming().take(count) {
-                let mut stream = stream.unwrap();
-                let mut request = [0u8; 1024];
-                let _ = stream.read(&mut request);
-                let head = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                    body.len()
-                );
-                let _ = stream.write_all(head.as_bytes());
-                let _ = stream.write_all(body);
-            }
-        });
-        format!("http://{address}/picture.png")
+    /// Answers every URL with the same response and counts the calls.
+    struct Fake {
+        content_type: &'static str,
+        calls: Arc<AtomicUsize>,
+    }
+
+    impl Fetcher for Fake {
+        fn fetch(&self, _url: &str) -> Result<Fetched, FetchError> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            Ok(Fetched {
+                content_type: self.content_type.to_string(),
+                bytes: b"\x89PNG fake".to_vec(),
+            })
+        }
+    }
+
+    fn downloader(content_type: &'static str) -> (Downloader, Arc<AtomicUsize>) {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let mut downloader = Downloader::new();
+        downloader.set_fetcher(Box::new(Fake {
+            content_type,
+            calls: calls.clone(),
+        }));
+        (downloader, calls)
     }
 
     #[test]
     fn downloads_images_once() {
-        let url = serve("image/png", b"\x89PNG fake", 1);
-        let downloader = Downloader::new();
-        let first = downloader.get(&url).unwrap().unwrap();
+        let (downloader, calls) = downloader("image/png");
+        let url = "https://example.org/picture.png";
+        let first = downloader.get(url).unwrap().unwrap();
         assert_eq!(first.extension, "png");
         assert_eq!(first.bytes, b"\x89PNG fake");
-        // The server answers only once; the second call comes from the cache.
-        assert_eq!(downloader.get(&url).unwrap().unwrap().bytes, first.bytes);
+        assert_eq!(downloader.get(url).unwrap().unwrap().bytes, first.bytes);
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
     }
 
     #[test]
     fn refuses_what_is_no_image() {
-        let url = serve("text/html", b"<html></html>", 1);
-        let error = Downloader::new().get(&url).unwrap().unwrap_err();
+        let (downloader, _) = downloader("text/html");
+        let error = downloader
+            .get("https://example.org/page")
+            .unwrap()
+            .unwrap_err();
         assert!(error.contains("not an image"), "{error}");
     }
 
     #[test]
     fn stays_offline_when_asked() {
-        let mut downloader = Downloader::new();
+        let (mut downloader, calls) = downloader("image/png");
         downloader.set_offline(true);
         assert!(downloader.get("https://example.org/a.png").is_none());
         assert!(
@@ -244,6 +243,12 @@ mod tests {
                 .unwrap()
                 .is_ok()
         );
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn fetches_nothing_without_a_fetcher() {
+        assert!(Downloader::new().get("https://example.org/a.png").is_none());
     }
 
     #[test]

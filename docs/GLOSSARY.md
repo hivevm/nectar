@@ -21,6 +21,8 @@ to invent.
   syntax.
 - **Document model** — Nectar's own tree of a document, independent of Markdown, that the passes
   enrich and the renderers read. _Avoid:_ AST.
+- **Fetcher** — the port through which the core receives images from the web; the host's adapter
+  makes the request. _Avoid:_ downloader, HTTP client.
 - **Host** — what a shell runs on, which decides the adapters available: a machine, a browser,
   another program.
 - **Pass** — one step that enriches the document model, such as section numbers, footnotes or code

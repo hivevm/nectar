@@ -1748,6 +1748,7 @@ dependencies = [
  "anyhow",
  "clap",
  "nectar-core",
+ "nectar-fetch",
  "nectar-html",
  "nectar-pdf",
  "nectar-process",
@@ -1767,6 +1768,13 @@ dependencies = [
  "serde",
  "tempfile",
  "toml 1.1.8+spec-1.1.0",
+]
+
+[[package]]
+name = "nectar-fetch"
+version = "0.1.0"
+dependencies = [
+ "nectar-core",
  "ureq",
 ]
 

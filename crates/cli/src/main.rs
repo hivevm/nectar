@@ -1,5 +1,5 @@
-//! Nectar command line. This is the one place that composes the core with the HTML renderer and
-//! the code engines, so every command uses the same set.
+//! Nectar command line. This is the one place that composes the core with the renderers, the code
+//! engines and the fetcher, so every command uses the same set.
 
 use std::net::{IpAddr, SocketAddr};
 use std::path::{Path, PathBuf};
@@ -10,6 +10,7 @@ use std::time::Instant;
 use anyhow::{Context, Result, anyhow, bail};
 use clap::{Parser, Subcommand};
 use nectar_core::{CodeEngine, Config, Diagnostic, Project, Severity};
+use nectar_fetch::Http;
 use nectar_html::{HtmlRenderer, PrintRenderer};
 use nectar_pdf::PdfRenderer;
 use nectar_process::Process;
@@ -164,6 +165,7 @@ fn open(root: &Path, drafts: bool, offline: bool) -> Result<Project> {
     let mut project = Project::load(root).map_err(|d| anyhow!("{d}"))?;
     project.set_include_drafts(drafts);
     project.set_offline(offline);
+    project.set_fetcher(Box::new(Http::new()));
     for engine in engines(project.config())? {
         project.add_engine(engine);
     }

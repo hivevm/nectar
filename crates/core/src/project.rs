@@ -7,6 +7,7 @@ use crate::config::{CONFIG_FILE, Config};
 use crate::diagnostic::{Diagnostic, Severity};
 use crate::download::Downloader;
 use crate::engine::CodeEngine;
+use crate::fetch::Fetcher;
 use crate::load::{Loader, read_bytes_inside};
 use crate::model::Document;
 use crate::passes::{self, EngineCache};
@@ -70,6 +71,11 @@ impl Project {
     /// Whether files with `draft = true` are part of the documents.
     pub fn set_include_drafts(&mut self, include: bool) {
         self.include_drafts = include;
+    }
+
+    /// Sets the adapter that fetches images from the web. Without one they stay links.
+    pub fn set_fetcher(&mut self, fetcher: Box<dyn Fetcher>) {
+        self.downloader.set_fetcher(fetcher);
     }
 
     /// Whether images from the web stay links instead of being downloaded.
