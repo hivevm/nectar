@@ -52,6 +52,7 @@
   // The GitHub CLI (`gh`) comes from setup.sh, not a Feature; a push and every gh action wait
   // for a human instruction (AGENTS.md, section 6).
   "features": {
+    // Java is the runtime of PlantUML, which setup.sh installs.
     "ghcr.io/devcontainers/features/java:1": {
       "version": "21",
       "jdkDistro": "tem",
@@ -66,7 +67,6 @@
     "vscode": {
       "extensions": [
         "anthropic.claude-code",
-        "vscjava.vscode-java-pack",
         "rust-lang.rust-analyzer",
         "tamasfe.even-better-toml",
         "vadimcn.vscode-lldb"

@@ -10,7 +10,8 @@ Nectar turns Markdown sources into HTML. It runs in two modes that share one cor
 
 1. A start document includes further Markdown files through links. The result is one complete
    document.
-2. The source format is CommonMark with the extensions listed under [Markdown dialect](#markdown-dialect).
+2. The source format is CommonMark with the extensions listed under
+   [Markdown dialect](#markdown-dialect).
 3. A document model of its own, independent of Markdown, describes the document.
 4. Syntax highlighting and diagrams are produced once, by engines behind a single port, in a
    transform pass. Their results are stored in the document model as format-neutral data.
@@ -46,7 +47,7 @@ A project names one or more start documents. Each start document produces one co
 Every Markdown file is parsed on its own. Merging happens on the document model: an include
 becomes a chapter node that carries the included file's document. A link is an include when
 
-- it stands alone on its line, optionally after a heading marker (`## [Title](path.md)`);
+- it stands alone on its line, optionally after a heading marker such as `##`;
   consecutive lines of such links include one file each,
 - its target ends in `.md`, and
 - the target file exists.
@@ -83,7 +84,7 @@ On top of CommonMark:
 | Feature | Syntax |
 |---|---|
 | Tables | GFM pipe tables; the number of `-` in a delimiter cell sets the column's relative width (in HTML a preference: no column gets narrower than its longest word) |
-| Image attributes | `![alt](img.png){width=50% height=4cm align=center}` |
+| Image attributes | `{width=50% height=4cm align=center}` right after an image |
 | Alerts | `!n`, `!s`, `!w`, `!e` at line start; multi-line as `!!w` … `!!`; also `> [!NOTE]` |
 | Highlight | `//text//` |
 | Underline | `____text____` |
@@ -94,7 +95,7 @@ On top of CommonMark:
 | Autolinks | bare URLs such as `https://example.org` |
 | Comments | `[label]: # (comment)`, dropped from the output |
 | Heading ids | `# Heading {#id}` |
-| Internal links | `[text](#id)`, `[text](#heading-slug)` or `[text](#Heading Text)` |
+| Internal links | a link target `#id`, `#heading-slug` or `#Heading Text` |
 | Symbols | `@name@`, a named glyph of the theme's symbol font |
 | Variables | `{{name}}` or `{{name;format}}` (format ignored), from `nectar.toml`, environment variables `NECTAR_<name>` and front matter, each overriding the one before; unknown names stay as written and are reported outside code |
 | Code | fenced with ` ``` ` or `~~~`; the info string selects the code engine |
@@ -192,11 +193,11 @@ The core defines the port and knows no engine. Engines are adapters in crates of
 | `nectar-railroad` | `railroad` | (E)BNF parser and SVG layout in-process |
 | `nectar-process` | as configured, such as `dot`, `uml`, `ebnf`, `regex`, `jsongraph` | a local command (`dot`, `plantuml`) |
 
-The railroad engine draws every rule of a block under its name and stacks the drawings into one
-SVG. A rule reference written as `\` continues a rule on a new line. A loop is labelled with
-the number of passes through it (`3×`, `1..3×`, `≥2×`); "once or more" has no label. Text boxes are sized with
-Verdana metrics, and texts are stretched to their box, so the drawing does not depend on the
-fonts of the viewer.
+The railroad engine draws every rule of a block under its name and stacks the drawings into one SVG.
+A rule reference written as `\` continues a rule on a new line. A loop is labelled with the number
+of passes through it (`3×`, `1..3×`, `≥2×`); "once or more" has no label. Text boxes are sized with
+Verdana metrics, and texts are stretched to their box, so the drawing does not depend on the fonts
+of the viewer.
 
 `nectar.toml` selects the adapters and configures them. Process engines are asked first, then
 railroad, then TextMate; railroad and TextMate are on unless their table says `enabled = false`.
@@ -269,16 +270,15 @@ a shared theme file, only with the same content; anything else is an error.
 ### PDF renderer
 
 `PdfRenderer` in `nectar-pdf` typesets every document with Typst, used as a library, into
-`<document>/print/<start document>.pdf`. It translates the document model into Typst source:
-text always as Typst strings, so nothing in a document is read as Typst markup; headings with
-their section numbers and labels for internal links; footnotes as Typst footnotes; highlighted
-code with the colours of the code engine; graphics as SVG files. Typst compiles the source in a
-world held in memory, with the bundled fonts (Ubuntu Sans, Victor Mono, Material Icons) and the
-document's images. Errors name the line of generated source they point to. The PDF reports what it leaves out:
-raw HTML and images that are no assets; links to local files point to the copied file, relative
-to the PDF. The settings of
-`[document.print]` apply as for the print view; `pdf = false` turns the PDF off. Typst's caches
-keep rebuilds under `nectar serve` short.
+`<document>/print/<start document>.pdf`. It translates the document model into Typst source: text
+always as Typst strings, so nothing in a document is read as Typst markup; headings with their
+section numbers and labels for internal links; footnotes as Typst footnotes; highlighted code with
+the colours of the code engine; graphics as SVG files. Typst compiles the source in a world held in
+memory, with the bundled fonts (Ubuntu Sans, Victor Mono, Material Icons) and the document's images.
+Errors name the line of generated source they point to. The PDF reports what it leaves out: raw HTML
+and images that are no assets; links to local files point to the copied file, relative to the PDF.
+The settings of `[document.print]` apply as for the print view; `pdf = false` turns the PDF off.
+Typst's caches keep rebuilds under `nectar serve` short.
 
 ### Themes
 

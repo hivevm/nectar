@@ -88,9 +88,9 @@ Nectar reads CommonMark with these additions:
 | Task lists | `- [ ]`, `- [x]` |
 | Footnotes | `text[^id]` and `[^id]: The footnote.` |
 | Links as footnotes | `[text][id]` or `[][id]` with `[id]: https://… "Title"`: the link gets a footnote that shows the title and the URL |
-| Image size | `![logo](logo.png){width=120 height=4cm align=center}` |
+| Image size | `{width=120 height=4cm align=center}` right after an image |
 | Heading ids | `## Heading {#id}` |
-| Internal links | `[text](#id)`, `[text](#Heading text)`, `[text](other.md#heading)` |
+| Internal links | a link target `#id`, `#Heading text` or `other.md#heading` |
 | Symbols | `@name@`, a [Material Icons](https://fonts.google.com/icons) name such as `@web@` |
 | Variables | `{{name}}` or `{{name;format}}` (the format is ignored), from `[vars]` in `nectar.toml`, environment variables `NECTAR_<name>` or the front matter, each overriding the one before; unknown names stay as written and are reported unless they stand in code |
 | Comments | `[comment]: # (not shown)` |
