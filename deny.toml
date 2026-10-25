@@ -1,0 +1,49 @@
+# cargo-deny configuration, run by scripts/check-build.sh (ADR-0008).
+
+[graph]
+all-features = true
+
+[licenses]
+# Licences compatible with BSD-3-Clause, the licence of Nectar (docs/SPECIFICATION.md, Constraints).
+allow = [
+  "0BSD",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "BSL-1.0",
+  "CC0-1.0",
+  "CDLA-Permissive-2.0",
+  "ISC",
+  "MIT",
+  "Unicode-3.0",
+  "Unicode-DFS-2016",
+  "Unlicense",
+  "Zlib",
+]
+confidence-threshold = 0.9
+# The one exception the specification names: giallo, behind nectar-textmate, is EUPL-1.2.
+exceptions = [
+  { crate = "giallo", allow = ["EUPL-1.2"] },
+]
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+allow-wildcard-paths = true
+# The technology crates ADR-0009 keeps out of the core and the renderers: only the adapters and
+# the shells named as wrappers may depend on them.
+deny = [
+  { crate = "tokio", wrappers = ["nectar", "nectar-server", "tokio-stream", "tokio-util", "axum", "hyper", "hyper-util", "tower"] },
+  { crate = "axum", wrappers = ["nectar-server"] },
+  { crate = "notify", wrappers = ["nectar-server", "notify-debouncer-full"] },
+  { crate = "notify-debouncer-full", wrappers = ["nectar-server"] },
+  { crate = "ureq", wrappers = ["nectar-fetch"] },
+]
+
+[advisories]
+yanked = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

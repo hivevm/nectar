@@ -9,7 +9,7 @@ Licensed under the SIL Open Font License 1.1; see fonts/LICENSE-VictorMono.txt
 Material Icons (fonts/MaterialIcons-Regular.ttf), Copyright Google LLC
 Licensed under the Apache License, Version 2.0, https://www.apache.org/licenses/LICENSE-2.0
 
-images/draft.png and images/confidential.png come from the HiveVM Java document generator in
-this repository.
+images/draft.png and images/confidential.png come from the HiveVM Java document generator, the
+former Gradle plugin of this repository.
 
 Typesetting is done by Typst (https://typst.app), licensed under the Apache License 2.0.

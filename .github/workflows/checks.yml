@@ -13,10 +13,9 @@ name: Checks
 # binding sensor runs in review-binding.yml, the repository settings sensor on a human's
 # instruction (ADR-0002); this workflow runs the self-test of each.
 #
-# A build, test, and lint job is absent until the project has a toolchain. The catalogue entry
-# Toolchain of the propose-adr skill says how the job is added; it is the one job of this workflow
-# that installs something, with a timeout that fits the real build and 'submodules: recursive' on
-# the checkout where the project uses submodules.
+# The build, test, and lint job runs scripts/check-build.sh on Linux, macOS and Windows (ADR-0008);
+# it is the one job of this workflow that installs something: the stable Rust toolchain and
+# cargo-deny.
 #
 # Every job is bounded by a timeout — a hung step would otherwise occupy a runner until the
 # platform's own six-hour limit — and every checkout runs with 'persist-credentials: false': the
@@ -59,7 +58,7 @@ jobs:
       # working tree: a documentation link into a submodule would otherwise break in CI while
       # working locally. Their *contents* are never read — check-docs.sh enumerates via
       # `git ls-files`, which lists a submodule as one gitlink entry, not as its files.
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           submodules: recursive
@@ -90,7 +89,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       # The check's own tests run first: a check that is wrong passes nothing worth trusting.
@@ -103,7 +102,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       # The check's own tests run first: a check that is wrong passes nothing worth trusting.
@@ -116,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -144,8 +143,9 @@ jobs:
         run: bash scripts/sensor-plan-frontier.sh
       - name: Self-test the action references sensor
         run: bash scripts/test-sensor-action-refs.sh
-      - name: Report the forms of the action references the workflows use
-        run: bash scripts/sensor-action-refs.sh
+      # Verifies: ADR-0011 — every action by its full commit SHA, kept current by Dependabot.
+      - name: Check that every action is referenced by its full commit SHA
+        run: bash scripts/sensor-action-refs.sh --require sha
       - name: Self-test the review binding sensor
         run: bash scripts/test-sensor-review-binding.sh
       # The repository settings sensor itself runs on a human's instruction (ADR-0002).
@@ -156,7 +156,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Self-test the check runner
@@ -167,3 +167,29 @@ jobs:
         run: bash scripts/test-check-shell.sh
       - name: Lint shell scripts with ShellCheck
         run: bash scripts/check-shell.sh
+
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # rustup ships with the runner images; the toolchain is the latest stable (specification,
+      # Constraints).
+      - name: Set up the Rust toolchain
+        shell: bash
+        run: rustup toolchain install stable --profile minimal -c rustfmt,clippy && rustup default stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: cargo-deny@0.20.2
+      - name: Build, test and lint Nectar
+        shell: bash
+        run: bash scripts/check-build.sh

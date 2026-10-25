@@ -1,9 +1,9 @@
-# Keeps the GitHub Actions under .github/workflows/ current: within a major, the version tag
-# picks up new releases by itself; Dependabot raises a pull request when an action publishes a
-# new major.
+# Keeps the GitHub Actions under .github/workflows/ current: every action is pinned by its full
+# commit SHA with the version as a comment (ADR-0011), and Dependabot raises a pull request that
+# moves the pin and its comment when an action publishes a new version.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: monthly
+      interval: weekly

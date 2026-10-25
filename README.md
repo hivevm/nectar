@@ -59,14 +59,17 @@ vocabulary in [`docs/GLOSSARY.md`](docs/GLOSSARY.md).
 <!-- This section is the single source for build/test/lint/run commands; both humans and
      agents rely on it, and the rule file names it. -->
 
-The Dev Container brings Rust, Graphviz and PlantUML, with Java 21 as PlantUML's runtime. Nectar's
-commands run from the repository root and match the [Nectar workflow](.github/workflows/nectar.yml):
+The Dev Container brings Rust, cargo-deny, Graphviz and PlantUML, with Java 21 as PlantUML's
+runtime. The commands run from the repository root; `scripts/check-build.sh` runs build, test and
+lint in one go, as the pre-push hook and the `build` job of CI do
+([ADR-0008](docs/adr/0008-toolchain-cargo-clippy-deny.md)):
 
 - **Build:** `cargo build --workspace`
 - **Test:** `cargo test --workspace`, then `cargo run -p nectar -- -C examples/demo build`,
   which has to succeed even where Graphviz and PlantUML are missing
-- **Lint:** `cargo fmt --all --check` and
-  `cargo clippy --workspace --all-targets -- -D warnings`; the repository checks with
+- **Lint:** `cargo fmt --all --check`,
+  `cargo clippy --workspace --all-targets -- -D warnings` and
+  `cargo deny --all-features check licenses bans sources`; the repository checks with
   `scripts/check-all.sh`
 - **Run:** `cargo run -p nectar -- -C examples/demo serve`, then open http://127.0.0.1:1313/
 
@@ -130,8 +133,10 @@ scripts/test-*.sh     # self-tests of the checks, the sensors, the hooks, the se
 scripts/lib/          # what the scripts share: the ADR header, git, the ticket path, the self-tests
 scripts/*.sh          # run by hand, steps 7 and 8 of the integration branches: number-adrs.sh,
                       # ready-for-main.sh, drop-merged-branch.sh
+scripts/release.sh    # builds and publishes the release archives; checks without a command
 .githooks/            # git hooks: nothing lands on main locally; checks before a merge and a push
-.github/workflows/    # checks.yml runs the checks; review-binding.yml reads each pull request's hand-off
+.github/workflows/    # checks.yml runs the checks; review-binding.yml reads each pull request's hand-off;
+                      # nectar-release.yml builds the release archives of a nectar-v* tag
 .github/              # Dependabot, issue & pull request templates, code owners
 .devcontainer/        # Dev Container definition (base image + Features)
 .vscode/              # shared editor settings
@@ -144,12 +149,15 @@ scripts/*.sh          # run by hand, steps 7 and 8 of the integration branches: 
 .claude/skills/       # pointers (one symlink per skill) for Claude Code to read .agents/skills/
 .claude/settings.json # Claude Code permissions: deny reading .env files (see SECURITY.md)
 Cargo.toml            # Cargo workspace of Nectar
+Cargo.lock            # the versions of every crate Nectar builds with, kept for --locked
+deny.toml             # cargo-deny: the licences and the crates allowed (ADR-0008)
 crates/core/          # Nectar: Markdown dialect, document model and transform passes
 crates/html/          # Nectar: website, print view and the built-in theme
 crates/pdf/           # Nectar: PDF typeset with Typst, with its fonts
 crates/textmate/      # Nectar: code highlighting with TextMate grammars and themes
 crates/railroad/      # Nectar: railroad diagrams from (E)BNF
 crates/process/       # Nectar: code engines that run a local command, such as Graphviz
+crates/fetch/         # Nectar: fetcher that downloads images from the web
 crates/server/        # Nectar: local server that rebuilds and reloads the browser
 crates/cli/           # Nectar: the nectar command line
 examples/demo/        # a complete Nectar project, built in CI
@@ -296,7 +304,7 @@ configured once by a maintainer and worth re-checking after a repository move or
   only, since squash and rebase discard the merges a `feat/` branch carries and the commits it
   was reworked into ([`AGENTS.md` §6](AGENTS.md#6-project-rules)); requires the
   <!-- required-checks begin — compared with the workflow's jobs by scripts/check-docs.sh -->
-  `docs`, `traceability`, `devcontainer`, `sensors`, and `shell`
+  `docs`, `traceability`, `devcontainer`, `sensors`, `shell`, and `build`
   <!-- required-checks end -->
   jobs of the **Checks** workflow as required status checks (rulesets list checks by their job
   name) and a branch up to date with `main` before it merges, so that the checks see what the

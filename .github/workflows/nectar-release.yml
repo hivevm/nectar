@@ -30,27 +30,18 @@ jobs:
             os: windows-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-      - run: cargo build --release --locked -p nectar --target ${{ matrix.target }}
-      - name: Package
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # rustup ships with the runner image; the toolchain is the latest stable, as in checks.yml.
+      - name: Set up the Rust toolchain
         shell: bash
-        run: |
-          name="nectar-${GITHUB_REF_NAME#nectar-}-${{ matrix.target }}"
-          mkdir "$name"
-          cp LICENSE "$name/"
-          if [[ "${{ matrix.target }}" == *windows* ]]; then
-            cp "target/${{ matrix.target }}/release/nectar.exe" "$name/"
-            7z a "$name.zip" "$name" > /dev/null
-            echo "ARCHIVE=$name.zip" >> "$GITHUB_ENV"
-          else
-            cp "target/${{ matrix.target }}/release/nectar" "$name/"
-            tar czf "$name.tar.gz" "$name"
-            echo "ARCHIVE=$name.tar.gz" >> "$GITHUB_ENV"
-          fi
-      - uses: actions/upload-artifact@v7
+        run: rustup toolchain install stable --profile minimal --target ${{ matrix.target }} && rustup default stable
+      # scripts/release.sh builds and packs, as check-all.sh checks what it packs (ADR-0002).
+      - name: Build and package
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: bash scripts/release.sh package "$TARGET"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ matrix.target }}
           path: ${{ env.ARCHIVE }}
@@ -61,13 +52,15 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v8
+      # The checkout first: it would clear the archives downloaded before it.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: dist
           merge-multiple: true
-      - name: Checksums
-        run: cd dist && sha256sum * > SHA256SUMS
-      - name: Publish
+      - name: Publish with checksums
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --title "Nectar ${GITHUB_REF_NAME#nectar-v}" --generate-notes
+        run: bash scripts/release.sh publish dist

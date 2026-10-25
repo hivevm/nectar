@@ -120,8 +120,10 @@ generated from.
 ## Images from the web
 
 Images belong to the documentation wherever they come from. After the assets are collected, the
-download pass fetches images with `http(s)` URLs and decodes `data:` URIs. An image must arrive
-with an image media type, within 30 seconds and 20 MB and after at most five redirects. It is
+download pass fetches images with `http(s)` URLs through the `Fetcher` port and decodes `data:`
+URIs. The core makes no request itself: the command line plugs in `nectar-fetch`, which allows 30
+seconds, 20 MB and five redirects, and a project without a fetcher keeps the URLs. An image must
+arrive with an image media type. It is
 stored with the document as an asset at `<document>/_remote/<hash>.<extension>`, its bytes kept
 in the document, so every renderer includes it like a local image: the website serves it from
 its own output, the PDF embeds it. The project fetches each URL once; a rebuild under
@@ -333,11 +335,12 @@ bind = "127.0.0.1"
 
 | Crate | Content |
 |---|---|
-| `nectar-core` | project loading, sources, parser, merge, document model, passes, `CodeEngine` and `Renderer` ports, diagnostics |
+| `nectar-core` | project loading, sources, parser, merge, document model, passes, `CodeEngine`, `Renderer` and `Fetcher` ports, diagnostics |
 | `nectar-html` | HTML renderer and the default theme |
 | `nectar-textmate` | TextMate code engine |
 | `nectar-railroad` | railroad code engine |
 | `nectar-process` | code engine that runs local commands |
+| `nectar-fetch` | fetcher that downloads images from the web over HTTP |
 | `nectar-server` | HTTP server, file watcher, live reload |
 | `nectar` | the CLI binary; composes core, renderer and engines for both `build` and `serve` |
 
@@ -392,11 +395,12 @@ decide how to show them: the CLI on the terminal, the server on the terminal and
 
 ## Distribution
 
-The workflow `.github/workflows/nectar.yml` checks formatting and Clippy warnings and runs the
-tests and a build of `examples/demo` on Linux, macOS and Windows. A tag `nectar-v<version>`
-starts `.github/workflows/nectar-release.yml`, which builds the CLI for Linux (x86-64, ARM),
-macOS (x86-64, ARM) and Windows (x86-64) and publishes the archives with their SHA-256 checksums
-as a GitHub release. The user guide is `doc/nectar/README.md`.
+The `build` job of `.github/workflows/checks.yml` runs `scripts/check-build.sh` on Linux, macOS
+and Windows: formatting, Clippy warnings, the tests, a build of `examples/demo` and cargo-deny. A
+tag `nectar-v<version>` starts `.github/workflows/nectar-release.yml`, which builds the CLI for
+Linux (x86-64, ARM), macOS (x86-64, ARM) and Windows (x86-64) and publishes the archives, with the
+notices of the crates and their SHA-256 checksums, as a GitHub release. The user guide is
+`doc/nectar/README.md`.
 
 ## Open points
 
