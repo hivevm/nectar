@@ -17,6 +17,7 @@ Thumbs.db
 # Session artifacts — plans, handoff notes, scratch files (AGENTS.md, section 4)
 .scratch/
 
+# Build output — Gradle, Eclipse, Cargo
 /bin
 /build
 .classpath

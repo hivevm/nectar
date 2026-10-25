@@ -1,7 +1,56 @@
 {
-  "name": "HiveVM Doc",
-  "image": "mcr.microsoft.com/devcontainers/base:debian",
+  "name": "Nectar DevContainer",
 
+  "image": "mcr.microsoft.com/devcontainers/base:debian",
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
+  },
+  // The host's agent config directory. HOME is set on Linux and macOS, USERPROFILE on Windows;
+  // exactly one of the two is non-empty, so concatenating both yields the home directory on every
+  // host (the pattern the Dev Containers documentation recommends).
+  "mounts": [
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.claude,target=/home/vscode/.claude,type=bind"
+  ],
+
+  "shutdownAction": "stopContainer",
+
+  // Runs on the host before the container is created. Ensures the bind-mount source for the agent
+  // config exists, so Docker does not auto-create it as a root-owned directory (which breaks
+  // credential writes inside the container). Written to work in both a POSIX shell and cmd.exe:
+  // plain `mkdir` (cmd.exe knows no `-p`; the parent is the home directory and always exists) and
+  // `|| exit 0` so an already existing directory — an error for both shells — does not abort the
+  // container build.
+  "initializeCommand": "mkdir \"${localEnv:HOME}${localEnv:USERPROFILE}/.claude\" || exit 0",
+
+  // System packages, the GitHub CLI, Graphviz and PlantUML; see the script.
+  "onCreateCommand": "bash .devcontainer/setup.sh",
+
+  // Runs inside the container on every start, so the settings are set again should a session
+  // have changed them: the repository's git hooks under .githooks/ and the merge settings they
+  // rely on. What each refuses, and the same commands for a clone outside the container,
+  // are under "Git hooks" in the README.
+  "postStartCommand": {
+    "hooks": "git config core.hooksPath .githooks",
+    "merge": "git config merge.ff false && git config pull.ff only",
+    "index": "git config merge.adr-index.driver '.githooks/merge-adr-index %O %A %B %S %X %Y'"
+  },
+
+  // Runs inside the container once it is created. ShellCheck comes from the base image's signed
+  // Debian archive, so the pre-push hook runs the shell lint CI runs; without it the lint skips
+  // itself locally.
+  "postCreateCommand": {
+    "shellcheck": "sudo apt-get update && sudo apt-get install -y --no-install-recommends shellcheck"
+  },
+
+  // DevContainer Features layered on top of the base image. The container intentionally has NO
+  // access to the host Docker daemon (no socket mount) — see ADR-0004. Manage the host's containers
+  // from a host-side VS Code extension instead (README → "Host container management").
+  // The GitHub CLI (`gh`) comes from setup.sh, not a Feature; a push and every gh action wait
+  // for a human instruction (AGENTS.md, section 6).
   "features": {
     "ghcr.io/devcontainers/features/java:1": {
       "version": "21",
@@ -11,30 +60,6 @@
     // Nectar engine: rustup stable with rustfmt, clippy, rust-src and rust-analyzer.
     "ghcr.io/devcontainers/features/rust:1": {}
   },
-
-  // Nectar development server (live reload).
-  "forwardPorts": [1313],
-  "portsAttributes": {
-    "1313": { "label": "nectar serve", "onAutoForward": "notify" }
-  },
-
-  // System packages, Graphviz and PlantUML; see the script.
-  "onCreateCommand": "bash .devcontainer/setup.sh",
-
-  "workspaceFolder": "/workspace",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
-
-  "remoteUser": "vscode",
-  "mounts": [
-    "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind"
-  ],
-
-  // Runs on the host before the container is created. Ensures the bind-mount source for the agent
-  // config exists, so Docker does not auto-create it as a root-owned directory (which breaks
-  // credential writes inside the container).
-  "initializeCommand": "mkdir -p ${localEnv:HOME}/.claude",
-
-  "shutdownAction": "stopContainer",
 
   "customizations": {
     // VS Code extensions installed inside the container
@@ -47,5 +72,17 @@
         "vadimcn.vscode-lldb"
       ]
     }
+  },
+
+  // Nectar development server (live reload).
+  "forwardPorts": [1313],
+  "portsAttributes": {
+    "1313": { "label": "nectar serve", "onAutoForward": "notify" }
+  },
+
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "8gb",
+    "storage": "32gb"
   }
 }

@@ -1,7 +1,122 @@
-# Markdown for PDF generation {#Markdown_for_PDF_generation}
+# Nectar
 
-> **Nectar** turns the same Markdown into a website, with a local server that reloads on every
-> change; see the [Nectar guide](doc/nectar/README.md).
+[![Checks](https://github.com/hivevm/nectar/actions/workflows/checks.yml/badge.svg)](https://github.com/hivevm/nectar/actions/workflows/checks.yml)
+
+**Nectar** turns Markdown into a website and a PDF: `nectar build` writes the site, `nectar serve`
+serves it on your machine and reloads the browser on every change. The work is driven by a written
+**specification** ([`docs/SPECIFICATION.md`](docs/SPECIFICATION.md)) and **Architecture Decision
+Records** ([`docs/adr/`](docs/adr/)), so intent and the reasoning behind every structural choice
+stay explicit and reviewable.
+
+> For agent instructions, see [`AGENTS.md`](AGENTS.md), the single source of truth for all coding
+> agents.
+
+> [!NOTE]
+> **This project still carries its template setup.** The one-time steps that turn the scaffold
+> into your own project are in [`TEMPLATE-SETUP.md`](TEMPLATE-SETUP.md); ask your agent to run the
+> `setup-project` skill to be walked through them, one question at a time. Once you are through
+> them, `scripts/test-template-setup.sh --close` removes that file and this note.
+
+## Overview
+
+The repository holds two generations of the same idea: Markdown in, documentation out.
+
+- **Nectar**, the command line `nectar`, written in Rust under [`crates/`](crates/). It turns a
+  project of Markdown files into a website with a print view and a PDF, highlights code with
+  TextMate grammars and draws railroad, Graphviz and PlantUML diagrams. The
+  [Nectar guide](doc/nectar/README.md) describes it in full, its design is
+  [`doc/nectar/design.md`](doc/nectar/design.md), and [`examples/demo/`](examples/demo/) is a
+  complete project to start from.
+- **The Gradle plugin** `org.hivevm.doc`, written in Java under [`src/`](src/). It renders
+  Markdown to PDF through Apache FOP; the second half of [Usage](#usage) documents it.
+
+The full problem statement and goals live in [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md), the
+vocabulary in [`docs/GLOSSARY.md`](docs/GLOSSARY.md).
+
+## Prerequisites
+
+- [VS Code](https://code.visualstudio.com/) with the
+  [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+  extension, or any DevContainer-compatible IDE
+- Docker / Podman (rootless) available on the host
+- Outside the Dev Container: bash 4.4 or later for the checks, 3.2 for the git hooks
+  ([ADR-0002](docs/adr/0002-decisions-verified-by-tests.md)); macOS ships 3.2
+
+## Getting Started
+
+> Setting the project up for the first time? Create the repository from the template, with
+> **Use this template** on GitHub or with
+> `gh repo create <owner>/<name> --template hivevm/nuc --public --clone`. A private repository
+> needs a paid GitHub plan for the rulesets of [Repository settings](#repository-settings).
+> The one-time steps are in [`TEMPLATE-SETUP.md`](TEMPLATE-SETUP.md); the close of the setup
+> removes this paragraph with that file.
+
+1. Open the repository in VS Code and choose **Reopen in Container**. The Dev Container and the
+   preconfigured agent extensions build automatically, and the container enables the repository's
+   git hooks with the merge settings they rely on ([Git hooks](#git-hooks)). Working outside the
+   container? Run the three commands listed there yourself, once per clone.
+2. Authenticate your coding agent inside the container (for Claude Code: `claude login`).
+3. Start working with the agent. Drive the work from the specification and the ADRs.
+
+## Build, Test & Run
+
+<!-- This section is the single source for build/test/lint/run commands; both humans and
+     agents rely on it, and the rule file names it. -->
+
+The Dev Container brings Rust, Java 21, Graphviz and PlantUML. Nectar's commands run from the
+repository root and match the [Nectar workflow](.github/workflows/nectar.yml):
+
+- **Build:** `cargo build --workspace`
+- **Test:** `cargo test --workspace`, then `cargo run -p nectar -- -C examples/demo build`,
+  which has to succeed even where Graphviz and PlantUML are missing
+- **Lint:** `cargo fmt --all --check` and
+  `cargo clippy --workspace --all-targets -- -D warnings`; the repository checks with
+  `scripts/check-all.sh`
+- **Run:** `cargo run -p nectar -- -C examples/demo serve`, then open http://127.0.0.1:1313/
+
+The Gradle plugin builds and tests with `./gradlew build`.
+
+A release of Nectar is a tag `nectar-vX.Y.Z`: the
+[release workflow](.github/workflows/nectar-release.yml) builds `nectar` for Linux, macOS and
+Windows and attaches the archives, with their `SHA256SUMS`, to a GitHub release of that tag.
+
+## Usage
+
+### Nectar
+
+Download the archive for your platform from the
+[releases](https://github.com/hivevm/nectar/releases), unpack it and put `nectar` on your
+`PATH`, or build it from source with `cargo install --path crates/cli`.
+
+A project is a directory with a `nectar.toml`:
+
+```toml
+title = "My Manual"
+
+[[document]]
+source = "content/manual.md"
+```
+
+```sh
+nectar serve            # http://127.0.0.1:1313/, reloads on every change
+nectar build            # writes the site, the print view and the PDF to public/
+```
+
+| Option | Meaning |
+|---|---|
+| `-C <dir>` | Project directory, the one that holds `nectar.toml`; default the current one |
+| `--offline` | Keep images from the web as links instead of downloading them |
+| `build -o <dir>` | Output directory; overrides `output` in `nectar.toml` |
+| `build --drafts` | Include files whose front matter says `draft = true` |
+| `serve -p <port>`, `serve --bind <addr>` | Address to serve on; default `127.0.0.1:1313` |
+| `serve --no-drafts` | Leave out drafts, which `serve` shows by default |
+
+Chapters, front matter, the Markdown dialect, code engines, the print view, themes and every
+key of `nectar.toml` are described in the [Nectar guide](doc/nectar/README.md). Nectar reads
+the Markdown dialect the Gradle plugin introduced; the sections below document the plugin and
+that dialect.
+
+### Gradle plugin: Markdown for PDF generation {#Markdown_for_PDF_generation}
 
 The plugin supports the creation of beautiful PDF's from markdown. Create a simple gradle project with the Gradle
 Wrapper and configure *build.gradle* and *settings.gradle*.
@@ -38,7 +153,7 @@ pluginManagement {
 The *markdown.config* parameter is optional and allows custom configuration of the layout of the rendered PDF. By
 default a standard template is applied.
 
-## Common mark
+### Common mark
 
 [Markdown][1] is a plain text format for writing structured documents, based on formatting conventions from email and
 usenet. *Markdown* is a simple way to format text that looks great on any device. It doesn’t do anything fancy like
@@ -68,7 +183,7 @@ offline editor is [Typora][3].
 
 [3]: https://typora.io/ "A truly minimal Mardkown editor"
 
-### Headings
+#### Headings
 
 Starting a line with a hash # and a space makes a header.
 
@@ -81,14 +196,14 @@ The more #, the smaller the header.
 !w Remember: Each *markdown* file should be handled as independent document. Including a file into another it becomes
 automatically a child chapter. So use the highest heading in each file.
 
-### Paragraphs
+#### Paragraphs
 
 A paragraph is consecutive lines of text with one or more blank lines between them.
 
 	lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor
 	invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
 
-### Line Breaks
+#### Line Breaks
 
 For a line break, add either a backslash \ or two blank spaces at the end of the line; this is interpreted as
 continuation of the text. This is useful if the markdown text should be be wrapped for better reading, but logically the
@@ -122,7 +237,7 @@ lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy
 ___
 eirmod tempor
 
-### Blockquotes
+#### Blockquotes
 
 To create a blockquote, start a line with greater than > followed by an optional space.
 
@@ -142,7 +257,7 @@ Blockquotes can be nested, and can also contain other formatting.
 >
 > Last line
 
-### Emphasis
+#### Emphasis
 
 To create bold or italic, wrap with asterisks \* or underscores \_. To avoid creating bold or italic, place a backslash
 in front \\\* or \\\_. For *italics* a single asteriks or underscore is used, for **bold** 2 are used. Using 3 allows to
@@ -157,7 +272,7 @@ tilde.
 	~~strikethrough~~
 	____underline____
 
-### Lists
+#### Lists
 
 Unordered lists can use either asterisks *, plus +, or hyphens - as list markers.
 
@@ -211,7 +326,7 @@ Task List
 - [x] Release candidate
 - [ ] Product release
 
-### Links
+#### Links
 
 Links can be either inline with the text, or placed at the bottom of the text as references.
 
@@ -237,7 +352,7 @@ or as alternative with an inline link
 
 [Tests](#Lists)
 
-### Images
+#### Images
 
 Images are almost identical to links, but an image starts with an exclamation point !.
 
@@ -260,7 +375,7 @@ defined between brackets {}.
 [image]: <data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAeCAQAAADArVVKAAABJWlDQ1BJQ0MgcHJvZmlsZQAAKJGdkD1KxFAUhb/MiH9opVioRQoRLAZsTGUzKgRBIcYRHK0ySQYHkxiSDIM7cCe6mCkEwR24AQVrz4sWFqbxweV8XO49570HLTsJ03JmF9KsKly/27/sX9lzb7TZYIEdtoOwzLued0Lj+XzFMvrSMV7Nc3+e2SguQ+lUlYV5UYG1L3YmVW5Yxeptzz8UP4jtKM0i8ZN4K0ojw2bXT5Nx+ONpbrMUZxfnpq/axOWYUzxsBowZkVDRkWbqHOGwJ3UpCLinJJQmxOpNNFNxIyrl5HIg6ol0m4a89TrPU8pAHiN5mYQ7UnmaPMz/fq99nNWb1to0D4qgbrVVreEQ3h9huQ8rz7B43ZA1//ttDTNOPfPPN34BFKlQexFMbQcAAAACYktHRAD/h4/MvwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB+UDGwkqM5WPHG4AAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAACJUlEQVRIx7WWTUiUQRjHf/PuqxWWepMQiXSRLuYlECIvBuJND5UFtgoGdSkEsQ6CVIcgO5id6lCiYHSoWyhFQpB06VCelDYK6cOi2JJ2i9F9dzo4TO375bbu+8xl5vnPzPPM8zkCiwRD1CMoLSneco0p6COLimhk6RUsso/nXCdb4hfYDHCQJXBQHCEKOorCsbBQrEciYB2wLCImO29lUa1nkoxrZzk79SyDzEMq9S0Oq/7hlKNTz3eTRiKRJKl1KXJXI5I+l1Jzmv/SpW4XCmV59NwYcSbZYbiCQboN5j5TpvllfvoH+6CNKwbt4BJFeiv4mOAsCQAamWBbsU4O0yvGOC1UMU1NqaLITZVMs8CB0oXpX0rroGygwXAqiimIQQIm2U/rP+sUI9zIE7CLvdrIFZqznSYcAN7zfTMBGU7yjDqT9Gf47MmfcQ4BwvixnhcoYIH2Qpy8TIJf+qpR7vsYsYd32MTMuwQxbL5wglRhUfSU8+SAh1xG+eAfOcY3F+8nx0kWGqZwkzss0s9aAP6KXn7n1c/TzBeeB+AwQCdfQ3bMMqgdCzkucu9/Em3D2clNOu8txrQBJ7jqNeXW+0GOYR4ATzhn3hKYB5JZzVny7Ewxo9X54ELWOEWaCzrmQvsBCDP8yl8Qgi+3C4WyPeLC7F0EFnlPtpCIrZTjEKoBpOAR7fxgLoKP12GqeQzNrET2dfxEs4jzZg/9NEbw+X3N7fjyHzpu6IUgF9LcAAAAAElFTkSuQmCC>
 
 
-### Code
+#### Code
 
 To create `inline code`, wrap with backticks `.
 
@@ -273,11 +388,11 @@ code block.
 	code block
 	```
 
-## Extended Syntax
+### Extended Syntax
 
 Advanced features that build on the basic Markdown syntax.
 
-### Multi-Files
+#### Multi-Files
 
 The *Markdown* parser supports organizing the documentation in multiple files. Each file can be included by a simple
 link with the relative path. The documentation generator will merge all files into a single *markdown* source. Each file
@@ -287,7 +402,7 @@ should be designed as independent file, the generator takes care about building 
 
 !w An included file will be handled as sub-chapter of the current chapter.
 
-### Comments
+#### Comments
 
 Most Markdown implementatios support comments.
 
@@ -295,7 +410,7 @@ Most Markdown implementatios support comments.
 
 [comment]: # (Still another comment)
 
-### Internal Links
+#### Internal Links
 
 Markdown allows to link to internal headers using as link the header name in lower case, prefixed with a hash, and
 replacing all spaces with an sign (-).
@@ -311,7 +426,7 @@ should avoid headers with special characters.
 	
 	### Header of Document
 
-### Tables
+#### Tables
 
 To add a table, use three or more hyphens (---) to create each column’s header, and use pipes (|) to separate each
 column. You can optionally add pipes on either end of the table. We support the extended syntax to align the columns. By
@@ -331,7 +446,7 @@ Sizing of of the single table columns is not supported by markdown. We extended 
 of the column width, using the number of hyphens (---) in the header separator. The number of hyphens in a single column
 relative to the sum of all hyphens in all columns define the relative width to the whole table.
 
-### Alerts
+#### Alerts
 
 Alerts are an extension to provide customizable blockquotes. 4 different kind of alerts are supported, that are rendered
 with a background and highlight color. The alert message have to start with **!** at the beginning of the line with a
@@ -368,7 +483,7 @@ Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod 
 magna aliquyam erat, sed diam voluptua.
 !!
 
-### Symbols
+#### Symbols
 
 Our implementation allows to define placeholders for font symbols. The symbol name must be defined between 2 @.
 
@@ -381,7 +496,7 @@ As font the [Material Icons Font][material-icons] is used.
 
 [material-icons]: https://material.io/resources/icons/ "Material Icons Font"
 
-### Formatted Code
+#### Formatted Code
 
 The implementation supports the extended syntax with 3 tilde (~), optionally to defining the the code formatter.
 
@@ -574,7 +689,7 @@ fn fizzbuzz_to(n: u32) {
 }
 ~~~
 
-### Extensions
+#### Extensions
 
 Uml Diagrams with PlantUML
 
@@ -878,7 +993,7 @@ H2_SELECT =
 The *language* attribute allows to define the formatting for a specific language. *ini*, *xml*, *json*, *java* and *cpp*
 are supported. Support for *rest* is missing.
 
-## Rendering Configuration
+### Rendering Configuration
 
 The *markdown.config* parameter allows to define a custom configuration for rendering.
 
@@ -1028,3 +1143,231 @@ Currently the renderer support 3 different fonts:
 - TEXT: Defines the font for the default text.
 - MONO: Defines the font for the code snippets.
 - SYMBOLS: Defines the symbol font, used for font icons.
+
+## Project Layout
+
+```
+TEMPLATE-SETUP.md     # one-time template setup; delete it when the project is yours
+README.md             # overview & setup for humans
+AGENTS.md             # single source of truth for coding agents
+CONTRIBUTING.md       # how to contribute, pointing at the rules
+SECURITY.md           # how to report a vulnerability, and what the configuration guarantees
+CODE_OF_CONDUCT.md    # the standards everyone taking part is held to
+LICENSE               # the license the project is released under
+docs/SPECIFICATION.md # the specification: problem, goals, success criteria
+docs/GLOSSARY.md      # the vocabulary everyone uses, kept current inline
+docs/CONVENTIONS.md   # how this project writes what no check decides, kept current inline
+docs/ARCHITECTURE.md  # the system as it currently stands
+docs/adr/             # Architecture Decision Records (+ template)
+docs/plan/            # open work: feature specs and their tickets, deleted as they land
+scripts/check-all.sh  # runs the checks, sensors, and self-tests, as the hooks and CI do
+scripts/check-*.sh    # checks: each fails on what breaks a rule
+scripts/sensor-*.sh   # sensors: report for the reviewer; sensor-repo-settings.sh runs by hand
+scripts/test-*.sh     # self-tests of the checks, the sensors, the hooks, the setup, and the scripts
+                      # run by hand
+scripts/lib/          # what the scripts share: the ADR header, git, the ticket path, the self-tests
+scripts/*.sh          # run by hand, steps 7 and 8 of the integration branches: number-adrs.sh,
+                      # ready-for-main.sh, drop-merged-branch.sh
+.githooks/            # git hooks: nothing lands on main locally; checks before a merge and a push
+.github/workflows/    # checks.yml runs the checks; review-binding.yml reads each pull request's hand-off
+.github/              # Dependabot, issue & pull request templates, code owners
+.devcontainer/        # Dev Container definition (base image + Features)
+.vscode/              # shared editor settings
+.editorconfig         # editor-neutral formatting baseline
+.gitattributes        # line-ending normalization (LF everywhere), the ADR index merged by its driver
+.gitignore            # what git leaves out, .scratch/ for session artifacts among it
+.agents/skills/       # the procedures of AGENTS.md as Agent Skills, one directory each (ADR-0003),
+                      # with the scripts and templates they carry (claim.sh, remap.sh, ticket.md)
+.claude/CLAUDE.md     # pointer for Claude Code to read AGENTS.md
+.claude/skills/       # pointers (one symlink per skill) for Claude Code to read .agents/skills/
+.claude/settings.json # Claude Code permissions: deny reading .env files (see SECURITY.md)
+Cargo.toml            # Cargo workspace of Nectar
+crates/core/          # Nectar: Markdown dialect, document model and transform passes
+crates/html/          # Nectar: website, print view and the built-in theme
+crates/pdf/           # Nectar: PDF typeset with Typst, with its fonts
+crates/textmate/      # Nectar: code highlighting with TextMate grammars and themes
+crates/railroad/      # Nectar: railroad diagrams from (E)BNF
+crates/process/       # Nectar: code engines that run a local command, such as Graphviz
+crates/server/        # Nectar: local server that rebuilds and reloads the browser
+crates/cli/           # Nectar: the nectar command line
+examples/demo/        # a complete Nectar project, built in CI
+doc/nectar/           # Nectar's user guide and design
+build.gradle          # Gradle plugin org.hivevm.doc: build and publication
+src/main/             # Gradle plugin: Java sources, templates, fonts and grammars
+```
+
+## Dev Container
+
+The environment is defined entirely in
+[`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json). It starts from a prebuilt
+base image and layers Dev Container Features and VS Code extensions on top; no Dockerfile or
+Compose file is required. Customise the environment by adding Features, switching the base image,
+or adding extensions. Features are pinned by major tag and resolved in the committed
+`devcontainer-lock.json`. Extensions are listed by identifier only, because a published extension
+version cannot be repointed and a version suffix is VS Code-specific.
+
+### Host container management
+
+The Dev Container deliberately has **no access to the host Docker daemon**: the socket is not
+mounted ([ADR-0004](docs/adr/0004-dev-container-runtime.md)). To manage the host's containers from
+VS Code, run the **Container Tools** extension (`ms-azuretools.vscode-containers`) on the **host**
+side: install it in your host VS Code. [`.vscode/settings.json`](.vscode/settings.json) already pins
+it to run locally via `remote.extensionKind`, so it keeps talking to the host engine even when this
+folder is reopened in the container.
+
+## Coding Agents
+
+This Dev Container preinstalls the **Claude Code** and **Mistral Vibe** VS Code extensions (see
+[`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json)); other agents (OpenAI Codex,
+Cursor, OpenCode, GitHub Copilot) work too once you add them.
+
+The rules every agent follows live in [`AGENTS.md`](AGENTS.md); that there is exactly one such file
+is decided in [ADR-0001](docs/adr/0001-agent-governance-model.md). An agent that cannot read it
+natively gets a pointer file instead. [`.claude/CLAUDE.md`](.claude/CLAUDE.md) is the one shipped
+here; it carries the pointer and no rules of its own ([`AGENTS.md` §3](AGENTS.md#3-adr-rules)). It
+exists for one gap only: Claude Code loads `CLAUDE.md`, not `AGENTS.md`, tracked upstream as
+[anthropics/claude-code#34235](https://github.com/anthropics/claude-code/issues/34235). Once that
+lands, delete the pointer file rather than keeping a second file to maintain.
+
+The procedures those rules name (proposing an ADR, planning a feature, working its tickets
+alone or in parallel, reviewing a change, revising the design, normalizing the record) are Agent
+Skills under [`.agents/skills/`](.agents/skills/), the open format and the directory Codex,
+Gemini CLI, and Cursor read
+([ADR-0003](docs/adr/0003-procedures-as-skills.md)). An agent invokes one by name (`/review`) or
+picks it up when the task matches its description. Claude Code reads `.claude/skills/` only, so
+that directory holds one symlink per skill into `.agents/skills/`; a directory-level symlink is
+not followed. The symlinks are pointers of the same kind as `CLAUDE.md`, tracked upstream as
+[anthropics/claude-code#31005](https://github.com/anthropics/claude-code/issues/31005). Delete them
+when that lands, and add one for every skill added meanwhile; the documentation check fails on a
+skill without its pointer. What enforces a rule is what every agent hits
+([`AGENTS.md` §6](AGENTS.md#6-project-rules)): the git hooks under [`.githooks/`](.githooks/),
+the checks, and the repository settings below.
+
+Agents work tickets in parallel without any one vendor's mechanism: a dispatching session claims
+each ticket by its branch in a git worktree of its own and starts a fresh session there, with the
+non-interactive command of whichever agent the project's harness ADR names, and the session works
+the ticket through the `work-tickets` skill.
+
+## Git hooks
+
+Git does not version its hooks, so the repository keeps them under [`.githooks/`](.githooks/).
+They hold for every agent and every human. The Dev Container enables them, with the merge
+settings they rely on, on every start; outside it, run once per clone:
+
+```sh
+git config core.hooksPath .githooks
+git config merge.ff false
+git config pull.ff only
+git config merge.adr-index.driver '.githooks/merge-adr-index %O %A %B %S %X %Y'
+```
+
+`merge.ff false` makes every merge a merge commit, as a `feat/` branch keeps them
+([`AGENTS.md` §6](AGENTS.md#6-project-rules)); a fast-forward would make no commit and run no
+hook. `pull.ff only` keeps a pull from then making a merge. Without the two settings the hooks
+still hold: a fast-forward skips the documentation check of `pre-merge-commit`, and the push
+still gates what it brought. The merge driver of the ADR index keeps the rows both sides add and
+stops on its prose ([`.githooks/merge-adr-index`](.githooks/merge-adr-index)); without it, every
+row two branches append conflicts.
+
+| Hook | Refuses | Bypassed by |
+|---|---|---|
+| `reference-transaction` | moving the local `main` to a commit `origin/main` lacks: by a commit, merge, cherry-pick, reset, or `git branch -f`. It lets through `git merge --ff-only origin/main`, a reset to it, `git fetch origin main:main`, a write of `main` where it already is, and a deletion. Needs git 2.28 or later. | running git without the hooks (`git -c core.hooksPath=/dev/null`), or moving `origin/main` by hand; not by `--no-verify` |
+| `pre-commit` | a commit on `main`; the conclusion of a conflicted merge while `scripts/check-all.sh --changed` is red | `--no-verify` |
+| `pre-merge-commit` | a merge on `main`; a merge into any other branch while `scripts/check-docs.sh` is red | `--no-verify` |
+| `pre-push` | a push to the remote's `main`, a deletion included; any other push while `scripts/check-all.sh --changed` is red, except one that only deletes, and one from a clean working tree whose tree the checks passed on before, as after a rework that only regroups | `--no-verify`, as the claim on a ticket does ([`AGENTS.md` §6](AGENTS.md#6-project-rules)); a tree written by hand into `checks-green-trees` of the git directory |
+
+With `--changed`, the self-tests of what the branch left untouched since `main` are skipped; CI
+runs every one before anything reaches `main`. A bypass is a deliberate act, not a default;
+[`AGENTS.md` §6](AGENTS.md#6-project-rules) says when an agent may. Each refusal says what to do
+instead.
+[`scripts/test-git-hooks.sh`](scripts/test-git-hooks.sh) exercises every row.
+
+## Integration branches
+
+A change reaches `main` through a pull request. Several branches may integrate first on a
+`feat/` branch, by local merges or by pull requests against it, and it stays the human's to
+rework until its pull request into `main` merges ([`AGENTS.md` §6](AGENTS.md#6-project-rules)).
+Each step waits for a human's instruction.
+
+1. Start it at the remote's `main`: `git fetch origin`, then
+   `git switch -c feat/<topic> origin/main`.
+2. Merge a reviewed branch into it with its hand-off as the message, written to a file since an
+   editor strips its headings: `git merge --no-ff -F .scratch/<hand-off>.md <branch>`. The
+   documentation check gates the merge, and the push of step 6 runs the rest. One that stops on a
+   conflict is concluded, once resolved and staged, with `git commit -F .scratch/<hand-off>.md`,
+   and all the checks gate that commit.
+3. Or merge it by a pull request against the `feat/` branch, so that its pipelines run first
+   ([`AGENTS.md` §6](AGENTS.md#6-project-rules)). With both branches pushed, on the branch:
+   `gh pr create --base feat/<topic> --body-file .scratch/<hand-off>.md`, and once it is green,
+   `gh pr merge <number> --merge --body-file .scratch/<hand-off>.md`, never by the web interface,
+   whose merge commit drops the hand-off. Then, on the `feat/` branch, `git fetch origin` and
+   `git merge --ff-only origin/feat/<topic>`.
+4. Rework it as often as needed: rebase it, regroup its commits, or drop what did not hold,
+   with `git rebase -i --autosquash --rebase-merges`. `--autosquash` folds in the fixups a review
+   leaves, as the `review` skill says; without `--rebase-merges` the merges flatten, and their
+   hand-offs with them. A pull request still open against the `feat/` branch is rebased onto the
+   rework.
+5. After a rework, review the whole branch at its head
+   ([`AGENTS.md` §5](AGENTS.md#5-quality-bar--definition-of-done)) and name that commit on the
+   `Reviewed at:` line of the pull request of step 6, which
+   [`review-binding.yml`](.github/workflows/review-binding.yml) reads on every push and edit.
+6. Test it in the pipelines: `git push -u origin feat/<topic>`, then open a draft pull request,
+   `gh pr create --draft --base main`, which runs them on every push against what the merge
+   into `main` would produce. A branch kept without a pull request, such as an experiment, runs
+   them by hand: `gh workflow run checks.yml --ref feat/<topic>`. A rework already pushed goes out
+   with `git push --force-with-lease`.
+7. Make the pull request ready: [`scripts/ready-for-main.sh`](scripts/ready-for-main.sh) refuses
+   a fixup steps 4 to 6 left, takes up the remote's `main`, and numbers the draft ADRs
+   ([ADR-0002](docs/adr/0002-decisions-verified-by-tests.md)); then the push it names and
+   `gh pr ready`. What `main` gains later is taken up the same way, and an ADR it gains moves the
+   branch's numbers on ([mechanics](docs/adr/README.md#mechanics)).
+8. Once the pull request into `main` has merged as a merge commit, take it up and drop the branch:
+   on it, [`scripts/drop-merged-branch.sh`](scripts/drop-merged-branch.sh) refuses a branch
+   `origin/main` lacks, takes up the remote's `main`, and deletes the local branch; then the
+   `git push origin --delete feat/<topic>` it names.
+
+## Repository settings
+
+Some of this project's rules cannot be enforced by files in the repository
+([`AGENTS.md` §6](AGENTS.md#6-project-rules)). They are settings on the GitHub repository itself,
+configured once by a maintainer and worth re-checking after a repository move or transfer:
+
+- a **ruleset on `main`** that requires pull requests and allows the merge method **merge commit**
+  only, since squash and rebase discard the merges a `feat/` branch carries and the commits it
+  was reworked into ([`AGENTS.md` §6](AGENTS.md#6-project-rules)); requires the
+  <!-- required-checks begin — compared with the workflow's jobs by scripts/check-docs.sh -->
+  `docs`, `traceability`, `devcontainer`, `sensors`, and `shell`
+  <!-- required-checks end -->
+  jobs of the **Checks** workflow as required status checks (rulesets list checks by their job
+  name) and a branch up to date with `main` before it merges, so that the checks see what the
+  merge produces, such as two ADRs proposed in parallel under one number, and blocks force
+  pushes and branch deletion;
+- enable **require a review from Code Owners** on that ruleset, so the two artifacts only a human
+  decides, [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md) and everything under
+  [`docs/adr/`](docs/adr/) ([`AGENTS.md` §3](AGENTS.md#3-adr-rules)), cannot be merged without the
+  owner named in [`.github/CODEOWNERS`](.github/CODEOWNERS), which has to carry a real handle or
+  team for the requirement to mean anything;
+- enable **secret scanning with push protection**, the only mechanical backstop behind the secrets
+  rule ([`AGENTS.md` §7](AGENTS.md#7-secrets)), which is otherwise carried by review alone;
+- enable **private vulnerability reporting** (see [`SECURITY.md`](SECURITY.md)).
+
+[`scripts/sensor-repo-settings.sh`](scripts/sensor-repo-settings.sh) reads these settings
+through `gh` and reports each one that differs from this list. It runs on a human's
+instruction ([ADR-0002](docs/adr/0002-decisions-verified-by-tests.md)).
+
+## Template
+
+- **Template release:** v0.5.0 — the release of [NUC](https://github.com/hivevm/nuc) this
+  repository carries; a project moves the line when it takes up a later one
+  ([ADR-0005](docs/adr/0005-template-releases.md)).
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the workflow (specification- and ADR-driven, small
+reviewable changes) and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) for the community standards we
+expect of everyone taking part. Security issues: please follow [`SECURITY.md`](SECURITY.md) instead
+of opening a public issue.
+
+## License
+
+Released under the BSD 3-Clause License. See [`LICENSE`](LICENSE).
