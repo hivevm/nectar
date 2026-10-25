@@ -23,3 +23,6 @@ Thumbs.db
 
 # Output of nectar build
 /examples/*/public/
+
+# Local test corpus of real manuals, kept out of the public repository
+/examples/manual/
