@@ -29,15 +29,19 @@ These properties shape the security posture of the coding agents working here:
   Authentication uses the web flow of `gh` with no stored tokens. What the repository's own git
   hooks guarantee for every agent and every human, and what bypasses each, is under
   [Git hooks](README.md#git-hooks) in the README.
-- **The specification and the decision record change only by human decision**
-  ([`AGENTS.md` §3](AGENTS.md#3-adr-rules), rules 4 and 7). The gate is
-  [`.github/CODEOWNERS`](.github/CODEOWNERS) together with the Code-Owner review requirement
-  listed under [**Repository settings**](README.md#repository-settings). It does not stop the
-  edit; it routes it to a human before it reaches `main`, and it holds for every agent alike.
-  Two limits are worth knowing. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) is deliberately
-  not gated, because [§5](AGENTS.md#5-quality-bar--definition-of-done) requires it to be updated in
-  the same change as the structure it describes. And a code owner GitHub does not know matches
-  nobody, so the file enforces nothing until it carries a real handle.
+- **The specification and the decision record change only by human decision.** A change to
+  [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md) is a decision rather than an edit, and only a
+  human changes an ADR's status ([`AGENTS.md` §3](AGENTS.md#3-adr-rules), rules 4 and 7). With
+  one maintainer, who cannot approve their own pull request, the Code-Owner review listed under
+  [**Repository settings**](README.md#repository-settings) stays off:
+  [`.github/CODEOWNERS`](.github/CODEOWNERS) names the owner, and the rule is guarded by that
+  maintainer reviewing every change
+  ([ADR-0007](docs/adr/0007-harness-one-agent-human-review.md)), not by GitHub. A second
+  maintainer turns the requirement on. Two limits are worth knowing.
+  [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) is deliberately not gated, because
+  [§5](AGENTS.md#5-quality-bar--definition-of-done) requires it to be updated in the same change as
+  the structure it describes. And a code owner GitHub does not know matches nobody, so the file
+  enforces nothing unless it carries a real handle.
 
 ## Secrets
 

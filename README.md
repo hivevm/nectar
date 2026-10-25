@@ -11,12 +11,6 @@ stay explicit and reviewable.
 > For agent instructions, see [`AGENTS.md`](AGENTS.md), the single source of truth for all coding
 > agents.
 
-> [!NOTE]
-> **This project still carries its template setup.** The one-time steps that turn the scaffold
-> into your own project are in [`TEMPLATE-SETUP.md`](TEMPLATE-SETUP.md); ask your agent to run the
-> `setup-project` skill to be walked through them, one question at a time. Once you are through
-> them, `scripts/test-template-setup.sh --close` removes that file and this note.
-
 ## Overview
 
 Nectar is the command line `nectar`, written in Rust under [`crates/`](crates/). It turns a
@@ -39,13 +33,6 @@ vocabulary in [`docs/GLOSSARY.md`](docs/GLOSSARY.md).
   ([ADR-0002](docs/adr/0002-decisions-verified-by-tests.md)); macOS ships 3.2
 
 ## Getting Started
-
-> Setting the project up for the first time? Create the repository from the template, with
-> **Use this template** on GitHub or with
-> `gh repo create <owner>/<name> --template hivevm/nuc --public --clone`. A private repository
-> needs a paid GitHub plan for the rulesets of [Repository settings](#repository-settings).
-> The one-time steps are in [`TEMPLATE-SETUP.md`](TEMPLATE-SETUP.md); the close of the setup
-> removes this paragraph with that file.
 
 1. Open the repository in VS Code and choose **Reopen in Container**. The Dev Container and the
    preconfigured agent extensions build automatically, and the container enables the repository's
@@ -112,7 +99,6 @@ key of `nectar.toml` are described in the [Nectar guide](doc/nectar/README.md).
 ## Project Layout
 
 ```
-TEMPLATE-SETUP.md     # one-time template setup; delete it when the project is yours
 README.md             # overview & setup for humans
 AGENTS.md             # single source of truth for coding agents
 CONTRIBUTING.md       # how to contribute, pointing at the rules
@@ -128,7 +114,7 @@ docs/plan/            # open work: feature specs and their tickets, deleted as t
 scripts/check-all.sh  # runs the checks, sensors, and self-tests, as the hooks and CI do
 scripts/check-*.sh    # checks: each fails on what breaks a rule
 scripts/sensor-*.sh   # sensors: report for the reviewer; sensor-repo-settings.sh runs by hand
-scripts/test-*.sh     # self-tests of the checks, the sensors, the hooks, the setup, and the scripts
+scripts/test-*.sh     # self-tests of the checks, the sensors, the hooks, and the scripts
                       # run by hand
 scripts/lib/          # what the scripts share: the ADR header, git, the ticket path, the self-tests
 scripts/*.sh          # run by hand, steps 7 and 8 of the integration branches: number-adrs.sh,
