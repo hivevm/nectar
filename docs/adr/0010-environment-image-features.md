@@ -42,5 +42,5 @@ install `nectar` for other projects, which the specification names as a possible
 
 **Not mechanically decidable:** that the work needs no container is a statement about the tests to
 come, not about a file. What holds mechanically is already checked:
-[`scripts/check-devcontainer.sh`](../../scripts/check-devcontainer.sh) fails on a mounted host
+`scripts/check-devcontainer.sh` fails on a mounted host
 socket and an unlocked Feature ([ADR-0004](0004-dev-container-runtime.md)).

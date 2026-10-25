@@ -3,7 +3,7 @@
 - **Status:** 🟡 proposed
 - **Date:** 2026-10-25
 - **Deciders:** Markus Brigl
-- **Applies to:** `Cargo.toml`, `deny.toml`, `scripts/check-build.sh`, `scripts/check-all.sh`, the `build` job of `.github/workflows/checks.yml`, `.github/workflows/nectar.yml`, and the Build, Test & Run section of `README.md`
+- **Applies to:** `Cargo.toml`, `deny.toml`, `scripts/check-build.sh`, `scripts/check-all.sh`, the `build` job of `.github/workflows/checks.yml`, and the Build, Test & Run section of `README.md`
 
 ## Context
 
@@ -26,9 +26,9 @@ forbids them.
 
 We will build, test and lint Nectar with Cargo through one script, `scripts/check-build.sh`, which
 runs `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`,
-`cargo test --workspace`, a build of `examples/demo`, and `cargo deny check` against a `deny.toml`
-that allows only licences compatible with BSD-3-Clause and bans the crates Q-1 keeps out of the
-core and the renderers.
+`cargo test --workspace`, a build of `examples/demo`, and `cargo deny check licenses bans sources`
+against a `deny.toml` that allows only licences compatible with BSD-3-Clause, with the exceptions
+the specification names, and bans the crates Q-1 keeps out of the core and the renderers.
 
 - `scripts/check-all.sh` runs it with a `run` line, so the pre-push hook refuses a red change.
 - The `build` job of `checks.yml` sets up the stable toolchain and runs it on Linux, macOS and
@@ -37,7 +37,9 @@ core and the renderers.
   markers, and rustc's `dead_code` lint, denied through Clippy's `-D warnings`, reports code nothing
   calls.
 
-**Out of scope:** the build for WebAssembly, which joins the script when the work on G-8 begins;
+**Out of scope:** cargo-deny's advisories, which report vulnerable and unmaintained crates that
+change without a commit and would turn the gate red without a change to decide; the build for
+WebAssembly, which joins the script when the work on G-8 begins;
 mutation testing, duplication and complexity sensors, which a design revision adds when the
 mistakes call for them; the release workflow `nectar-release.yml`.
 
