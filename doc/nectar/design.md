@@ -226,9 +226,11 @@ holds the files, the project files it read and its diagnostics.
 A renderer maps nodes to its format and does not repeat work done by passes: it writes tokens of
 highlighted code as styled spans and embeds graphics as they are.
 
-The website follows the system's colour scheme: the default theme has a dark variant, and
-highlighted code carries the colours of both TextMate themes (`theme`, `dark_theme`, by default
-`github-light` and `github-dark`) as custom properties, from which the stylesheet picks. The
+The website follows the system's colour scheme: every colour of the default theme is a pair for
+the light and the dark scheme (`light-dark()`), and highlighted code carries the colours of both
+TextMate themes (`theme`, `dark_theme`, by default `github-light` and `github-dark`) as custom
+properties, from which the stylesheet picks. A switch in the top bar steps through system, light
+and dark and keeps the choice for the site (`localStorage`); it shows only with scripts. The
 print view and the PDF stay light.
 
 The HTML renderer lives in `nectar-html`. Per start document it either writes one page for the

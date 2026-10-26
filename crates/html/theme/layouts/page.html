@@ -4,15 +4,38 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% if page.title != site.title %}{{ page.title }} · {% endif %}{{ site.title }}</title>
+<script>
+  // Applies the colour scheme chosen with the switch before the page paints. Without scripts, or
+  // with "system", the page follows the system.
+  try {
+    const scheme = localStorage.getItem("nectar-scheme");
+    if (scheme === "light" || scheme === "dark") document.documentElement.classList.add(scheme);
+  } catch (e) {}
+</script>
 <link rel="stylesheet" href="{{ theme }}style.css">
 </head>
 <body>
 <input type="checkbox" class="toggle" id="menu-control" hidden>
 <input type="checkbox" class="toggle" id="toc-control" hidden>
+<header class="book-navbar">
+  <div class="book-navbar-content">
+    <label for="menu-control" class="book-action book-menu-button" title="Menu"><span class="symbol">menu</span></label>
+    <p class="book-brand"><a href="{{ document.url }}">{{ site.title }}</a></p>
+    <div class="book-actions">
+      {% if print %}<a class="book-print" href="{{ print }}" title="Print view"><span class="symbol">print</span></a>{% endif %}
+      {% if pdf %}<a class="book-print" href="{{ pdf }}" title="PDF"><span class="symbol">picture_as_pdf</span></a>{% endif %}
+      <button type="button" class="book-action book-scheme" title="Colour scheme" hidden>
+        <svg class="scheme-system" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+        <svg class="scheme-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="scheme-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+      </button>
+      {% if toc %}<label for="toc-control" class="book-action book-toc-button" title="On this page"><span class="symbol">toc</span></label>{% endif %}
+    </div>
+  </div>
+</header>
 <div class="book-container">
   <aside class="book-menu" aria-label="Menu">
     <div class="book-menu-content">
-      <p class="book-brand"><a href="{{ document.url }}">{{ site.title }}</a></p>
       {% if menu %}
       <nav class="book-menu-tree" aria-label="Contents">
         <ul>
@@ -40,20 +63,11 @@
     </div>
   </aside>
 
-  <header class="book-header">
-    <label for="menu-control" title="Menu"><span class="symbol">menu</span></label>
-    <p class="book-brand"><a href="{{ document.url }}">{{ site.title }}</a></p>
-    {% if toc %}<label for="toc-control" title="Table of contents"><span class="symbol">toc</span></label>{% else %}<span></span>{% endif %}
-  </header>
-
   <div class="book-page">
-    {% if pdf %}<a class="book-print" href="{{ pdf }}" title="PDF"><span class="symbol">picture_as_pdf</span></a>{% endif %}
-    {% if print %}<a class="book-print" href="{{ print }}" title="Print view"><span class="symbol">print</span></a>{% endif %}
     {% if breadcrumb %}
     <nav class="book-breadcrumbs" aria-label="Breadcrumbs">
       <ul>
         {% for item in breadcrumb %}<li><a href="{{ item.url }}">{{ item.title }}</a></li>{% endfor %}
-        <li><span aria-current="page">{{ page.title }}</span></li>
       </ul>
     </nav>
     {% endif %}
@@ -75,8 +89,8 @@
     {% if prev or next %}
     <footer class="book-footer">
       <nav class="book-pager" aria-label="Pages">
-        <span>{% if prev %}<a href="{{ prev.url }}" rel="prev"><span class="symbol">arrow_back</span> {{ prev.title }}</a>{% endif %}</span>
-        <span>{% if next %}<a href="{{ next.url }}" rel="next">{{ next.title }} <span class="symbol">arrow_forward</span></a>{% endif %}</span>
+        {% if prev %}<a class="book-pager-prev" href="{{ prev.url }}" rel="prev"><span class="book-pager-title">{{ prev.title }}</span><span class="book-pager-label"><span class="symbol">chevron_left</span> Previous</span></a>{% else %}<span></span>{% endif %}
+        {% if next %}<a class="book-pager-next" href="{{ next.url }}" rel="next"><span class="book-pager-title">{{ next.title }}</span><span class="book-pager-label">Next <span class="symbol">chevron_right</span></span></a>{% endif %}
       </nav>
     </footer>
     {% endif %}
@@ -85,8 +99,9 @@
   </div>
 
   {% if toc %}
-  <aside class="book-toc" aria-label="Table of contents">
+  <aside class="book-toc" aria-label="On this page">
     <div class="book-toc-content">
+      <p class="book-toc-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h12M4 18h8"/></svg> On this page</p>
       <nav>
         <ul>
           {% for heading in toc %}
@@ -114,6 +129,47 @@
         try { sessionStorage.setItem(key, JSON.stringify(open)); } catch (e) {}
       });
     }
+  })();
+
+  // The colour scheme switch steps through system, light and dark and keeps the choice for the
+  // site. It shows only with scripts; without them the page follows the system.
+  (() => {
+    const button = document.querySelector(".book-scheme");
+    const root = document.documentElement;
+    const schemes = ["system", "light", "dark"];
+    const names = { system: "System colour scheme", light: "Light colour scheme", dark: "Dark colour scheme" };
+    let scheme = root.classList.contains("dark") ? "dark" : root.classList.contains("light") ? "light" : "system";
+    const show = () => {
+      button.dataset.scheme = scheme;
+      button.title = names[scheme];
+      button.setAttribute("aria-label", names[scheme]);
+    };
+    button.addEventListener("click", () => {
+      scheme = schemes[(schemes.indexOf(scheme) + 1) % schemes.length];
+      root.classList.remove("light", "dark");
+      if (scheme !== "system") root.classList.add(scheme);
+      try {
+        if (scheme === "system") localStorage.removeItem("nectar-scheme");
+        else localStorage.setItem("nectar-scheme", scheme);
+      } catch (e) {}
+      show();
+    });
+    show();
+    button.hidden = false;
+  })();
+
+  // Marks the heading being read in "On this page".
+  (() => {
+    const links = [...document.querySelectorAll(".book-toc a")];
+    const headings = links.map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1))));
+    if (!links.length || headings.some((h) => !h)) return;
+    const mark = () => {
+      let current = 0;
+      headings.forEach((h, i) => { if (h.getBoundingClientRect().top < 96) current = i; });
+      links.forEach((a, i) => a.classList.toggle("active", i === current));
+    };
+    addEventListener("scroll", mark, { passive: true });
+    mark();
   })();
 </script>
 </body>
