@@ -23,6 +23,8 @@ to invent.
   enrich and the renderers read. _Avoid:_ AST.
 - **Fetcher** — the port through which the core receives images from the web; the host's adapter
   makes the request. _Avoid:_ downloader, HTTP client.
+- **Files** — the port through which the core reads the project's files, by paths relative to the
+  project root; the host's adapter keeps every access inside it. _Avoid:_ file system, VFS.
 - **Host** — what a shell runs on, which decides the adapters available: a machine, a browser,
   another program.
 - **Pass** — one step that enriches the document model, such as section numbers, footnotes or code
@@ -36,4 +38,5 @@ to invent.
   _Avoid:_ frontend, wrapper.
 - **Start document** — the Markdown file a `[[document]]` names; it and its chapters make one
   document. _Avoid:_ main file, index.
-  _Avoid:_ <the synonyms not used here>.
+- **Workers** — the port through which the core runs code engines side by side; the host's adapter
+  decides on how many threads, if any. _Avoid:_ thread pool, executor.

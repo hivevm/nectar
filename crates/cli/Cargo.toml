@@ -12,6 +12,7 @@ clap = { version = "4.6.7", features = ["derive"] }
 nectar-core = { version = "0.1.0", path = "../core" }
 nectar-fetch = { version = "0.1.0", path = "../fetch" }
 nectar-html = { version = "0.1.0", path = "../html" }
+nectar-native = { version = "0.1.0", path = "../native" }
 nectar-pdf = { version = "0.1.0", path = "../pdf" }
 nectar-process = { version = "0.1.0", path = "../process" }
 nectar-railroad = { version = "0.1.0", path = "../railroad" }

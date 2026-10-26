@@ -10,18 +10,26 @@ use std::sync::Mutex;
 use crate::diagnostic::{Diagnostic, Origin};
 use crate::download::{Downloader, download_images};
 use crate::engine::{CodeEngine, EngineOutput};
+use crate::files::Files;
 use crate::model::{
     Block, BlockKind, Chapter, Document, Footnote, Inline, Link, Target, block_inlines_mut,
     visit_blocks_mut, visit_chapters_mut, visit_inlines_mut,
 };
+use crate::workers::Workers;
 
 pub(crate) type EngineCache = Mutex<HashMap<u64, EngineOutput>>;
 
+/// The code engines of a project, the workers that run them and the results of earlier builds.
+pub(crate) struct CodeEngines<'a> {
+    pub engines: &'a [Box<dyn CodeEngine>],
+    pub workers: &'a dyn Workers,
+    pub cache: &'a EngineCache,
+}
+
 pub(crate) fn run(
     document: &mut Document,
-    root: &Path,
-    engines: &[Box<dyn CodeEngine>],
-    cache: &EngineCache,
+    files: &dyn Files,
+    code_engines: &CodeEngines<'_>,
     downloader: &Downloader,
     allow_html: bool,
     diagnostics: &mut Vec<Diagnostic>,
@@ -33,9 +41,9 @@ pub(crate) fn run(
     number_headings(document);
     number_footnotes(document);
     resolve_links(document, diagnostics);
-    collect_assets(document, root, diagnostics);
+    collect_assets(document, files, diagnostics);
     download_images(document, downloader, diagnostics);
-    run_code_engines(document, engines, cache, diagnostics);
+    run_code_engines(document, code_engines, diagnostics);
 }
 
 /// Shows raw HTML as the text it was written as, so that `<file>` in a sentence stays visible
@@ -395,7 +403,7 @@ fn resolve_links(document: &mut Document, diagnostics: &mut Vec<Diagnostic>) {
 }
 
 /// Records every local file that links and images refer to, with its place in the output.
-fn collect_assets(document: &mut Document, root: &Path, diagnostics: &mut Vec<Diagnostic>) {
+fn collect_assets(document: &mut Document, files: &dyn Files, diagnostics: &mut Vec<Diagnostic>) {
     let base = document
         .root
         .source
@@ -418,7 +426,8 @@ fn collect_assets(document: &mut Document, root: &Path, diagnostics: &mut Vec<Di
                 if assets.contains_key(path) {
                     return;
                 }
-                if !root.join(path).is_file() {
+                // A path that leads outside the root is kept, so that reading reports it.
+                if matches!(files.is_file(path), Ok(false)) {
                     diagnostics.push(Diagnostic::warning(
                         format!("{} does not exist", path.display()),
                         Some(origin.clone()),
@@ -448,13 +457,17 @@ struct Job<'e> {
 }
 
 /// Hands every code block to the first engine that supports its language. Blocks not in the
-/// cache are rendered in parallel, each distinct block once; failed blocks stay code.
+/// cache are rendered by the workers, each distinct block once; failed blocks stay code.
 fn run_code_engines(
     document: &mut Document,
-    engines: &[Box<dyn CodeEngine>],
-    cache: &EngineCache,
+    code_engines: &CodeEngines<'_>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
+    let CodeEngines {
+        engines,
+        workers,
+        cache,
+    } = *code_engines;
     if engines.is_empty() {
         return;
     }
@@ -486,7 +499,7 @@ fn run_code_engines(
             });
         }
     });
-    let failures = render_parallel(jobs.into_values().collect(), cache);
+    let failures = render(jobs.into_values().collect(), workers, cache);
 
     visit_blocks_mut(&mut document.root.blocks, &mut |block| {
         let BlockKind::Code(code) = &block.kind else {
@@ -520,30 +533,18 @@ fn cache_key(engine: &dyn CodeEngine, language: &str, code: &str) -> u64 {
     hasher.finish()
 }
 
-/// Renders the jobs on all cores, stores results in the cache and returns the failures.
-fn render_parallel(jobs: Vec<Job<'_>>, cache: &EngineCache) -> HashMap<u64, String> {
-    let workers = std::thread::available_parallelism()
-        .map_or(4, |n| n.get())
-        .min(jobs.len());
-    let queue = Mutex::new(jobs.into_iter());
+/// Renders the jobs on the workers, stores results in the cache and returns the failures.
+fn render(jobs: Vec<Job<'_>>, workers: &dyn Workers, cache: &EngineCache) -> HashMap<u64, String> {
     let failures = Mutex::new(HashMap::new());
-    std::thread::scope(|scope| {
-        for _ in 0..workers {
-            scope.spawn(|| {
-                loop {
-                    let Some(job) = queue.lock().unwrap().next() else {
-                        break;
-                    };
-                    match job.engine.render(&job.language, &job.code) {
-                        Ok(output) => {
-                            cache.lock().unwrap().insert(job.key, output);
-                        }
-                        Err(e) => {
-                            failures.lock().unwrap().insert(job.key, e.to_string());
-                        }
-                    }
-                }
-            });
+    workers.run(jobs.len(), &|index| {
+        let job = &jobs[index];
+        match job.engine.render(&job.language, &job.code) {
+            Ok(output) => {
+                cache.lock().unwrap().insert(job.key, output);
+            }
+            Err(e) => {
+                failures.lock().unwrap().insert(job.key, e.to_string());
+            }
         }
     });
     failures.into_inner().unwrap()
@@ -552,6 +553,8 @@ fn render_parallel(jobs: Vec<Job<'_>>, cache: &EngineCache) -> HashMap<u64, Stri
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::files::memory::Memory;
+    use crate::workers::InTurn;
 
     #[test]
     fn slugs() {
@@ -562,14 +565,9 @@ mod tests {
     }
 
     fn document(files: &[(&str, &str)]) -> (Document, Vec<Diagnostic>) {
-        let dir = tempfile::tempdir().unwrap();
-        for (name, text) in files {
-            let path = dir.path().join(name);
-            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-            std::fs::write(path, text).unwrap();
-        }
+        let project = Memory::with(files);
         let vars = std::collections::BTreeMap::new();
-        let mut loader = crate::load::Loader::new(dir.path(), &vars, false);
+        let mut loader = crate::load::Loader::new(&project, &vars, false);
         let root = loader.chapter(Path::new(files[0].0), "", None).unwrap();
         let mut document = Document {
             title: root.title.clone(),
@@ -586,9 +584,12 @@ mod tests {
         let mut diagnostics = loader.diagnostics;
         run(
             &mut document,
-            dir.path(),
-            &[],
-            &Mutex::new(HashMap::new()),
+            &project,
+            &CodeEngines {
+                engines: &[],
+                workers: &InTurn,
+                cache: &Mutex::new(HashMap::new()),
+            },
             &Downloader::new(),
             false,
             &mut diagnostics,

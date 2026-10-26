@@ -187,7 +187,8 @@ pub enum EngineOutput {
 The code engine pass asks the engines in the order they were added and gives the block to the
 first one that supports its language. When no engine handles the language, the block stays as
 plain code. When an engine fails, the block stays as plain code and the pass reports a warning at
-the block's origin. Distinct blocks are rendered in parallel. Results are cached by engine,
+the block's origin. Distinct blocks are rendered once each, side by side when the host's
+`Workers` adapter allows it; without one they are rendered in turn. Results are cached by engine,
 language and a hash of the code for the lifetime of the project, so `serve` does not render an
 unchanged diagram twice.
 
@@ -342,30 +343,36 @@ bind = "127.0.0.1"
 
 | Crate | Content |
 |---|---|
-| `nectar-core` | project loading, sources, parser, merge, document model, passes, `CodeEngine`, `Renderer` and `Fetcher` ports, diagnostics |
+| `nectar-core` | project loading, sources, parser, merge, document model, passes, `Files`, `Workers`, `CodeEngine`, `Renderer` and `Fetcher` ports, diagnostics |
 | `nectar-html` | HTML renderer and the default theme |
 | `nectar-textmate` | TextMate code engine |
 | `nectar-railroad` | railroad code engine |
 | `nectar-process` | code engine that runs local commands |
 | `nectar-fetch` | fetcher that downloads images from the web over HTTP |
+| `nectar-native` | the project directory on disk (`Directory`) and threads (`Threads`) |
 | `nectar-server` | HTTP server, file watcher, live reload |
 | `nectar` | the CLI binary; composes core, renderer and engines for both `build` and `serve` |
 
-`nectar-core` depends on no adapter, no renderer and no async runtime. Only the `nectar` binary
-knows the complete set of adapters, so `build` and `serve` always use the same engines.
+`nectar-core` depends on no adapter, no renderer and no async runtime, and reads no file itself.
+Only the `nectar` binary knows the complete set of adapters, so `build` and `serve` always use the
+same engines.
 
 ## Core interface
 
 ```rust
-let mut project = Project::load(root)?;        // nectar.toml
+let files = Box::new(Directory::new(root));  // or any other adapter of `Files`
+let mut project = Project::load(files)?;       // nectar.toml
+project.set_workers(Box::new(Threads));        // without: engines run in turn
 project.add_engine(engine);                    // once per adapter, in order
 let build = project.build(&[&web, &print]);   // files in memory, sources, diagnostics
-build.write_to(&out_dir)?;                     // `nectar build` only
 ```
 
+`nectar build` writes the files of the build to the output directory; the core writes nothing.
+
 A build holds the output files as a map from path to bytes, every project file it read (Markdown
-files, images, theme files, configuration) and the diagnostics. The core reads files only below
-the project root; links and includes that leave it are reported and not followed.
+files, images, theme files, configuration) and the diagnostics. The core reads files only through
+`Files`, by paths relative to the project root: links and includes that leave it are reported and
+not followed, and `Directory` refuses a path that a symbolic link leads outside.
 
 A project keeps its engines and their result cache between builds, so building again after an
 edit re-parses and re-renders in memory but runs no engine for unchanged code. A rebuild of a

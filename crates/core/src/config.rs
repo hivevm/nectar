@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use serde::Deserialize;
 
 use crate::diagnostic::{Diagnostic, Origin};
+use crate::files::{Files, read_text};
 
 /// Environment variables with this prefix are variables of the documents.
 pub const ENVIRONMENT_PREFIX: &str = "NECTAR_";
@@ -79,9 +80,9 @@ pub enum Split {
 
 impl Config {
     /// Reads `nectar.toml` from the project root.
-    pub fn load(root: &Path) -> Result<Self, Diagnostic> {
+    pub fn load(files: &dyn Files) -> Result<Self, Diagnostic> {
         let origin = Some(Origin::new(CONFIG_FILE, 0));
-        let text = std::fs::read_to_string(root.join(CONFIG_FILE)).map_err(|e| {
+        let text = read_text(files, Path::new(CONFIG_FILE)).map_err(|e| {
             Diagnostic::error(
                 format!("cannot read the configuration: {e}"),
                 origin.clone(),

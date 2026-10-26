@@ -6,6 +6,7 @@ members = [
     "crates/textmate",
     "crates/process",
     "crates/fetch",
+    "crates/native",
     "crates/railroad",
     "crates/pdf",
     "crates/server",

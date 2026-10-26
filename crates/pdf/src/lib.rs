@@ -78,7 +78,7 @@ fn render_document(
             return Some(path);
         }
         let source = PathBuf::from(value);
-        match ctx.read(&source) {
+        match ctx.files.read(&source) {
             Ok(bytes) => {
                 let path = virtual_path(&source);
                 files.insert(path.clone(), bytes);
@@ -116,7 +116,7 @@ fn render_document(
             files.insert(path, bytes.clone());
             continue;
         }
-        match ctx.read(&source) {
+        match ctx.files.read(&source) {
             Ok(bytes) => {
                 files.insert(path, bytes);
             }

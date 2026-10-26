@@ -1,17 +1,19 @@
 //! Nectar command line. This is the one place that composes the core with the renderers, the code
-//! engines and the fetcher, so every command uses the same set.
+//! engines and the adapters, so every command uses the same set.
 
+use std::io;
 use std::net::{IpAddr, SocketAddr};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::Instant;
 
 use anyhow::{Context, Result, anyhow, bail};
 use clap::{Parser, Subcommand};
-use nectar_core::{CodeEngine, Config, Diagnostic, Project, Severity};
+use nectar_core::{Build, CodeEngine, Config, Diagnostic, Project, Severity};
 use nectar_fetch::Http;
 use nectar_html::{HtmlRenderer, PrintRenderer};
+use nectar_native::{Directory, Threads};
 use nectar_pdf::PdfRenderer;
 use nectar_process::Process;
 use nectar_railroad::Railroad;
@@ -98,9 +100,7 @@ fn build(root: &Path, output: Option<PathBuf>, drafts: bool, offline: bool) -> R
     }
 
     let dir = output.unwrap_or_else(|| root.join(&project.config().output));
-    build
-        .write_to(&dir)
-        .with_context(|| format!("cannot write to {}", dir.display()))?;
+    write(&build, &dir).with_context(|| format!("cannot write to {}", dir.display()))?;
     eprintln!(
         "{} files written to {} in {} ms",
         build.files.len(),
@@ -118,7 +118,7 @@ fn serve(
     offline: bool,
 ) -> Result<ExitCode> {
     // The configuration may be broken at start; the server then shows why and keeps watching.
-    let config = Config::load(root).ok();
+    let config = Config::load(&Directory::new(root)).ok();
     let setting = |name: &str| config.as_ref().and_then(|c| c.serve.get(name).cloned());
     let port = match port {
         Some(port) => port,
@@ -162,7 +162,8 @@ fn serve(
 }
 
 fn open(root: &Path, drafts: bool, offline: bool) -> Result<Project> {
-    let mut project = Project::load(root).map_err(|d| anyhow!("{d}"))?;
+    let mut project = Project::load(Box::new(Directory::new(root))).map_err(|d| anyhow!("{d}"))?;
+    project.set_workers(Box::new(Threads));
     project.set_include_drafts(drafts);
     project.set_offline(offline);
     project.set_fetcher(Box::new(Http::new()));
@@ -170,6 +171,24 @@ fn open(root: &Path, drafts: bool, offline: bool) -> Result<Project> {
         project.add_engine(engine);
     }
     Ok(project)
+}
+
+/// Writes every output file of `build` below `dir`. Files from earlier builds are left in place.
+fn write(build: &Build, dir: &Path) -> io::Result<()> {
+    for (path, bytes) in &build.files {
+        if !path.components().all(|c| matches!(c, Component::Normal(_))) {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("output path {} leaves the output directory", path.display()),
+            ));
+        }
+        let target = dir.join(path);
+        if let Some(parent) = target.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(target, bytes)?;
+    }
+    Ok(())
 }
 
 /// The code engines configured under `[engine]`: every `[engine.process.<name>]` first, then

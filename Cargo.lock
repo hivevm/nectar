@@ -1750,6 +1750,7 @@ dependencies = [
  "nectar-core",
  "nectar-fetch",
  "nectar-html",
+ "nectar-native",
  "nectar-pdf",
  "nectar-process",
  "nectar-railroad",
@@ -1766,7 +1767,6 @@ dependencies = [
  "comrak",
  "regex",
  "serde",
- "tempfile",
  "toml 1.1.8+spec-1.1.0",
 ]
 
@@ -1785,8 +1785,15 @@ dependencies = [
  "minijinja",
  "nectar-core",
  "serde",
- "tempfile",
  "toml 1.1.8+spec-1.1.0",
+]
+
+[[package]]
+name = "nectar-native"
+version = "0.1.0"
+dependencies = [
+ "nectar-core",
+ "tempfile",
 ]
 
 [[package]]
@@ -1794,7 +1801,6 @@ name = "nectar-pdf"
 version = "0.1.0"
 dependencies = [
  "nectar-core",
- "tempfile",
  "typst",
  "typst-layout",
  "typst-pdf",

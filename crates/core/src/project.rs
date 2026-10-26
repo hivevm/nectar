@@ -1,6 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::io;
-use std::path::{Component, Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Mutex;
 
 use crate::config::{CONFIG_FILE, Config};
@@ -8,16 +7,19 @@ use crate::diagnostic::{Diagnostic, Severity};
 use crate::download::Downloader;
 use crate::engine::CodeEngine;
 use crate::fetch::Fetcher;
-use crate::load::{Loader, read_bytes_inside};
+use crate::files::Files;
+use crate::load::Loader;
 use crate::model::Document;
-use crate::passes::{self, EngineCache};
+use crate::passes::{self, CodeEngines, EngineCache};
 use crate::render::{RenderContext, Renderer};
+use crate::workers::{InTurn, Workers};
 
-/// A project: its root directory, its configuration and the code engines to use.
+/// A project: its files, its configuration and the code engines to use.
 pub struct Project {
-    root: PathBuf,
+    files: Box<dyn Files>,
     config: Config,
     engines: Vec<Box<dyn CodeEngine>>,
+    workers: Box<dyn Workers>,
     include_drafts: bool,
     cache: EngineCache,
     downloader: Downloader,
@@ -41,22 +43,18 @@ pub struct Build {
 }
 
 impl Project {
-    /// Opens the project in `root`, reading its `nectar.toml`.
-    pub fn load(root: impl Into<PathBuf>) -> Result<Self, Diagnostic> {
-        let root = root.into();
-        let config = Config::load(&root)?;
+    /// Opens the project whose files `files` gives, reading its `nectar.toml`.
+    pub fn load(files: Box<dyn Files>) -> Result<Self, Diagnostic> {
+        let config = Config::load(files.as_ref())?;
         Ok(Self {
-            root,
+            files,
             config,
             engines: Vec::new(),
+            workers: Box::new(InTurn),
             include_drafts: false,
             cache: Mutex::new(HashMap::new()),
             downloader: Downloader::new(),
         })
-    }
-
-    pub fn root(&self) -> &Path {
-        &self.root
     }
 
     pub fn config(&self) -> &Config {
@@ -66,6 +64,11 @@ impl Project {
     /// Adds a code engine. Engines are asked in the order they were added.
     pub fn add_engine(&mut self, engine: Box<dyn CodeEngine>) {
         self.engines.push(engine);
+    }
+
+    /// Sets the adapter that runs the code engines side by side. Without one they run in turn.
+    pub fn set_workers(&mut self, workers: Box<dyn Workers>) {
+        self.workers = workers;
     }
 
     /// Whether files with `draft = true` are part of the documents.
@@ -86,7 +89,7 @@ impl Project {
     /// Loads every start document and runs the transform passes.
     pub fn documents(&self) -> Documents {
         let vars = self.config.variables_with_environment(std::env::vars());
-        let mut loader = Loader::new(&self.root, &vars, self.include_drafts);
+        let mut loader = Loader::new(self.files.as_ref(), &vars, self.include_drafts);
         let mut documents = Vec::new();
         let mut diagnostics = Vec::new();
 
@@ -108,9 +111,12 @@ impl Project {
             };
             passes::run(
                 &mut document,
-                &self.root,
-                &self.engines,
-                &self.cache,
+                self.files.as_ref(),
+                &CodeEngines {
+                    engines: &self.engines,
+                    workers: self.workers.as_ref(),
+                    cache: &self.cache,
+                },
                 &self.downloader,
                 self.config.html,
                 &mut diagnostics,
@@ -128,7 +134,6 @@ impl Project {
         }
     }
 
-    /// Builds the whole project with `renderer`.
     /// Builds the whole project with every renderer. Renderers may write the same file only
     /// with the same content, such as shared theme files.
     pub fn build(&self, renderers: &[&dyn Renderer]) -> Build {
@@ -138,7 +143,7 @@ impl Project {
             mut diagnostics,
         } = self.documents();
         let context = RenderContext {
-            root: &self.root,
+            files: self.files.as_ref(),
             config: &self.config,
         };
         let mut files: BTreeMap<PathBuf, Vec<u8>> = BTreeMap::new();
@@ -167,7 +172,7 @@ impl Project {
                     files.insert(target.clone(), bytes.clone());
                     continue;
                 }
-                match read_bytes_inside(&self.root, source) {
+                match self.files.read(source) {
                     Ok(bytes) => {
                         files.insert(target.clone(), bytes);
                         sources.insert(source.clone());
@@ -192,23 +197,5 @@ impl Build {
         self.diagnostics
             .iter()
             .any(|d| d.severity == Severity::Error)
-    }
-
-    /// Writes every output file below `dir`. Files from earlier builds are left in place.
-    pub fn write_to(&self, dir: &Path) -> io::Result<()> {
-        for (path, bytes) in &self.files {
-            if !path.components().all(|c| matches!(c, Component::Normal(_))) {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("output path {} leaves the output directory", path.display()),
-                ));
-            }
-            let target = dir.join(path);
-            if let Some(parent) = target.parent() {
-                std::fs::create_dir_all(parent)?;
-            }
-            std::fs::write(target, bytes)?;
-        }
-        Ok(())
     }
 }

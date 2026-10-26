@@ -1,9 +1,12 @@
 //! Builds a small project from sources to HTML, through the core and the HTML renderer.
 
-use std::path::Path;
+use std::collections::BTreeMap;
+use std::io;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 
 use nectar_core::model::Graphic;
-use nectar_core::{CodeEngine, EngineError, EngineOutput, Project};
+use nectar_core::{CodeEngine, EngineError, EngineOutput, Files, Project};
 use nectar_html::{HtmlRenderer, PrintRenderer};
 
 struct Diagrams;
@@ -30,10 +33,40 @@ impl CodeEngine for Diagrams {
     }
 }
 
-fn write(root: &Path, file: &str, text: &str) {
-    let path = root.join(file);
-    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-    std::fs::write(path, text).unwrap();
+/// The project's files in memory, shared by every clone, so a test can change them between builds.
+#[derive(Clone, Default)]
+struct Memory(Arc<Mutex<BTreeMap<PathBuf, Vec<u8>>>>);
+
+impl Files for Memory {
+    fn read(&self, path: &Path) -> io::Result<Vec<u8>> {
+        let files = self.0.lock().unwrap();
+        files
+            .get(path)
+            .cloned()
+            .ok_or(io::ErrorKind::NotFound.into())
+    }
+
+    fn is_file(&self, path: &Path) -> io::Result<bool> {
+        Ok(self.0.lock().unwrap().contains_key(path))
+    }
+
+    fn list(&self, dir: &Path) -> io::Result<Vec<PathBuf>> {
+        let files = self.0.lock().unwrap();
+        let below: Vec<_> = files
+            .keys()
+            .filter(|p| p.starts_with(dir))
+            .cloned()
+            .collect();
+        if below.is_empty() {
+            return Err(io::ErrorKind::NotFound.into());
+        }
+        Ok(below)
+    }
+}
+
+fn write(root: &Memory, file: &str, text: &str) {
+    let bytes = text.as_bytes().to_vec();
+    root.0.lock().unwrap().insert(PathBuf::from(file), bytes);
 }
 
 fn page(build: &nectar_core::Build, file: &str) -> String {
@@ -42,8 +75,7 @@ fn page(build: &nectar_core::Build, file: &str) -> String {
 
 #[test]
 fn builds_split_and_single_page_documents() {
-    let dir = tempfile::tempdir().unwrap();
-    let root = dir.path();
+    let root = &Memory::default();
     write(
         root,
         "nectar.toml",
@@ -62,7 +94,7 @@ fn builds_split_and_single_page_documents() {
     );
     write(root, "docs/img/logo.png", "png");
 
-    let mut project = Project::load(root).unwrap();
+    let mut project = Project::load(Box::new(root.clone())).unwrap();
     project.add_engine(Box::new(Diagrams));
     let build = project.build(&[&HtmlRenderer::default()]);
 
@@ -100,8 +132,7 @@ fn builds_split_and_single_page_documents() {
 
 #[test]
 fn numbers_contents_footnotes_and_embedded_files() {
-    let dir = tempfile::tempdir().unwrap();
-    let root = dir.path();
+    let root = &Memory::default();
     write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
     write(
         root,
@@ -115,7 +146,7 @@ fn numbers_contents_footnotes_and_embedded_files() {
     );
     write(root, "Main.java", "class Main {}\n");
 
-    let build = Project::load(root)
+    let build = Project::load(Box::new(root.clone()))
         .unwrap()
         .build(&[&HtmlRenderer::default()]);
     assert!(build.diagnostics.is_empty(), "{:?}", build.diagnostics);
@@ -155,8 +186,7 @@ fn numbers_contents_footnotes_and_embedded_files() {
 
 #[test]
 fn menu_is_a_tree_open_along_the_current_page() {
-    let dir = tempfile::tempdir().unwrap();
-    let root = dir.path();
+    let root = &Memory::default();
     write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
     write(root, "main.md", "# Main\n\n[A](a.md)\n[B](b.md)\n");
     write(root, "a.md", "# A\n\n[A1](a1.md)\n");
@@ -164,7 +194,7 @@ fn menu_is_a_tree_open_along_the_current_page() {
     write(root, "b.md", "# B\n\n[B1](b1.md)\n");
     write(root, "b1.md", "# B1\n");
 
-    let build = Project::load(root)
+    let build = Project::load(Box::new(root.clone()))
         .unwrap()
         .build(&[&HtmlRenderer::default()]);
     assert!(build.diagnostics.is_empty(), "{:?}", build.diagnostics);
@@ -192,8 +222,7 @@ fn menu_is_a_tree_open_along_the_current_page() {
 
 #[test]
 fn single_page_menu_lists_the_headings() {
-    let dir = tempfile::tempdir().unwrap();
-    let root = dir.path();
+    let root = &Memory::default();
     write(
         root,
         "nectar.toml",
@@ -201,7 +230,7 @@ fn single_page_menu_lists_the_headings() {
     );
     write(root, "main.md", "# Main\n\n## One\n\n### Inner\n\n## Two\n");
 
-    let build = Project::load(root)
+    let build = Project::load(Box::new(root.clone()))
         .unwrap()
         .build(&[&HtmlRenderer::default()]);
     let page = page(&build, "index.html");
@@ -213,8 +242,7 @@ fn single_page_menu_lists_the_headings() {
 
 #[test]
 fn print_view_is_one_paged_file_per_document() {
-    let dir = tempfile::tempdir().unwrap();
-    let root = dir.path();
+    let root = &Memory::default();
     write(
         root,
         "nectar.toml",
@@ -231,7 +259,9 @@ fn print_view_is_one_paged_file_per_document() {
         print_view: true,
         pdf: false,
     };
-    let build = Project::load(root).unwrap().build(&[&web, &PrintRenderer]);
+    let build = Project::load(Box::new(root.clone()))
+        .unwrap()
+        .build(&[&web, &PrintRenderer]);
     assert!(build.diagnostics.is_empty(), "{:?}", build.diagnostics);
 
     let print = page(&build, "print/index.html");
@@ -285,8 +315,7 @@ fn print_view_is_one_paged_file_per_document() {
 
 #[test]
 fn print_view_can_be_turned_off_and_reports_bad_settings() {
-    let dir = tempfile::tempdir().unwrap();
-    let root = dir.path();
+    let root = &Memory::default();
     write(root, "main.md", "# Manual\n");
 
     write(
@@ -298,7 +327,9 @@ fn print_view_can_be_turned_off_and_reports_bad_settings() {
         print_view: true,
         pdf: false,
     };
-    let build = Project::load(root).unwrap().build(&[&web, &PrintRenderer]);
+    let build = Project::load(Box::new(root.clone()))
+        .unwrap()
+        .build(&[&web, &PrintRenderer]);
     assert!(!build.files.contains_key(Path::new("print/index.html")));
     assert!(!page(&build, "index.html").contains("book-print"));
 
@@ -307,14 +338,15 @@ fn print_view_can_be_turned_off_and_reports_bad_settings() {
         "nectar.toml",
         "[[document]]\nsource = \"main.md\"\n[document.print]\nsize = 3\n",
     );
-    let build = Project::load(root).unwrap().build(&[&web, &PrintRenderer]);
+    let build = Project::load(Box::new(root.clone()))
+        .unwrap()
+        .build(&[&web, &PrintRenderer]);
     assert!(build.has_errors(), "{:?}", build.diagnostics);
 }
 
 #[test]
 fn images_from_data_uris_become_files_of_the_site() {
-    let dir = tempfile::tempdir().unwrap();
-    let root = dir.path();
+    let root = &Memory::default();
     write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
     write(
         root,
@@ -322,7 +354,7 @@ fn images_from_data_uris_become_files_of_the_site() {
         "# Manual\n\n![dot](data:image/png;base64,iVBORw0KGgo=)\n\n![web](https://example.org/a.png)\n",
     );
 
-    let mut project = Project::load(root).unwrap();
+    let mut project = Project::load(Box::new(root.clone())).unwrap();
     project.set_offline(true);
     let build = project.build(&[&HtmlRenderer::default()]);
     assert!(build.diagnostics.is_empty(), "{:?}", build.diagnostics);
@@ -389,12 +421,11 @@ impl CodeEngine for Colours {
 
 #[test]
 fn highlighted_code_carries_light_and_dark_colours() {
-    let dir = tempfile::tempdir().unwrap();
-    let root = dir.path();
+    let root = &Memory::default();
     write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
     write(root, "main.md", "# Main\n\n```x\nkey plain\n```\n");
 
-    let mut project = Project::load(root).unwrap();
+    let mut project = Project::load(Box::new(root.clone())).unwrap();
     project.add_engine(Box::new(Colours));
     let build = project.build(&[&HtmlRenderer::default()]);
     let index = page(&build, "index.html");
@@ -416,8 +447,7 @@ fn highlighted_code_carries_light_and_dark_colours() {
 // Verifies: G-9
 #[test]
 fn raw_html_is_text_unless_the_project_allows_it() {
-    let dir = tempfile::tempdir().unwrap();
-    let root = dir.path();
+    let root = &Memory::default();
     write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
     write(
         root,
@@ -425,7 +455,7 @@ fn raw_html_is_text_unless_the_project_allows_it() {
         "# Manual\n\nRun `nectar` with -c <file>.\n\n<div>block</div>\n",
     );
 
-    let build = Project::load(root)
+    let build = Project::load(Box::new(root.clone()))
         .unwrap()
         .build(&[&HtmlRenderer::default()]);
     let html = page(&build, "index.html");
@@ -449,7 +479,7 @@ fn raw_html_is_text_unless_the_project_allows_it() {
         "nectar.toml",
         "html = true\n[[document]]\nsource = \"main.md\"\n",
     );
-    let build = Project::load(root)
+    let build = Project::load(Box::new(root.clone()))
         .unwrap()
         .build(&[&HtmlRenderer::default()]);
     let html = page(&build, "index.html");

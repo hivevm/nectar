@@ -153,7 +153,7 @@ fn image(
         name @ ("draft" | "confidential") => Some(format!("{theme}print/{name}.png")),
         path => {
             let source = PathBuf::from(path);
-            match ctx.read(&source) {
+            match ctx.files.read(&source) {
                 Ok(bytes) => {
                     let name = source.file_name().unwrap_or_default().to_string_lossy();
                     let target = join(&document.path, &format!("print/{name}"));

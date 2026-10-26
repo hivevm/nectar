@@ -10,7 +10,12 @@ use std::path::{Path, PathBuf};
 const PORTABLE: &[&str] = &["core", "html", "pdf", "textmate", "railroad"];
 
 /// The adapter crates; only the shell composes them.
-const ADAPTERS: &[&str] = &["nectar-fetch", "nectar-process", "nectar-server"];
+const ADAPTERS: &[&str] = &[
+    "nectar-fetch",
+    "nectar-native",
+    "nectar-process",
+    "nectar-server",
+];
 
 /// Crates that bring a technology a host decides.
 const TECHNOLOGY_CRATES: &[&str] = &[
@@ -19,6 +24,7 @@ const TECHNOLOGY_CRATES: &[&str] = &[
     "notify",
     "notify-debouncer-full",
     "reqwest",
+    "tempfile",
     "tokio",
     "ureq",
 ];
@@ -26,28 +32,19 @@ const TECHNOLOGY_CRATES: &[&str] = &[
 /// Modules of the standard library that reach the host.
 const TECHNOLOGY_MODULES: &[&str] = &["fs", "net", "process", "thread"];
 
-/// The uses that have yet to move behind a port, as `file: module`. The list only shrinks: a use
-/// not listed fails, and so does a listed one that is gone, so that it leaves the list.
-const PENDING: &[&str] = &[
-    "core/src/config.rs: fs",
-    "core/src/load.rs: fs",
-    "core/src/passes.rs: thread",
-    "core/src/project.rs: fs",
-    "html/src/lib.rs: fs",
-];
-
 fn crates_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..")
 }
 
-/// The names under `[dependencies]` of a manifest.
+/// The names under `[dependencies]` and `[dev-dependencies]` of a manifest: the tests of a
+/// portable crate run without disk too, against fakes behind the ports.
 fn dependencies(manifest: &str) -> Vec<String> {
     let mut names = Vec::new();
     let mut inside = false;
     for line in manifest.lines() {
         let line = line.trim();
         if line.starts_with('[') {
-            inside = line == "[dependencies]";
+            inside = line == "[dependencies]" || line == "[dev-dependencies]";
         } else if inside && let Some((name, _)) = line.split_once('=') {
             names.push(name.trim().to_string());
         }
@@ -109,7 +106,7 @@ fn portable_crates_depend_on_no_adapter_and_no_technology_crate() {
 }
 
 #[test]
-fn portable_crates_use_no_technology_module_beyond_the_pending_ones() {
+fn portable_crates_use_no_technology_module() {
     let mut found = Vec::new();
     for name in PORTABLE {
         let mut files = Vec::new();
@@ -123,22 +120,9 @@ fn portable_crates_use_no_technology_module_beyond_the_pending_ones() {
             }
         }
     }
-    found.sort();
-    let new: Vec<_> = found
-        .iter()
-        .filter(|f| !PENDING.contains(&f.as_str()))
-        .collect();
-    let gone: Vec<_> = PENDING
-        .iter()
-        .filter(|p| !found.contains(&p.to_string()))
-        .collect();
     assert!(
-        new.is_empty(),
-        "technology used outside the adapters: {new:#?}"
-    );
-    assert!(
-        gone.is_empty(),
-        "moved behind a port, remove from PENDING: {gone:#?}"
+        found.is_empty(),
+        "technology used outside the adapters: {found:#?}"
     );
 }
 

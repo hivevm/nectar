@@ -564,19 +564,21 @@ pub(crate) fn layout(
         return default.to_string();
     };
     let dir = Path::new("themes").join(theme);
-    if !ctx.root.join(&dir).is_dir() {
-        output.diagnostics.push(Diagnostic::error(
-            format!("theme directory {} does not exist", dir.display()),
-            None,
-        ));
+    if let Err(e) = ctx.files.list(&dir) {
+        let message = if e.kind() == std::io::ErrorKind::NotFound {
+            format!("theme directory {} does not exist", dir.display())
+        } else {
+            format!("cannot read theme directory {}: {e}", dir.display())
+        };
+        output.diagnostics.push(Diagnostic::error(message, None));
         return default.to_string();
     }
     let path = dir.join("layouts").join(name);
-    if !ctx.root.join(&path).is_file() {
+    if matches!(ctx.files.is_file(&path), Ok(false)) {
         return default.to_string();
     }
     output.sources.insert(path.clone());
-    match ctx.read(&path).map(String::from_utf8) {
+    match ctx.files.read(&path).map(String::from_utf8) {
         Ok(Ok(text)) => text,
         _ => {
             output.diagnostics.push(Diagnostic::error(
@@ -599,13 +601,12 @@ pub(crate) fn copy_static(ctx: &RenderContext<'_>, output: &mut Output) {
         return;
     };
     let dir = Path::new("themes").join(theme).join("static");
-    let mut files = Vec::new();
-    list_files(ctx.root, &dir, &mut files);
+    let files = ctx.files.list(&dir).unwrap_or_default();
     for file in files {
         let Ok(relative) = file.strip_prefix(&dir) else {
             continue;
         };
-        match ctx.read(&file) {
+        match ctx.files.read(&file) {
             Ok(bytes) => {
                 output
                     .files
@@ -616,22 +617,6 @@ pub(crate) fn copy_static(ctx: &RenderContext<'_>, output: &mut Output) {
                 format!("cannot read {}: {e}", file.display()),
                 None,
             )),
-        }
-    }
-}
-
-fn list_files(root: &Path, dir: &Path, files: &mut Vec<PathBuf>) {
-    let Ok(entries) = std::fs::read_dir(root.join(dir)) else {
-        return;
-    };
-    let mut entries: Vec<_> = entries.flatten().collect();
-    entries.sort_by_key(|entry| entry.file_name());
-    for entry in entries {
-        let path = dir.join(entry.file_name());
-        match entry.file_type() {
-            Ok(kind) if kind.is_dir() => list_files(root, &path, files),
-            Ok(kind) if kind.is_file() => files.push(path),
-            _ => {}
         }
     }
 }

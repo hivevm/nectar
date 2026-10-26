@@ -4,11 +4,12 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use crate::diagnostic::{Diagnostic, Origin};
+use crate::files::{Files, read_text};
 use crate::model::{Block, BlockKind, Chapter, Code, Heading, Inline, Target, visit_blocks_mut};
 use crate::parse::{Item, parse_file};
 
 pub(crate) struct Loader<'a> {
-    pub root: &'a Path,
+    pub files: &'a dyn Files,
     pub vars: &'a BTreeMap<String, String>,
     pub include_drafts: bool,
     /// Every file read, relative to the project root.
@@ -19,9 +20,13 @@ pub(crate) struct Loader<'a> {
 }
 
 impl<'a> Loader<'a> {
-    pub fn new(root: &'a Path, vars: &'a BTreeMap<String, String>, include_drafts: bool) -> Self {
+    pub fn new(
+        files: &'a dyn Files,
+        vars: &'a BTreeMap<String, String>,
+        include_drafts: bool,
+    ) -> Self {
         Self {
-            root,
+            files,
             vars,
             include_drafts,
             sources: BTreeSet::new(),
@@ -40,7 +45,7 @@ impl<'a> Loader<'a> {
             ));
             return None;
         }
-        let text = match read_inside(self.root, file) {
+        let text = match read_text(self.files, file) {
             Ok(text) => text,
             Err(e) => {
                 self.diagnostics.push(Diagnostic::error(
@@ -71,7 +76,8 @@ impl<'a> Loader<'a> {
                     blocks.push(block);
                 }
                 Item::Include(include) => {
-                    if !self.root.join(&include.path).is_file() {
+                    // A path that leads outside the root is loaded, so that reading reports it.
+                    if matches!(self.files.is_file(&include.path), Ok(false)) {
                         self.diagnostics.push(Diagnostic::warning(
                             format!("included file {} does not exist", include.path.display()),
                             Some(include.fallback.origin.clone()),
@@ -145,7 +151,7 @@ impl Loader<'_> {
     /// content as code. The code engines then highlight or draw it; the image text becomes the
     /// caption.
     fn embed_files(&mut self, blocks: &mut [Block]) {
-        let root = self.root;
+        let files = self.files;
         let sources = &mut self.sources;
         let diagnostics = &mut self.diagnostics;
         visit_blocks_mut(blocks, &mut |block| {
@@ -165,7 +171,7 @@ impl Loader<'_> {
             if PICTURES.contains(&extension.as_str()) {
                 return;
             }
-            let code = match read_inside(root, path) {
+            let code = match read_text(files, path) {
                 Ok(code) => code,
                 Err(e) => {
                     diagnostics.push(Diagnostic::warning(
@@ -216,23 +222,6 @@ fn language_for(extension: &str) -> &str {
     }
 }
 
-/// Reads a file below the project root; refuses paths that leave the root through links.
-pub(crate) fn read_inside(root: &Path, file: &Path) -> std::io::Result<String> {
-    String::from_utf8(read_bytes_inside(root, file)?)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
-}
-
-pub(crate) fn read_bytes_inside(root: &Path, file: &Path) -> std::io::Result<Vec<u8>> {
-    let path = root.join(file).canonicalize()?;
-    if !path.starts_with(root.canonicalize()?) {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::PermissionDenied,
-            "the file lies outside the project",
-        ));
-    }
-    std::fs::read(path)
-}
-
 fn shift_headings(blocks: &mut [Block], by: u8) {
     if by == 0 {
         return;
@@ -266,11 +255,12 @@ fn first_heading(blocks: &[Block]) -> Option<&Heading> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::files::memory::Memory;
 
-    fn write(root: &Path, file: &str, text: &str) {
-        let path = root.join(file);
-        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-        std::fs::write(path, text).unwrap();
+    fn write(files: &mut Memory, file: &str, text: &str) {
+        files
+            .0
+            .insert(PathBuf::from(file), text.as_bytes().to_vec());
     }
 
     fn headings(blocks: &[Block], out: &mut Vec<(u8, String)>) {
@@ -285,17 +275,17 @@ mod tests {
 
     #[test]
     fn includes_shift_headings_and_take_the_link_title() {
-        let dir = tempfile::tempdir().unwrap();
+        let mut files = Memory::default();
         write(
-            dir.path(),
+            &mut files,
             "main.md",
             "# Manual\n\n## Usage\n\n[Install](parts/install.md)\n\n# [Appendix](parts/appendix.md)\n",
         );
-        write(dir.path(), "parts/install.md", "# Installing\n\n## Linux\n");
-        write(dir.path(), "parts/appendix.md", "# A\n");
+        write(&mut files, "parts/install.md", "# Installing\n\n## Linux\n");
+        write(&mut files, "parts/appendix.md", "# A\n");
 
         let vars = BTreeMap::new();
-        let mut loader = Loader::new(dir.path(), &vars, false);
+        let mut loader = Loader::new(&files, &vars, false);
         let chapter = loader.chapter(Path::new("main.md"), "", None).unwrap();
         assert!(loader.diagnostics.is_empty(), "{:?}", loader.diagnostics);
 
@@ -316,14 +306,14 @@ mod tests {
 
     #[test]
     fn missing_includes_are_reported_once() {
-        let dir = tempfile::tempdir().unwrap();
+        let mut files = Memory::default();
         write(
-            dir.path(),
+            &mut files,
             "nectar.toml",
             "[[document]]\nsource = \"main.md\"\n",
         );
-        write(dir.path(), "main.md", "# Main\n\n[Gone](gone.md)\n");
-        let build = crate::Project::load(dir.path()).unwrap().documents();
+        write(&mut files, "main.md", "# Main\n\n[Gone](gone.md)\n");
+        let build = crate::Project::load(Box::new(files)).unwrap().documents();
         let messages: Vec<&str> = build
             .diagnostics
             .iter()
@@ -332,14 +322,65 @@ mod tests {
         assert_eq!(messages, ["included file gone.md does not exist"]);
     }
 
+    /// Refuses `secret.md` as an adapter refuses a path that leads outside the project.
+    struct Refusing(Memory);
+
+    impl Files for Refusing {
+        fn read(&self, path: &Path) -> std::io::Result<Vec<u8>> {
+            self.is_file(path)?;
+            self.0.read(path)
+        }
+
+        fn is_file(&self, path: &Path) -> std::io::Result<bool> {
+            if path == Path::new("secret.md") {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    "the file lies outside the project",
+                ));
+            }
+            self.0.is_file(path)
+        }
+
+        fn list(&self, dir: &Path) -> std::io::Result<Vec<PathBuf>> {
+            self.0.list(dir)
+        }
+    }
+
+    #[test]
+    fn a_refused_include_is_an_error_and_a_missing_asset_a_warning() {
+        let files = Refusing(Memory::with(&[
+            ("nectar.toml", "[[document]]\nsource = \"main.md\"\n"),
+            (
+                "main.md",
+                "# Main\n\n[Secret](secret.md)\n\n![Picture](secret.png)\n",
+            ),
+        ]));
+        let documents = crate::Project::load(Box::new(files)).unwrap().documents();
+        let messages: Vec<_> = documents
+            .diagnostics
+            .iter()
+            .map(|d| (d.severity, d.message.as_str()))
+            .collect();
+        assert_eq!(
+            messages,
+            [
+                (
+                    crate::Severity::Error,
+                    "cannot read secret.md: the file lies outside the project"
+                ),
+                (crate::Severity::Warning, "secret.png does not exist"),
+            ]
+        );
+    }
+
     #[test]
     fn include_cycles_are_errors() {
-        let dir = tempfile::tempdir().unwrap();
-        write(dir.path(), "a.md", "# A\n\n[B](b.md)\n");
-        write(dir.path(), "b.md", "# B\n\n[A](a.md)\n");
+        let mut files = Memory::default();
+        write(&mut files, "a.md", "# A\n\n[B](b.md)\n");
+        write(&mut files, "b.md", "# B\n\n[A](a.md)\n");
 
         let vars = BTreeMap::new();
-        let mut loader = Loader::new(dir.path(), &vars, false);
+        let mut loader = Loader::new(&files, &vars, false);
         loader.chapter(Path::new("a.md"), "", None).unwrap();
         assert_eq!(loader.diagnostics.len(), 1);
         assert!(loader.diagnostics[0].message.contains("cycle"));
@@ -347,13 +388,13 @@ mod tests {
 
     #[test]
     fn drafts_are_left_out_unless_requested() {
-        let dir = tempfile::tempdir().unwrap();
-        write(dir.path(), "main.md", "# Main\n\n[Draft](draft.md)\n");
-        write(dir.path(), "draft.md", "+++\ndraft = true\n+++\n# Draft\n");
+        let mut files = Memory::default();
+        write(&mut files, "main.md", "# Main\n\n[Draft](draft.md)\n");
+        write(&mut files, "draft.md", "+++\ndraft = true\n+++\n# Draft\n");
 
         let vars = BTreeMap::new();
         let count = |include_drafts| {
-            let mut loader = Loader::new(dir.path(), &vars, include_drafts);
+            let mut loader = Loader::new(&files, &vars, include_drafts);
             let chapter = loader.chapter(Path::new("main.md"), "", None).unwrap();
             chapter
                 .blocks
@@ -367,17 +408,17 @@ mod tests {
 
     #[test]
     fn images_of_source_files_embed_the_file() {
-        let dir = tempfile::tempdir().unwrap();
+        let mut files = Memory::default();
         write(
-            dir.path(),
+            &mut files,
             "main.md",
             "# Main\n\n![Entry point](src/Main.java)\n\n![](g.railroad)\n\n![logo](logo.png)\n",
         );
-        write(dir.path(), "src/Main.java", "class Main {}\n");
-        write(dir.path(), "g.railroad", "r = a;\n");
+        write(&mut files, "src/Main.java", "class Main {}\n");
+        write(&mut files, "g.railroad", "r = a;\n");
 
         let vars = BTreeMap::new();
-        let mut loader = Loader::new(dir.path(), &vars, false);
+        let mut loader = Loader::new(&files, &vars, false);
         let chapter = loader.chapter(Path::new("main.md"), "", None).unwrap();
         assert!(loader.diagnostics.is_empty(), "{:?}", loader.diagnostics);
 

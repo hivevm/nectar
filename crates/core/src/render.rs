@@ -1,22 +1,16 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::config::Config;
 use crate::diagnostic::Diagnostic;
-use crate::load::read_bytes_inside;
+use crate::files::Files;
 use crate::model::Document;
 
-/// What a renderer gets besides the documents.
+/// What a renderer gets besides the documents: the project's files, such as theme files, and its
+/// configuration.
 pub struct RenderContext<'a> {
-    pub root: &'a Path,
+    pub files: &'a dyn Files,
     pub config: &'a Config,
-}
-
-impl RenderContext<'_> {
-    /// Reads a project file, such as a theme file, relative to the project root.
-    pub fn read(&self, path: &Path) -> std::io::Result<Vec<u8>> {
-        read_bytes_inside(self.root, path)
-    }
 }
 
 /// The files a renderer produces, with the project files it read and its diagnostics.
