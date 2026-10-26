@@ -58,8 +58,11 @@
       "jdkDistro": "tem",
       "installGradle": false
     },
-    // Nectar engine: rustup stable with rustfmt, clippy, rust-src and rust-analyzer.
-    "ghcr.io/devcontainers/features/rust:1": {}
+    // Nectar engine: rustup stable with rustfmt, clippy, rust-src and rust-analyzer, and the
+    // WebAssembly target that scripts/check-build.sh checks the core and the renderers against.
+    "ghcr.io/devcontainers/features/rust:1": {
+      "targets": "wasm32-unknown-unknown"
+    }
   },
 
   "customizations": {

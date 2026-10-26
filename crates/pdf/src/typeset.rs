@@ -712,6 +712,49 @@ mod tests {
         assert!(margin("2em").is_err());
     }
 
+    // Verifies: G-3
+    #[test]
+    fn every_page_but_the_cover_has_a_running_header_and_a_page_number() {
+        let document = Document {
+            title: "Manual".to_string(),
+            path: String::new(),
+            split: nectar_core::Split::Chapter,
+            numbered: false,
+            contents: false,
+            print: Default::default(),
+            root: Chapter {
+                id: "manual".to_string(),
+                slug: String::new(),
+                title: "Manual".to_string(),
+                source: PathBuf::from("main.md"),
+                blocks: Vec::new(),
+                footnotes: Vec::new(),
+            },
+            footnotes: Vec::new(),
+            assets: BTreeMap::new(),
+            downloads: BTreeMap::new(),
+        };
+        let settings = PrintSettings::default();
+        let mut typesetter = Typesetter::new(&document, &settings);
+        typesetter.document("Site", &Page::from_settings(&settings).unwrap(), None, None);
+        let source = typesetter.out;
+
+        // Running headers and page numbers are pagination artifacts, untagged in the PDF.
+        let page = &source[source.find("#set page(").unwrap()..];
+        let header = page.find("header: context").expect("a running header");
+        let footer = page.find("footer: context").expect("a footer");
+        assert!(header < footer, "{source}");
+        assert!(
+            page[footer..].starts_with("footer: context align(center, text(")
+                && page[footer..].contains("counter(page).display()"),
+            "{source}"
+        );
+        assert!(
+            source.contains("#page(header: none, footer: none"),
+            "a cover without them: {source}"
+        );
+    }
+
     #[test]
     fn strings_cannot_escape() {
         assert_eq!(string("a \"b\" \\ #c [d]"), "\"a \\\"b\\\" \\\\ #c [d]\"");

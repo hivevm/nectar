@@ -240,6 +240,7 @@ fn single_page_menu_lists_the_headings() {
     assert!(menu.contains("href=\"#inner\">1.1. Inner</a>"), "{menu}");
 }
 
+// Verifies: G-3
 #[test]
 fn print_view_is_one_paged_file_per_document() {
     let root = &Memory::default();
@@ -302,6 +303,15 @@ fn print_view_is_one_paged_file_per_document() {
         build
             .files
             .contains_key(Path::new("_theme/print/paged.polyfill.min.js"))
+    );
+    let css = page(&build, "_theme/print.css");
+    assert!(
+        css.contains("content: target-counter(attr(href), page);"),
+        "page numbers in the contents: {css}"
+    );
+    assert!(
+        css.contains("content: string(chapter);") && css.contains("content: counter(page);"),
+        "running headers and page numbers: {css}"
     );
 
     let web_page = page(&build, "part/index.html");
@@ -486,4 +496,41 @@ fn raw_html_is_text_unless_the_project_allows_it() {
     assert!(html.contains("-c <file>."), "{html}");
     assert!(html.contains("<div>block</div>"), "{html}");
     assert!(build.diagnostics.is_empty(), "{:?}", build.diagnostics);
+}
+
+// Verifies: G-2
+#[test]
+fn included_chapters_go_below_their_heading_and_resolve_against_their_directory() {
+    let root = &Memory::default();
+    write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
+    write(
+        root,
+        "main.md",
+        "# Manual\n\n## Usage\n\n[Setup](parts/setup.md)\n\n[Notes](parts/notes.md)\n",
+    );
+    write(
+        root,
+        "parts/setup.md",
+        "# Setup\n\n## Linux\n\nSee the [notes](notes.md#hints).\n\n![Screen](img/screen.png)\n",
+    );
+    write(root, "parts/notes.md", "# Notes\n\n## Hints\n");
+    write(root, "parts/img/screen.png", "png");
+
+    let build = Project::load(Box::new(root.clone()))
+        .unwrap()
+        .build(&[&HtmlRenderer::default()]);
+    assert!(build.diagnostics.is_empty(), "{:?}", build.diagnostics);
+
+    let setup = page(&build, "setup/index.html");
+    assert!(
+        setup.contains("<h3 id=\"setup\""),
+        "Setup goes below Usage: {setup}"
+    );
+    assert!(setup.contains("<h4 id=\"linux\""), "{setup}");
+    assert!(
+        setup.contains("href=\"../notes/index.html#hints\""),
+        "{setup}"
+    );
+    assert!(setup.contains("src=\"../parts/img/screen.png\""), "{setup}");
+    assert!(build.files.contains_key(Path::new("parts/img/screen.png")));
 }

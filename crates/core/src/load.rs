@@ -256,6 +256,7 @@ fn first_heading(blocks: &[Block]) -> Option<&Heading> {
 mod tests {
     use super::*;
     use crate::files::memory::Memory;
+    use std::sync::{Arc, Mutex};
 
     fn write(files: &mut Memory, file: &str, text: &str) {
         files
@@ -371,6 +372,68 @@ mod tests {
                 (crate::Severity::Warning, "secret.png does not exist"),
             ]
         );
+    }
+
+    /// Records every path asked for.
+    struct Recording(Memory, Arc<Mutex<Vec<PathBuf>>>);
+
+    impl Files for Recording {
+        fn read(&self, path: &Path) -> std::io::Result<Vec<u8>> {
+            self.1.lock().unwrap().push(path.to_path_buf());
+            self.0.read(path)
+        }
+
+        fn is_file(&self, path: &Path) -> std::io::Result<bool> {
+            self.1.lock().unwrap().push(path.to_path_buf());
+            self.0.is_file(path)
+        }
+
+        fn list(&self, dir: &Path) -> std::io::Result<Vec<PathBuf>> {
+            self.1.lock().unwrap().push(dir.to_path_buf());
+            self.0.list(dir)
+        }
+    }
+
+    // Verifies: G-7
+    #[test]
+    fn links_includes_and_images_outside_the_root_are_reported_and_not_followed() {
+        let files = Memory::with(&[
+            ("nectar.toml", "[[document]]\nsource = \"docs/main.md\"\n"),
+            (
+                "docs/main.md",
+                "# Main\n\n[Outside](../../outside.md)\n\n![Picture](../../picture.png)\n\n\
+                 Get [the file](../../../etc/passwd).\n",
+            ),
+        ]);
+        let asked = Arc::new(Mutex::new(Vec::new()));
+        let build = crate::Project::load(Box::new(Recording(files, asked.clone())))
+            .unwrap()
+            .build(&[]);
+
+        let messages: Vec<_> = build
+            .diagnostics
+            .iter()
+            .map(|d| (d.origin.as_ref().unwrap().line, d.message.as_str()))
+            .collect();
+        assert_eq!(
+            messages,
+            [
+                (3, "'../../outside.md' points outside the project"),
+                (5, "'../../picture.png' points outside the project"),
+                (7, "'../../../etc/passwd' points outside the project"),
+            ]
+        );
+        let asked = asked.lock().unwrap();
+        assert!(
+            asked.iter().all(|path| {
+                (path.starts_with("docs") || path == Path::new("nectar.toml"))
+                    && path
+                        .components()
+                        .all(|c| matches!(c, std::path::Component::Normal(_)))
+            }),
+            "{asked:?}"
+        );
+        assert!(build.files.is_empty());
     }
 
     #[test]

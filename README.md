@@ -46,14 +46,17 @@ vocabulary in [`docs/GLOSSARY.md`](docs/GLOSSARY.md).
 <!-- This section is the single source for build/test/lint/run commands; both humans and
      agents rely on it, and the rule file names it. -->
 
-The Dev Container brings Rust, cargo-deny, Graphviz and PlantUML, with Java 21 as PlantUML's
-runtime. The commands run from the repository root; `scripts/check-build.sh` runs build, test and
-lint in one go, as the pre-push hook and the `build` job of CI do
+The Dev Container brings Rust with the `wasm32-unknown-unknown` target, cargo-deny, Graphviz and
+PlantUML, with Java 21 as PlantUML's runtime. The commands run from the repository root;
+`scripts/check-build.sh` runs build, test and lint in one go, as the pre-push hook and the `build`
+job of CI do
 ([ADR-0008](docs/adr/0008-toolchain-cargo-clippy-deny.md)):
 
 - **Build:** `cargo build --workspace`
 - **Test:** `cargo test --workspace`, then `cargo run -p nectar -- -C examples/demo build`,
-  which has to succeed even where Graphviz and PlantUML are missing
+  which has to succeed even where Graphviz and PlantUML are missing, and
+  `cargo check --target wasm32-unknown-unknown -p nectar-core -p nectar-html -p nectar-pdf
+  -p nectar-railroad`
 - **Lint:** `cargo fmt --all --check`,
   `cargo clippy --workspace --all-targets -- -D warnings` and
   `cargo deny --all-features check licenses bans sources`; the repository checks with

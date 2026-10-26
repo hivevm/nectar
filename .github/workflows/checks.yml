@@ -178,10 +178,10 @@ jobs:
         with:
           persist-credentials: false
       # rustup ships with the runner images; the toolchain is the latest stable (specification,
-      # Constraints).
+      # Constraints), with the WebAssembly target that G-8 is checked against.
       - name: Set up the Rust toolchain
         shell: bash
-        run: rustup toolchain install stable --profile minimal -c rustfmt,clippy && rustup default stable
+        run: rustup toolchain install stable --profile minimal -c rustfmt,clippy -t wasm32-unknown-unknown && rustup default stable
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
         with:

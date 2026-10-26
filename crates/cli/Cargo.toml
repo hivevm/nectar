@@ -20,3 +20,6 @@ nectar-textmate = { version = "0.1.0", path = "../textmate" }
 toml = "1.1.8"
 nectar-server = { version = "0.1.0", path = "../server" }
 tokio = { version = "1.54.1", features = ["rt-multi-thread"] }
+
+[dev-dependencies]
+tempfile = "3.27.0"

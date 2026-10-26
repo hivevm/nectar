@@ -5,7 +5,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use nectar_core::{Files, Project};
+use nectar_core::{Files, Project, Severity};
 use nectar_pdf::PdfRenderer;
 
 /// The project's files in memory, shared by every clone, so a test can change them between builds.
@@ -111,6 +111,7 @@ fn pdf_can_be_turned_off_and_reports_bad_settings() {
     );
 }
 
+// Verifies: G-4
 #[test]
 fn embeds_data_uri_images_and_reports_what_is_left_out() {
     let root = &Memory::default();
@@ -150,12 +151,12 @@ fn embeds_data_uri_images_and_reports_what_is_left_out() {
             .any(|m| m.contains("https://example.org/a.png")),
         "{messages:?}"
     );
-    assert!(
-        build
-            .diagnostics
-            .iter()
-            .all(|d| d.origin.as_ref().is_some_and(|o| o.line > 0))
-    );
+    assert!(build.diagnostics.iter().all(|d| {
+        d.severity == Severity::Warning
+            && d.origin
+                .as_ref()
+                .is_some_and(|o| o.file == Path::new("main.md") && o.line > 0)
+    }));
     assert!(build.files[Path::new("print/main.pdf")].starts_with(b"%PDF-"));
 }
 
@@ -207,4 +208,41 @@ fn a_thematic_break_starts_a_new_page() {
         pages(&build.files[Path::new("print/main.pdf")]),
         without + 1
     );
+}
+
+// Verifies: G-3
+#[test]
+fn the_pdf_has_a_cover_contents_and_footnotes() {
+    let root = &Memory::default();
+    write(
+        root,
+        "main.md",
+        b"# Manual\n\nIntro[^n].\n\n[^n]: The note.\n\n[Part](part.md)\n",
+    );
+    write(root, "part.md", b"# Part\n\n## Details\n");
+    let pdf = |cover: bool| {
+        write(
+            root,
+            "nectar.toml",
+            format!("[[document]]\nsource = \"main.md\"\n[document.print]\ncover = {cover}\n")
+                .as_bytes(),
+        );
+        let build = Project::load(Box::new(root.clone()))
+            .unwrap()
+            .build(&[&PdfRenderer]);
+        assert!(build.diagnostics.is_empty(), "{:?}", build.diagnostics);
+        build.files[Path::new("print/main.pdf")].clone()
+    };
+
+    let with_cover = pdf(true);
+    assert_eq!(
+        pages(&with_cover),
+        pages(&pdf(false)) + 1,
+        "the cover is a page"
+    );
+    // The PDF is tagged: the contents and the footnotes are structure elements of their own.
+    let text = String::from_utf8_lossy(&with_cover);
+    assert!(text.contains("/S/TOC"), "contents");
+    assert!(text.matches("/S/TOCI").count() >= 2, "an entry per chapter");
+    assert!(text.contains("/S/Note"), "footnotes");
 }
