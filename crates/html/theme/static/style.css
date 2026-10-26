@@ -362,7 +362,8 @@ p { margin-top: 1.25em; overflow-wrap: break-word; }
 .markdown li.task > input { position: absolute; left: 0.3em; top: 0.45em; margin: 0; accent-color: var(--color-link); }
 
 /* Mintlify drops the space above whatever follows a heading. */
-.markdown :is(h2, h3, h4, h5, h6) + * { margin-top: 0; }
+/* Written out: Paged.js splits selectors at every comma, :is() included. */
+.markdown h2 + *, .markdown h3 + *, .markdown h4 + *, .markdown h5 + *, .markdown h6 + * { margin-top: 0; }
 
 blockquote { margin: 1.6em 0; padding-left: 1.5rem; color: var(--body-font-color); border-left: 4px solid var(--border-subtle); }
 blockquote > :first-child { margin-top: 0; }

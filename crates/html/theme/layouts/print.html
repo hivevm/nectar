@@ -23,15 +23,49 @@
       layout.awaitImageLoaded.limited = true;
     }
 
-    // The preview styles go in after the layout: Paged.js rewrites the styles it reads.
+    // The preview styles go in after the layout: Paged.js rewrites the styles it reads. In the
+    // spread view the pages face each other as in a book, the first one alone on the right.
     afterRendered() {
       const style = document.createElement("style");
       style.textContent = `@media screen {
         body.print { background: #e6e6ec; }
         .pagedjs_pages { padding: 8mm 0; }
         .pagedjs_page { margin: 0 auto 8mm; background: #ffffff; box-shadow: 0 1px 6px rgb(0 0 0 / 0.18); }
-      }`;
+        body.spread .pagedjs_pages { display: flex; flex-wrap: wrap; width: calc(var(--pagedjs-width) * 2); margin: 0 auto; }
+        body.spread .pagedjs_page { margin: 0 0 8mm; }
+        body.spread .pagedjs_first_page { margin-left: var(--pagedjs-width); }
+        .print-spread {
+          position: fixed; top: 12px; right: 12px; z-index: 1;
+          padding: 6px 12px; border: 0; border-radius: 6px;
+          color: #0b0b0f; background: #ffffff; box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+          font: 13px/1.4 system-ui, sans-serif; cursor: pointer;
+        }
+        .print-spread[aria-pressed="true"] { color: #ffffff; background: #0b0b0f; }
+      }
+      @media print { .print-spread { display: none; } }`;
       document.head.append(style);
+
+      // The switch between single pages and spreads keeps the choice for the site.
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "print-spread";
+      button.textContent = "Two pages";
+      const show = (spread) => {
+        document.body.classList.toggle("spread", spread);
+        button.setAttribute("aria-pressed", String(spread));
+      };
+      let spread = false;
+      try { spread = localStorage.getItem("nectar-spread") === "true"; } catch (e) {}
+      button.addEventListener("click", () => {
+        spread = !spread;
+        try {
+          if (spread) localStorage.setItem("nectar-spread", "true");
+          else localStorage.removeItem("nectar-spread");
+        } catch (e) {}
+        show(spread);
+      });
+      show(spread);
+      document.body.append(button);
     }
   }
   Paged.registerHandlers(NectarPrint);
