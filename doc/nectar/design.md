@@ -341,21 +341,8 @@ bind = "127.0.0.1"
 
 ## Crates
 
-| Crate | Content |
-|---|---|
-| `nectar-core` | project loading, sources, parser, merge, document model, passes, `Files`, `Workers`, `CodeEngine`, `Renderer` and `Fetcher` ports, diagnostics |
-| `nectar-html` | HTML renderer and the default theme |
-| `nectar-textmate` | TextMate code engine |
-| `nectar-railroad` | railroad code engine |
-| `nectar-process` | code engine that runs local commands |
-| `nectar-fetch` | fetcher that downloads images from the web over HTTP |
-| `nectar-native` | the project directory on disk (`Directory`) and threads (`Threads`) |
-| `nectar-server` | HTTP server, file watcher, live reload |
-| `nectar` | the CLI binary; composes core, renderer and engines for both `build` and `serve` |
-
-`nectar-core` depends on no adapter, no renderer and no async runtime, and reads no file itself.
-Only the `nectar` binary knows the complete set of adapters, so `build` and `serve` always use the
-same engines.
+The crates, what each holds and how their dependencies point are described once, in the
+[building blocks of the architecture overview](../../docs/ARCHITECTURE.md#building-blocks).
 
 ## Core interface
 
@@ -363,6 +350,7 @@ same engines.
 let files = Box::new(Directory::new(root));  // or any other adapter of `Files`
 let mut project = Project::load(files)?;       // nectar.toml
 project.set_workers(Box::new(Threads));        // without: engines run in turn
+project.set_environment(std::env::vars());     // NECTAR_<name> overrides a variable
 project.add_engine(engine);                    // once per adapter, in order
 let build = project.build(&[&web, &print]);   // files in memory, sources, diagnostics
 ```
@@ -410,11 +398,10 @@ decide how to show them: the CLI on the terminal, the server on the terminal and
 ## Distribution
 
 The `build` job of `.github/workflows/checks.yml` runs `scripts/check-build.sh` on Linux, macOS
-and Windows: formatting, Clippy warnings, the tests, a build of `examples/demo` and cargo-deny. A
-tag `nectar-v<version>` starts `.github/workflows/nectar-release.yml`, which builds the CLI for
-Linux (x86-64, ARM), macOS (x86-64, ARM) and Windows (x86-64) and publishes the archives, with the
-notices of the crates and their SHA-256 checksums, as a GitHub release. The user guide is
-`doc/nectar/README.md`.
+and Windows; the script names its steps. A tag `nectar-v<version>` starts
+`.github/workflows/nectar-release.yml`, which builds the CLI for Linux (x86-64, ARM), macOS
+(x86-64, ARM) and Windows (x86-64) and publishes the archives, with the notices of the crates and
+their SHA-256 checksums, as a GitHub release. The user guide is `doc/nectar/README.md`.
 
 ## Open points
 
