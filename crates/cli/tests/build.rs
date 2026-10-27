@@ -284,16 +284,22 @@ fn every_block_of_the_demo_website_is_in_the_pdf_or_reported() {
             0,
         ),
         ("tables", &["<table"], &["/S/Table"], 0),
-        ("figures", &["<figure"], &["/S/Figure"], images_left_out),
-        // Code blocks are highlighted text in the PDF, without a tag; inline code is tagged.
-        ("inline code", &["<code>"], &["/S/Code"], 0),
+        // The PDF reserves figures for pictures, a caption around one included: a listing, code
+        // with a caption, counts as code.
+        ("pictures", &["<img"], &["/S/Figure"], images_left_out),
+        // Code blocks, highlighted or not, and inline code are code elements alike in the PDF.
+        ("code", &["<pre", "<code>"], &["/S/Code"], 0),
     ];
     for (kind, in_web, in_pdf, left_out) in exact {
-        let (web, pdf) = (count(&web, in_web), count(&pdf, in_pdf));
-        assert!(web > 0, "the demo has no {kind}");
+        let (mut on_web, in_pdf) = (count(&web, in_web), count(&pdf, in_pdf));
+        if kind == "code" {
+            // A block without a language is `<pre class="code"><code>`: one block, not two.
+            on_web -= count(&web, &["<pre class=\"code\"><code>"]);
+        }
+        assert!(on_web > 0, "the demo has no {kind}");
         assert_eq!(
-            pdf + left_out,
-            web,
+            in_pdf + left_out,
+            on_web,
             "{kind}: {left_out} reported as left out"
         );
     }

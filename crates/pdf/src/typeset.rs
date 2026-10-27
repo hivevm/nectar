@@ -421,9 +421,17 @@ impl<'a> Typesetter<'a> {
             .foreground
             .as_deref()
             .map_or("luma(30)".to_string(), color);
+        // The tokens stand in for a raw element of the plain code, so the tagged PDF marks the
+        // block as code while it keeps the engine's colours. The sizes are set inside the rule,
+        // since raw scales whatever stands in for it to 0.8em.
+        let plain: Vec<String> = code
+            .lines
+            .iter()
+            .map(|line| line.iter().map(|token| token.text.as_str()).collect())
+            .collect();
         let _ = writeln!(
             self.out,
-            "#block(width: 100%, inset: 8pt, radius: 3pt, fill: {fill}, stroke: 0.5pt + luma(225), breakable: true)[#set text(font: \"Victor Mono\", size: 8.5pt, fill: {text_color}, hyphenate: false); #set par(justify: false, leading: 0.55em);"
+            "#block(width: 100%, inset: 8pt, radius: 3pt, fill: {fill}, stroke: 0.5pt + luma(225), breakable: true)[#show raw: _ => [#set text(font: \"Victor Mono\", size: 8.5pt, fill: {text_color}, hyphenate: false); #set par(justify: false, leading: 0.55em); "
         );
         for (index, line) in code.lines.iter().enumerate() {
             if index > 0 {
@@ -439,7 +447,11 @@ impl<'a> Typesetter<'a> {
                 }
             }
         }
-        self.out.push_str("\n];");
+        let _ = write!(
+            self.out,
+            "\n]; #raw(block: true, {})\n];",
+            string_lines(&plain.join("\n"))
+        );
     }
 
     /// A diagram: as wide as it is, but never wider than the column.
@@ -753,6 +765,61 @@ mod tests {
             source.contains("#page(header: none, footer: none"),
             "a cover without them: {source}"
         );
+    }
+
+    #[test]
+    fn highlighted_code_keeps_its_colours_inside_a_raw_element() {
+        let document = Document {
+            title: String::new(),
+            path: String::new(),
+            split: nectar_core::Split::Chapter,
+            numbered: false,
+            contents: false,
+            print: Default::default(),
+            root: Chapter {
+                id: String::new(),
+                slug: String::new(),
+                title: String::new(),
+                source: PathBuf::from("main.md"),
+                blocks: Vec::new(),
+                footnotes: Vec::new(),
+            },
+            footnotes: Vec::new(),
+            assets: BTreeMap::new(),
+            downloads: BTreeMap::new(),
+        };
+        let settings = PrintSettings::default();
+        let mut typesetter = Typesetter::new(&document, &settings);
+        let token = |text: &str, color: Option<&str>| nectar_core::model::Token {
+            text: text.to_string(),
+            style: TokenStyle {
+                color: color.map(str::to_string),
+                ..TokenStyle::default()
+            },
+            dark: None,
+        };
+        typesetter.highlighted(&HighlightedCode {
+            language: "rust".to_string(),
+            foreground: None,
+            background: None,
+            dark_foreground: None,
+            dark_background: None,
+            lines: vec![
+                vec![token("fn", Some("#d73a49")), token(" main() {}", None)],
+                vec![token("}", None)],
+            ],
+        });
+        let source = typesetter.out;
+        let shown = source
+            .find("#show raw: _ => [")
+            .expect("tokens stand in for raw");
+        let red = source
+            .find("#text(fill: rgb(\"#d73a49\"), \"fn\")")
+            .expect("the colour");
+        let raw = source
+            .find("#raw(block: true, \"fn main() {}\\n}\")")
+            .expect("the code");
+        assert!(shown < red && red < raw, "{source}");
     }
 
     #[test]

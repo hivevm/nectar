@@ -2,7 +2,8 @@
 
 use std::path::Path;
 
-use nectar_core::{MemoryFiles, Project, Severity};
+use nectar_core::model::{HighlightedCode, Token, TokenStyle};
+use nectar_core::{CodeEngine, EngineError, EngineOutput, MemoryFiles, Project, Severity};
 use nectar_pdf::PdfRenderer;
 
 fn write(root: &MemoryFiles, file: &str, bytes: &[u8]) {
@@ -210,4 +211,93 @@ fn the_pdf_has_a_cover_contents_and_footnotes() {
     assert!(text.contains("/S/TOC"), "contents");
     assert!(text.matches("/S/TOCI").count() >= 2, "an entry per chapter");
     assert!(text.contains("/S/Note"), "footnotes");
+}
+
+/// Highlights every `rust` block: keywords red, the rest as it is.
+struct Colours;
+
+impl CodeEngine for Colours {
+    fn name(&self) -> &str {
+        "colours"
+    }
+
+    fn supports(&self, language: &str) -> bool {
+        language == "rust"
+    }
+
+    fn render(&self, language: &str, code: &str) -> Result<EngineOutput, EngineError> {
+        let token = |text: &str, color: Option<&str>| Token {
+            text: text.to_string(),
+            style: TokenStyle {
+                color: color.map(str::to_string),
+                ..TokenStyle::default()
+            },
+            dark: None,
+        };
+        let lines = code
+            .lines()
+            .map(|line| match line.split_once(' ') {
+                Some((keyword, rest)) => vec![
+                    token(keyword, Some("#d73a49")),
+                    token(&format!(" {rest}"), None),
+                ],
+                None => vec![token(line, None)],
+            })
+            .collect();
+        Ok(EngineOutput::Highlighted(HighlightedCode {
+            language: language.to_string(),
+            foreground: None,
+            background: None,
+            dark_foreground: None,
+            dark_background: None,
+            lines,
+        }))
+    }
+}
+
+#[test]
+fn highlighted_code_blocks_are_code_in_the_pdf() {
+    let root = &MemoryFiles::new();
+    write(root, "nectar.toml", b"[[document]]\nsource = \"main.md\"\n");
+    write(
+        root,
+        "main.md",
+        b"# Manual\n\nCall `main` first.\n\n```rust\nfn main() {}\nlet x = 1;\n```\n",
+    );
+    let mut project = Project::load(Box::new(root.clone())).unwrap();
+    project.add_engine(Box::new(Colours));
+    let build = project.build(&[&PdfRenderer]);
+    assert!(build.diagnostics.is_empty(), "{:?}", build.diagnostics);
+
+    let pdf = &build.files[Path::new("print/main.pdf")];
+    let text = String::from_utf8_lossy(pdf);
+    assert_eq!(
+        text.matches("/S/Code").count(),
+        2,
+        "the inline code and the block"
+    );
+    // #d73a49, the engine's colour of `fn` and `let`, as the fill of the page's text.
+    assert!(
+        contents(pdf).contains("0.84313726 0.22745098 0.28627452"),
+        "the engine's colours reach the page"
+    );
+}
+
+/// The content streams of a PDF, unpacked, one after the other.
+fn contents(pdf: &[u8]) -> String {
+    let mut text = String::new();
+    let mut rest = pdf;
+    while let Some(start) = rest.windows(6).position(|w| w == b"stream") {
+        let body = &rest[start + 6..];
+        let body = body
+            .strip_prefix(b"\r\n")
+            .or(body.strip_prefix(b"\n"))
+            .unwrap_or(body);
+        let end = body.windows(9).position(|w| w == b"endstream").unwrap();
+        if let Ok(unpacked) = miniz_oxide::inflate::decompress_to_vec_zlib(&body[..end]) {
+            text.push_str(&String::from_utf8_lossy(&unpacked));
+        }
+        rest = &body[end + 9..];
+    }
+    text
 }
