@@ -6,7 +6,7 @@
 > is updated in the same change as the structure it describes
 > ([ADR-0001](adr/0001-agent-governance-model.md)).
 >
-> **Last design revision:** 2026-10-25, due after 20 changes. The revision that ran moves the
+> **Last design revision:** 2026-10-26, due after 20 changes. The revision that ran moves the
 > date; the number is this project's to set; a sensor counts the changes outside `docs/` since
 > the commit that set the date and says when the next is due
 > ([ADR-0006](adr/0006-feature-layer.md)).
@@ -34,10 +34,13 @@ The crates under `crates/`, every dependency pointing toward the core
 
 - **`nectar-core`** — loads the project, parses the dialect into the document model, merges the
   chapters and runs the passes; owns the ports `Files`, `Workers`, `CodeEngine`, `Renderer` and
-  `Fetcher`. Knows no adapter, no output format, no file system and no threads.
+  `Fetcher`. Knows no adapter, no output format, no file system and no threads; it still reads
+  the `NECTAR_` environment variables itself.
 - **`nectar-html`** — the renderer for the website and the print view, with the built-in theme.
 - **`nectar-pdf`** — the renderer for the PDF, typeset with Typst in memory.
 - **`nectar-textmate`**, **`nectar-railroad`** — code engines that need nothing of the host.
+  The railroad engine builds for WebAssembly; the TextMate engine does not, since `giallo` needs
+  the C libraries Oniguruma and zstd.
 - **`nectar-process`** — the code engine that runs a program named in `nectar.toml`, such as
   Graphviz or PlantUML.
 - **`nectar-fetch`** — the fetcher that downloads images from the web over HTTP, within limits
