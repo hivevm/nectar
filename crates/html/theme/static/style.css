@@ -355,7 +355,7 @@ p { margin-top: 1.25em; overflow-wrap: break-word; }
 .markdown ol > li { padding-inline-start: calc(2em - 1.415em); }
 .markdown ol > li::marker { color: var(--gray-500); font-weight: 400; }
 .markdown li { margin: 0.5em 0; }
-.markdown :is(ul, ol) :is(ul, ol) { margin: 0.75em 0; }
+.markdown ul ul, .markdown ul ol, .markdown ol ul, .markdown ol ol { margin: 0.75em 0; }
 .markdown li > p { margin: 0.75em 0; }
 .markdown ul > li.task { padding-left: 2em; }
 .markdown ul > li.task::before { display: none; }
@@ -387,7 +387,7 @@ blockquote > :last-child, .alert > :last-child { margin-bottom: 0; }
 .alert-success { --alert-border: light-dark(#bbf7d0, #14532d); --alert-background: light-dark(#f0fdf4, rgb(22 163 74 / 0.2)); --alert-color: light-dark(#166534, #86efac); }
 .alert-warning { --alert-border: light-dark(#fef08a, #713f12); --alert-background: light-dark(#fefce8, rgb(202 138 4 / 0.2)); --alert-color: light-dark(#854d0e, #fde047); }
 .alert-error { --alert-border: light-dark(#fecaca, #7f1d1d); --alert-background: light-dark(#fef2f2, rgb(220 38 38 / 0.2)); --alert-color: light-dark(#991b1b, #fca5a5); }
-.markdown .alert :is(a, code, strong, b) { color: inherit; }
+.markdown .alert a, .markdown .alert code, .markdown .alert strong, .markdown .alert b { color: inherit; }
 .markdown .alert a:not(.anchor) { border-bottom-color: currentColor; }
 
 code {
