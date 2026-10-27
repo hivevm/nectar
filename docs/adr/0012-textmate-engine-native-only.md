@@ -1,6 +1,6 @@
 # ADR-0012: The TextMate engine runs on native hosts only, and a WebAssembly host highlights through the code engine port
 
-- **Status:** 🟡 proposed
+- **Status:** 🟢 accepted
 - **Date:** 2026-10-26
 - **Deciders:** Markus Brigl
 - **Applies to:** `crates/textmate/`, the WebAssembly step of `scripts/check-build.sh`, and the code engines a WebAssembly shell composes

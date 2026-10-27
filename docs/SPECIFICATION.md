@@ -70,7 +70,7 @@ Only a normalization renumbers them ([`AGENTS.md` §3](../AGENTS.md#3-adr-rules)
    follow it and shall report it.
 8. **G-8** — When `nectar-core` and the renderers are compiled for `wasm32-unknown-unknown`, the
    build shall succeed, and a project given as files in memory shall produce the same website as
-   the command line.
+   the command line with the same code engines.
 9. **G-9** — When a source contains raw HTML and `nectar.toml` does not set `html = true`, the
    system shall show it as text and report a warning with file and line; with `html = true` it
    shall pass it to the website, while the PDF still reports it (G-4).
@@ -85,7 +85,8 @@ from the threats below.
 - **Q-1** — Portability: the core and the renderers run wherever Rust compiles, WebAssembly
   included, because that is what Hugo cannot do. Measured by a structural test that fails on any
   use of a file system, process, thread or async runtime API in `nectar-core` and the renderer
-  crates; only the shells (`cli`, `server`, `process`) use them.
+  crates; only the adapters (`nectar-fetch`, `nectar-native`, `nectar-process`) and the shells
+  (`nectar`, `nectar-server`) use them.
 - **Q-2** — Fidelity between outputs: a source means the same thing on the website and in the PDF,
   so nobody maintains the documentation twice. Measured on the documents in `examples/demo`: every
   heading, paragraph, table, figure and code block of the website appears in the PDF, or a

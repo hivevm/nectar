@@ -12,8 +12,8 @@
 # - a build of examples/demo, which has to succeed where Graphviz and PlantUML are missing: their
 #   blocks stay code and are reported as warnings;
 # - a check of the core, the renderers and the railroad engine for wasm32-unknown-unknown
-#   (Verifies: G-8), so nothing that cannot run in a browser creeps in; the target comes with the
-#   toolchain set-up. The TextMate engine is not part of it yet: giallo needs C libraries;
+#   (Verifies: G-8, ADR-0012), so nothing that cannot run in a browser creeps in, nectar-textmate
+#   included, which runs on native hosts only; the target comes with the toolchain set-up;
 # - cargo-deny against deny.toml: licences compatible with BSD-3-Clause only, the exception the
 #   specification names aside; the sources of every crate; and none of the technology crates
 #   ADR-0009 keeps out of the core and the renderers. Advisories are not part of the gate.
