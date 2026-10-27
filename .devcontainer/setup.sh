@@ -13,8 +13,9 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=$GH_KEYRING] https://cli.
 # PlantUML needs font metrics from headless AWT.
 # Graphviz serves the `dot` engine of Nectar.
 # Poppler renders PDF pages to images, to look at what the PDF renderer produced.
+# strace traces a build in the Q-5 test.
 sudo apt-get update
-sudo apt-get install -y --no-install-recommends fontconfig libfreetype6 graphviz poppler-utils gh
+sudo apt-get install -y --no-install-recommends fontconfig libfreetype6 graphviz poppler-utils strace gh
 sudo rm -rf /var/lib/apt/lists/*
 
 # PlantUML serves the `uml`, `ebnf`, `regex` and `jsongraph` engines of Nectar, pinned by checksum.

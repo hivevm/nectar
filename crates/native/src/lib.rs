@@ -1,16 +1,19 @@
 //! Adapters for a machine: the project's files in a directory on disk, and threads that run the
 //! code engines side by side.
 
+use std::ffi::OsString;
 use std::fs;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
 
 use nectar_core::{Files, Workers};
 
 /// The project's files in the directory `root`. Paths that lead outside it, through `..` or a
-/// symbolic link, are refused.
+/// symbolic link, are refused without anything outside being touched. So is a path that leaves
+/// the root and comes back, and a link whose absolute target names the root neither as it lies
+/// on disk nor as it was given; on Windows the names are compared as written, case included.
 pub struct Directory {
     root: PathBuf,
 }
@@ -20,17 +23,76 @@ impl Directory {
         Self { root: root.into() }
     }
 
-    /// Where `path` lies on disk, after every link, when that is inside the root.
+    /// Where `path` lies on disk, after every link, when that is inside the root. It goes one
+    /// name at a time and reads a link before it follows it, so a path that leads outside the
+    /// root is refused without anything outside being touched (Q-5).
     fn resolve(&self, path: &Path) -> io::Result<PathBuf> {
-        let resolved = self.root.join(path).canonicalize()?;
-        if !resolved.starts_with(self.root.canonicalize()?) {
-            return Err(io::Error::new(
-                io::ErrorKind::PermissionDenied,
-                "the file lies outside the project",
-            ));
+        let root = self.root.canonicalize()?;
+        let mut resolved = root.clone();
+        // The names still to walk, the next one last.
+        let mut pending = names(path)?;
+        let mut links = 0;
+        while let Some(name) = pending.pop() {
+            if name == Component::ParentDir.as_os_str() {
+                if resolved == root {
+                    return Err(outside());
+                }
+                resolved.pop();
+                continue;
+            }
+            let next = resolved.join(&name);
+            if !fs::symlink_metadata(&next)?.file_type().is_symlink() {
+                resolved = next;
+                continue;
+            }
+            links += 1;
+            if links > MAX_LINKS {
+                return Err(io::Error::other("too many symbolic links"));
+            }
+            let target = fs::read_link(&next)?;
+            let target = if target.is_absolute() {
+                resolved = root.clone();
+                // The root as it lies on disk, or as it was named, which can pass through a
+                // link, such as /var on macOS, or be relative, such as `-C .`.
+                let named = std::path::absolute(&self.root)?;
+                target
+                    .strip_prefix(&root)
+                    .or_else(|_| target.strip_prefix(&named))
+                    .map_err(|_| outside())?
+                    .to_path_buf()
+            } else {
+                target
+            };
+            pending.extend(names(&target)?);
         }
         Ok(resolved)
     }
+}
+
+/// How many links a path may pass through, as Linux allows.
+const MAX_LINKS: usize = 40;
+
+fn outside() -> io::Error {
+    io::Error::new(
+        io::ErrorKind::PermissionDenied,
+        "the file lies outside the project",
+    )
+}
+
+/// The names of a relative path, last first, `..` kept; a path from a file system's root is
+/// refused.
+fn names(path: &Path) -> io::Result<Vec<OsString>> {
+    let mut names = Vec::new();
+    for component in path.components() {
+        match component {
+            Component::Normal(name) => names.push(name.to_os_string()),
+            Component::ParentDir => names.push(component.as_os_str().to_os_string()),
+            Component::CurDir => {}
+            Component::RootDir | Component::Prefix(_) => return Err(outside()),
+        }
+    }
+    names.reverse();
+    Ok(names)
 }
 
 impl Files for Directory {
@@ -201,6 +263,15 @@ mod tests {
             files.list(Path::new("")).unwrap(),
             [PathBuf::from("main.md")]
         );
+
+        // Links that stay inside are followed, relative or absolute; a loop ends.
+        std::os::unix::fs::symlink("main.md", root.join("relative.md")).unwrap();
+        std::os::unix::fs::symlink(root.join("main.md"), root.join("absolute.md")).unwrap();
+        std::os::unix::fs::symlink("loop", root.join("loop")).unwrap();
+        for link in ["relative.md", "absolute.md"] {
+            assert_eq!(files.read(Path::new(link)).unwrap(), b"# Main", "{link}");
+        }
+        assert!(files.read(Path::new("loop")).is_err());
     }
 
     #[test]

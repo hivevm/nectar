@@ -182,6 +182,10 @@ jobs:
       - name: Set up the Rust toolchain
         shell: bash
         run: rustup toolchain install stable --profile minimal -c rustfmt,clippy -t wasm32-unknown-unknown && rustup default stable
+      # The Q-5 test traces a build with strace on Linux and fails without it.
+      - name: Install strace
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y strace
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
         with:

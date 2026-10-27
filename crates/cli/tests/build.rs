@@ -29,6 +29,7 @@ fn failing_engine(name: &str, language: &str) -> String {
 
 fn nectar(root: &Path, args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_nectar"))
+        .current_dir(root)
         .arg("-C")
         .arg(root)
         .arg("--offline")
@@ -175,6 +176,182 @@ fn two_builds_of_the_demo_are_byte_identical() {
     }
 }
 
+/// What a build may touch outside its project on Linux besides the root's own parents: the
+/// dynamic loader and the libraries it finds, under `/lib` or, where `/lib` is merged into it,
+/// `/usr/lib`; and what the standard library reads to count the cores.
+const SYSTEM: &[&str] = &[
+    "/etc/ld.so.cache",
+    "/etc/ld.so.preload",
+    "/lib/",
+    "/usr/lib/",
+    "/proc/self/cgroup",
+    "/proc/self/maps",
+    "/proc/self/mountinfo",
+    "/sys/fs/cgroup/",
+];
+
+/// The string arguments of a call as strace writes them, escapes undone, each with the argument
+/// before it, which names the directory descriptor a relative path is resolved against.
+fn strings(arguments: &str) -> Vec<(String, String)> {
+    let mut found = Vec::new();
+    let (mut previous, mut current) = (String::new(), String::new());
+    let mut chars = arguments.chars();
+    while let Some(c) = chars.next() {
+        match c {
+            '"' => {
+                let mut text = String::new();
+                while let Some(c) = chars.next() {
+                    match c {
+                        '\\' => text.extend(chars.next()),
+                        '"' => break,
+                        c => text.push(c),
+                    }
+                }
+                found.push((text, previous.trim().to_string()));
+                current.push_str("\"\"");
+            }
+            ',' => previous = std::mem::take(&mut current),
+            c => current.push(c),
+        }
+    }
+    found
+}
+
+/// What an `strace -f` of a build in `root` shows that Q-5 forbids: a path outside the root, its
+/// parents and the system's, or one the check cannot place; a program other than `program`; and
+/// any use of the network.
+fn forbidden_in_trace(trace: &str, root: &Path, program: &Path) -> Vec<String> {
+    let mut forbidden = Vec::new();
+    for line in trace.lines() {
+        // `<pid> <call>(<arguments>) = <result>`
+        let call = line
+            .split_once(' ')
+            .map_or(line, |(_, call)| call.trim_start());
+        let Some((name, arguments)) = call.split_once('(') else {
+            continue;
+        };
+        if name.is_empty() || !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+            continue;
+        }
+        if ["socket", "connect", "sendto", "sendmsg", "bind"].contains(&name) {
+            forbidden.push(line.to_string());
+            continue;
+        }
+        let mut paths = strings(arguments);
+        // The program's arguments and a link's content are no paths the call touches.
+        if ["execve", "readlink", "readlinkat"].contains(&name) {
+            paths.truncate(1);
+        }
+        let allowed = paths
+            .iter()
+            .filter(|(path, _)| !path.is_empty())
+            .all(|(path, before)| {
+                let path = Path::new(path);
+                let path = if path.is_absolute() {
+                    path.to_path_buf()
+                } else if before.is_empty() || before == "AT_FDCWD" {
+                    root.join(path)
+                } else {
+                    // Relative to a directory descriptor the check cannot follow.
+                    return false;
+                };
+                // `..` after a link leads where the link points, which the check cannot see.
+                if path
+                    .components()
+                    .any(|c| c == std::path::Component::ParentDir)
+                {
+                    return false;
+                }
+                if name == "execve" {
+                    return path == program;
+                }
+                path.starts_with(root)
+                    || root.ancestors().any(|parent| parent == path)
+                    || path == program
+                    || SYSTEM.iter().any(|system| {
+                        path.starts_with(system) || path == Path::new(system.trim_end_matches('/'))
+                    })
+            });
+        if !allowed {
+            forbidden.push(line.to_string());
+        }
+    }
+    forbidden
+}
+
+#[test]
+fn the_trace_check_finds_what_q5_forbids() {
+    let root = Path::new("/work/project");
+    let program = Path::new("/bin/nectar");
+    let trace = r#"7 execve("/bin/nectar", ["/bin/nectar"], 0x0 /* 3 vars */) = 0
+7 openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+7 readlink("/work", 0x7ffe, 1023) = -1 EINVAL (Invalid argument)
+7 openat(AT_FDCWD, "/work/project/main.md", O_RDONLY|O_CLOEXEC) = 3
+7 statx(3, "", AT_EMPTY_PATH, STATX_ALL, {}) = 0
+7 readlink("/work/project/link.md", "/work/secret.md", 1023) = 15
+7 +++ exited with 0 +++
+7 openat(AT_FDCWD, "/work/project/odd\".md", O_RDONLY|O_CLOEXEC) = 3
+7 openat(AT_FDCWD, "/proc/self/cgroup", O_RDONLY|O_CLOEXEC) = 3
+8 openat(AT_FDCWD, "/work/project/../secret.md", O_RDONLY|O_CLOEXEC) = 3
+8 newfstatat(AT_FDCWD, "notes/../../../etc/passwd", {}, 0) = 0
+8 execve("/bin/sh", ["sh", "-c", "touch x"], 0x0 /* 3 vars */) = 0
+8 connect(3, {sa_family=AF_INET, sin_port=htons(80)}, 16) = 0
+8 openat(5, "secret.md", O_RDONLY|O_CLOEXEC) = 3
+8 renameat2(AT_FDCWD, "/work/project/a.md", AT_FDCWD, "/work/b.md", 0) = 0
+8 openat(AT_FDCWD, "/proc/self/root/etc/passwd", O_RDONLY|O_CLOEXEC) = 3"#;
+    let forbidden = forbidden_in_trace(trace, root, program);
+    let expected = [
+        "../secret.md",
+        "passwd",
+        "/bin/sh",
+        "connect",
+        "openat(5,",
+        "/work/b.md",
+        "/proc/self/root",
+    ];
+    assert_eq!(forbidden.len(), expected.len(), "{forbidden:#?}");
+    for (line, what) in forbidden.iter().zip(expected) {
+        assert!(line.contains(what), "{line} for {what}");
+    }
+}
+
+/// Runs `nectar` like [`nectar`]. On Linux it runs under `strace -f` and fails on whatever Q-5
+/// forbids; elsewhere no tracer is at hand, and the checks of the output alone hold.
+fn confined(root: &Path, args: &[&str]) -> Output {
+    #[cfg(target_os = "linux")]
+    {
+        let program = Path::new(env!("CARGO_BIN_EXE_nectar"));
+        let trace = root.parent().unwrap().join("trace.txt");
+        let output = Command::new("strace")
+            .args([
+                "-f",
+                "-qq",
+                "-s",
+                "4096",
+                "-e",
+                "trace=%file,%process,%network",
+                "-o",
+            ])
+            .arg(&trace)
+            .arg(program)
+            // Cargo points the loader at its build directories for tests; nectar needs none.
+            .env_remove("LD_LIBRARY_PATH")
+            .current_dir(root)
+            .arg("-C")
+            .arg(root)
+            .arg("--offline")
+            .args(args)
+            .output()
+            .unwrap_or_else(|e| panic!("Q-5 traces the build with strace on Linux: {e}"));
+        let root = root.canonicalize().unwrap();
+        let forbidden = forbidden_in_trace(&fs::read_to_string(trace).unwrap(), &root, program);
+        assert!(forbidden.is_empty(), "outside the project: {forbidden:#?}");
+        output
+    }
+    #[cfg(not(target_os = "linux"))]
+    nectar(root, args)
+}
+
 // Verifies: Q-5
 #[test]
 fn a_project_reaches_nothing_outside_its_root_runs_no_injected_command_and_stays_offline() {
@@ -206,7 +383,7 @@ fn a_project_reaches_nothing_outside_its_root_runs_no_injected_command_and_stays
         ),
     );
 
-    let output = nectar(&root, &["build"]);
+    let output = confined(&root, &["build"]);
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(output.status.success(), "{stderr}");
     assert_eq!(
@@ -233,7 +410,7 @@ fn a_project_reaches_nothing_outside_its_root_runs_no_injected_command_and_stays
     {
         std::os::unix::fs::symlink(dir.path().join("secret.md"), root.join("linked.md")).unwrap();
         write(&root, "main.md", "# Main\n\n[Linked](linked.md)\n");
-        let output = nectar(&root, &["build", "--output", "linked"]);
+        let output = confined(&root, &["build", "--output", "linked"]);
         let stderr = String::from_utf8_lossy(&output.stderr);
         assert!(!output.status.success(), "{stderr}");
         assert!(
