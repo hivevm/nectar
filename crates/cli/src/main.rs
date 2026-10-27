@@ -10,14 +10,14 @@ use std::time::Instant;
 
 use anyhow::{Context, Result, anyhow, bail};
 use clap::{Parser, Subcommand};
-use nectar_core::{Build, CodeEngine, Config, Diagnostic, Project, Severity};
+use nectar_core::{Build, CodeEngine, Config, Diagnostic, Project, Renderer, Severity};
 use nectar_fetch::Http;
 use nectar_html::{HtmlRenderer, PrintRenderer};
 use nectar_native::{Directory, Threads};
 use nectar_pdf::PdfRenderer;
 use nectar_process::Process;
 use nectar_railroad::Railroad;
-use nectar_server::{OpenProject, ServeOptions};
+use nectar_server::{OpenProject, Renderers, ServeOptions};
 use nectar_textmate::{DEFAULT_DARK_THEME, DEFAULT_THEME, TextMate};
 
 const DEFAULT_PORT: u16 = 1313;
@@ -88,11 +88,9 @@ fn main() -> ExitCode {
 fn build(root: &Path, output: Option<PathBuf>, drafts: bool, offline: bool) -> Result<ExitCode> {
     let started = Instant::now();
     let project = open(root, drafts, offline)?;
-    let web = HtmlRenderer {
-        print_view: true,
-        pdf: true,
-    };
-    let build = project.build(&[&web, &PrintRenderer, &PdfRenderer]);
+    let renderers = renderers();
+    let renderers: Vec<&dyn Renderer> = renderers.iter().map(|r| r.as_ref() as _).collect();
+    let build = project.build(&renderers);
     report(&build.diagnostics);
     if build.has_errors() {
         eprintln!("build failed");
@@ -149,21 +147,27 @@ fn serve(
         ignore,
     };
     let runtime = tokio::runtime::Runtime::new()?;
-    let renderers: nectar_server::Renderers = Arc::new(vec![
+    runtime.block_on(nectar_server::serve(open, renderers(), options))?;
+    Ok(ExitCode::SUCCESS)
+}
+
+/// The renderers of every build: the website with its print view and PDF links, the print view
+/// and the PDF. `build` and `serve` share them, so both write the same site.
+fn renderers() -> Renderers {
+    Arc::new(vec![
         Box::new(HtmlRenderer {
             print_view: true,
             pdf: true,
         }),
         Box::new(PrintRenderer),
         Box::new(PdfRenderer),
-    ]);
-    runtime.block_on(nectar_server::serve(open, renderers, options))?;
-    Ok(ExitCode::SUCCESS)
+    ])
 }
 
 fn open(root: &Path, drafts: bool, offline: bool) -> Result<Project> {
     let mut project = Project::load(Box::new(Directory::new(root))).map_err(|d| anyhow!("{d}"))?;
     project.set_workers(Box::new(Threads));
+    project.set_environment(std::env::vars());
     project.set_include_drafts(drafts);
     project.set_offline(offline);
     project.set_fetcher(Box::new(Http::new()));

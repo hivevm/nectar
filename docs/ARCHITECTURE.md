@@ -34,8 +34,9 @@ The crates under `crates/`, every dependency pointing toward the core
 
 - **`nectar-core`** — loads the project, parses the dialect into the document model, merges the
   chapters and runs the passes; owns the ports `Files`, `Workers`, `CodeEngine`, `Renderer` and
-  `Fetcher`. Knows no adapter, no output format, no file system and no threads; it still reads
-  the `NECTAR_` environment variables itself.
+  `Fetcher`. Knows no adapter, no output format, no file system, no threads and no environment
+  variables but those the shell hands over. `MemoryFiles` holds a project's files in memory,
+  for a host without a file system and for the tests of every crate.
 - **`nectar-html`** — the renderer for the website and the print view, with the built-in theme.
 - **`nectar-pdf`** — the renderer for the PDF, typeset with Typst in memory.
 - **`nectar-textmate`**, **`nectar-railroad`** — code engines that need nothing of the host.

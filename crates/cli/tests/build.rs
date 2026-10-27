@@ -3,11 +3,10 @@
 
 use std::collections::BTreeMap;
 use std::fs;
-use std::io;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
-use nectar_core::{Files, Project};
+use nectar_core::{MemoryFiles, Project};
 use nectar_html::{HtmlRenderer, PrintRenderer};
 use nectar_pdf::PdfRenderer;
 use nectar_railroad::Railroad;
@@ -306,35 +305,6 @@ fn every_block_of_the_demo_website_is_in_the_pdf_or_reported() {
     );
 }
 
-/// The project's files in memory.
-struct Memory(BTreeMap<PathBuf, Vec<u8>>);
-
-impl Files for Memory {
-    fn read(&self, path: &Path) -> io::Result<Vec<u8>> {
-        self.0
-            .get(path)
-            .cloned()
-            .ok_or(io::ErrorKind::NotFound.into())
-    }
-
-    fn is_file(&self, path: &Path) -> io::Result<bool> {
-        Ok(self.0.contains_key(path))
-    }
-
-    fn list(&self, dir: &Path) -> io::Result<Vec<PathBuf>> {
-        let below: Vec<_> = self
-            .0
-            .keys()
-            .filter(|p| p.starts_with(dir))
-            .cloned()
-            .collect();
-        if below.is_empty() {
-            return Err(io::ErrorKind::NotFound.into());
-        }
-        Ok(below)
-    }
-}
-
 // Verifies: G-8
 #[test]
 fn files_in_memory_build_the_same_website_as_the_command_line() {
@@ -361,7 +331,7 @@ fn files_in_memory_build_the_same_website_as_the_command_line() {
         "docs/img/logo.svg",
         "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\"/>",
     );
-    let in_memory = Memory(files(&root));
+    let in_memory: MemoryFiles = files(&root).into_iter().collect();
 
     let output = dir.path().join("public");
     let built = nectar(&root, &["build", "--output", output.to_str().unwrap()]);
@@ -388,4 +358,26 @@ fn files_in_memory_build_the_same_website_as_the_command_line() {
     for (path, bytes) in &build.files {
         assert!(from_disk[path] == *bytes, "{} differs", path.display());
     }
+}
+
+#[test]
+fn the_command_line_hands_nectar_variables_to_the_project() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(
+        root,
+        "nectar.toml",
+        "[[document]]\nsource = \"main.md\"\n[vars]\nVERSION = \"1.0\"\n",
+    );
+    write(root, "main.md", "# Main\n\nVersion {{VERSION}}.\n");
+    let output = Command::new(env!("CARGO_BIN_EXE_nectar"))
+        .arg("-C")
+        .arg(root)
+        .args(["--offline", "build"])
+        .env("NECTAR_VERSION", "2.0")
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let page = fs::read_to_string(root.join("public/index.html")).unwrap();
+    assert!(page.contains("Version 2.0."), "{page}");
 }

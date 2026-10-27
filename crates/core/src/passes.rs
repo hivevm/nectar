@@ -553,7 +553,7 @@ fn render(jobs: Vec<Job<'_>>, workers: &dyn Workers, cache: &EngineCache) -> Has
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::files::memory::Memory;
+    use crate::files::MemoryFiles;
     use crate::workers::InTurn;
 
     #[test]
@@ -565,7 +565,7 @@ mod tests {
     }
 
     fn document(files: &[(&str, &str)]) -> (Document, Vec<Diagnostic>) {
-        let project = Memory::with(files);
+        let project: MemoryFiles = files.iter().copied().collect();
         let vars = std::collections::BTreeMap::new();
         let mut loader = crate::load::Loader::new(&project, &vars, false);
         let root = loader.chapter(Path::new(files[0].0), "", None).unwrap();

@@ -27,7 +27,8 @@ fn start(root: &Path) -> (Server, u16, mpsc::Receiver<String>) {
     let mut child = Command::new(env!("CARGO_BIN_EXE_nectar"))
         .arg("-C")
         .arg(root)
-        .args(["--offline", "serve", "--port", "0"])
+        // Without drafts, as `nectar build` builds by default.
+        .args(["--offline", "serve", "--port", "0", "--no-drafts"])
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
@@ -63,6 +64,38 @@ fn get(port: u16, path: &str) -> String {
     let mut response = String::new();
     stream.read_to_string(&mut response).unwrap();
     response
+}
+
+/// The body of `GET path`, as bytes.
+fn get_bytes(port: u16, path: &str) -> Vec<u8> {
+    let mut stream = TcpStream::connect(("127.0.0.1", port)).unwrap();
+    write!(
+        stream,
+        "GET /{path} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+    )
+    .unwrap();
+    let mut response = Vec::new();
+    stream.read_to_end(&mut response).unwrap();
+    let body = response.windows(4).position(|w| w == b"\r\n\r\n").unwrap() + 4;
+    response.split_off(body)
+}
+
+/// Every file below `dir`, relative to it, with forward slashes, with its content.
+fn files(dir: &Path) -> Vec<(String, Vec<u8>)> {
+    let mut found = Vec::new();
+    let mut pending = vec![dir.to_path_buf()];
+    while let Some(next) = pending.pop() {
+        for entry in fs::read_dir(next).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                pending.push(path);
+            } else {
+                let relative = path.strip_prefix(dir).unwrap().to_string_lossy();
+                found.push((relative.replace('\\', "/"), fs::read(&path).unwrap()));
+            }
+        }
+    }
+    found
 }
 
 /// The stream of build versions a browser listens to.
@@ -199,4 +232,37 @@ fn a_one_line_edit_of_the_demo_rebuilds_in_under_200_ms() {
         timings.push(next_rebuild(&lines));
     }
     assert!(timings[1] < 200, "the rebuild took {} ms", timings[1]);
+}
+
+#[test]
+fn serve_answers_with_the_files_that_build_writes() {
+    let demo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/demo");
+    let out = tempfile::tempdir().unwrap();
+    let built = Command::new(env!("CARGO_BIN_EXE_nectar"))
+        .arg("-C")
+        .arg(&demo)
+        .args(["--offline", "build", "--output"])
+        .arg(out.path())
+        .status()
+        .unwrap();
+    assert!(built.success());
+    let (_server, port, _) = start(&demo);
+
+    let written = files(out.path());
+    assert!(written.len() > 10);
+    for (path, bytes) in written {
+        let served = get_bytes(port, &path);
+        if path.ends_with(".html") {
+            // The server adds its reload script to every page, in front of `</head>`.
+            let at = bytes.windows(7).position(|w| w == b"</head>").unwrap();
+            let tail = bytes.len() - at;
+            assert!(
+                served.starts_with(&bytes[..at]) && served.ends_with(&bytes[at..]),
+                "{path} differs beyond the reload script"
+            );
+            assert!(served.len() - tail > at, "{path} has no reload script");
+        } else {
+            assert!(served == bytes, "{path} differs");
+        }
+    }
 }

@@ -104,6 +104,7 @@ impl Workers for Threads {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use nectar_core::MemoryFiles;
     use std::sync::Mutex;
 
     fn write(root: &Path, file: &str, text: &str) {
@@ -112,39 +113,73 @@ mod tests {
         fs::write(path, text).unwrap();
     }
 
-    #[test]
-    fn reads_and_lists_the_files_below_the_root() {
-        let dir = tempfile::tempdir().unwrap();
-        write(dir.path(), "docs/b.md", "b");
-        write(dir.path(), "docs/a.md", "a");
-        write(dir.path(), "docs/img/c.png", "c");
-        let files = Directory::new(dir.path());
+    /// What the documentation of the `Files` port promises, held against one adapter. The
+    /// project holds `docs/a.md`, `docs/b.md` and `docs/img/c.png`, and `../secret.txt` lies
+    /// outside it.
+    fn holds_the_contract_of_files(files: &dyn Files) {
+        fn kind<T: std::fmt::Debug>(result: io::Result<T>) -> io::ErrorKind {
+            result.unwrap_err().kind()
+        }
+        let path = Path::new;
 
-        assert_eq!(files.read(Path::new("docs/a.md")).unwrap(), b"a");
-        assert!(files.is_file(Path::new("docs/a.md")).unwrap());
-        assert!(!files.is_file(Path::new("docs/gone.md")).unwrap());
-        assert!(!files.is_file(Path::new("docs")).unwrap());
-        assert!(!files.is_file(Path::new("docs/a.md/b.md")).unwrap());
+        assert_eq!(files.read(path("docs/a.md")).unwrap(), b"a");
+        for detour in ["./docs/a.md", "docs/../docs/a.md", "docs/img/../a.md"] {
+            assert_eq!(files.read(path(detour)).unwrap(), b"a", "{detour}");
+        }
         assert_eq!(
-            files.list(Path::new("docs")).unwrap(),
-            ["docs/a.md", "docs/b.md", "docs/img/c.png"].map(PathBuf::from)
+            kind(files.read(path("docs/gone.md"))),
+            io::ErrorKind::NotFound
         );
-        let missing = files.list(Path::new("themes")).unwrap_err();
-        assert_eq!(missing.kind(), io::ErrorKind::NotFound);
+        assert!(files.is_file(path("docs/a.md")).unwrap());
+        for missing in ["docs/gone.md", "docs", "docs/a.md/b.md"] {
+            assert!(!files.is_file(path(missing)).unwrap(), "{missing}");
+        }
+
+        let all = ["docs/a.md", "docs/b.md", "docs/img/c.png"].map(PathBuf::from);
+        assert_eq!(
+            files.list(path("docs")).unwrap(),
+            all,
+            "sorted, at any depth"
+        );
+        assert_eq!(
+            files.list(path("")).unwrap(),
+            all,
+            "the root is a directory"
+        );
+        assert_eq!(kind(files.list(path("themes"))), io::ErrorKind::NotFound);
+        assert_eq!(kind(files.list(path("docs/a.md"))), io::ErrorKind::NotFound);
+
+        let outside = path("../secret.txt");
+        assert_eq!(kind(files.read(outside)), io::ErrorKind::PermissionDenied);
+        let refused = files.is_file(outside).unwrap_err();
+        assert_eq!(refused.kind(), io::ErrorKind::PermissionDenied);
+        assert_eq!(
+            kind(files.list(path(".."))),
+            io::ErrorKind::PermissionDenied
+        );
     }
 
     #[test]
-    fn refuses_paths_that_lead_outside_the_root() {
+    fn the_directory_holds_the_contract_of_files() {
         let outer = tempfile::tempdir().unwrap();
         write(outer.path(), "secret.txt", "secret");
-        write(outer.path(), "project/main.md", "# Main");
-        let files = Directory::new(outer.path().join("project"));
+        let root = outer.path().join("project");
+        write(&root, "docs/b.md", "b");
+        write(&root, "docs/a.md", "a");
+        write(&root, "docs/img/c.png", "c");
+        holds_the_contract_of_files(&Directory::new(root));
+    }
 
-        let path = Path::new("../secret.txt");
-        let refused = files.read(path).unwrap_err();
-        assert_eq!(refused.kind(), io::ErrorKind::PermissionDenied);
-        assert!(files.is_file(path).is_err());
-        assert!(files.list(Path::new("..")).is_err());
+    #[test]
+    fn files_in_memory_hold_the_contract_of_files() {
+        let files: MemoryFiles = [
+            ("docs/b.md", "b"),
+            ("docs/a.md", "a"),
+            ("docs/img/c.png", "c"),
+        ]
+        .into_iter()
+        .collect();
+        holds_the_contract_of_files(&files);
     }
 
     #[cfg(unix)]

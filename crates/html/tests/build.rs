@@ -1,12 +1,9 @@
 //! Builds a small project from sources to HTML, through the core and the HTML renderer.
 
-use std::collections::BTreeMap;
-use std::io;
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::path::Path;
 
 use nectar_core::model::Graphic;
-use nectar_core::{CodeEngine, EngineError, EngineOutput, Files, Project};
+use nectar_core::{CodeEngine, EngineError, EngineOutput, MemoryFiles, Project};
 use nectar_html::{HtmlRenderer, PrintRenderer};
 
 struct Diagrams;
@@ -33,40 +30,8 @@ impl CodeEngine for Diagrams {
     }
 }
 
-/// The project's files in memory, shared by every clone, so a test can change them between builds.
-#[derive(Clone, Default)]
-struct Memory(Arc<Mutex<BTreeMap<PathBuf, Vec<u8>>>>);
-
-impl Files for Memory {
-    fn read(&self, path: &Path) -> io::Result<Vec<u8>> {
-        let files = self.0.lock().unwrap();
-        files
-            .get(path)
-            .cloned()
-            .ok_or(io::ErrorKind::NotFound.into())
-    }
-
-    fn is_file(&self, path: &Path) -> io::Result<bool> {
-        Ok(self.0.lock().unwrap().contains_key(path))
-    }
-
-    fn list(&self, dir: &Path) -> io::Result<Vec<PathBuf>> {
-        let files = self.0.lock().unwrap();
-        let below: Vec<_> = files
-            .keys()
-            .filter(|p| p.starts_with(dir))
-            .cloned()
-            .collect();
-        if below.is_empty() {
-            return Err(io::ErrorKind::NotFound.into());
-        }
-        Ok(below)
-    }
-}
-
-fn write(root: &Memory, file: &str, text: &str) {
-    let bytes = text.as_bytes().to_vec();
-    root.0.lock().unwrap().insert(PathBuf::from(file), bytes);
+fn write(root: &MemoryFiles, file: &str, text: &str) {
+    root.insert(file, text);
 }
 
 fn page(build: &nectar_core::Build, file: &str) -> String {
@@ -75,7 +40,7 @@ fn page(build: &nectar_core::Build, file: &str) -> String {
 
 #[test]
 fn builds_split_and_single_page_documents() {
-    let root = &Memory::default();
+    let root = &MemoryFiles::new();
     write(
         root,
         "nectar.toml",
@@ -132,7 +97,7 @@ fn builds_split_and_single_page_documents() {
 
 #[test]
 fn numbers_contents_footnotes_and_embedded_files() {
-    let root = &Memory::default();
+    let root = &MemoryFiles::new();
     write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
     write(
         root,
@@ -186,7 +151,7 @@ fn numbers_contents_footnotes_and_embedded_files() {
 
 #[test]
 fn menu_is_a_tree_open_along_the_current_page() {
-    let root = &Memory::default();
+    let root = &MemoryFiles::new();
     write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
     write(root, "main.md", "# Main\n\n[A](a.md)\n[B](b.md)\n");
     write(root, "a.md", "# A\n\n[A1](a1.md)\n");
@@ -222,7 +187,7 @@ fn menu_is_a_tree_open_along_the_current_page() {
 
 #[test]
 fn single_page_menu_lists_the_headings() {
-    let root = &Memory::default();
+    let root = &MemoryFiles::new();
     write(
         root,
         "nectar.toml",
@@ -243,7 +208,7 @@ fn single_page_menu_lists_the_headings() {
 // Verifies: G-3
 #[test]
 fn print_view_is_one_paged_file_per_document() {
-    let root = &Memory::default();
+    let root = &MemoryFiles::new();
     write(
         root,
         "nectar.toml",
@@ -325,7 +290,7 @@ fn print_view_is_one_paged_file_per_document() {
 
 #[test]
 fn print_view_can_be_turned_off_and_reports_bad_settings() {
-    let root = &Memory::default();
+    let root = &MemoryFiles::new();
     write(root, "main.md", "# Manual\n");
 
     write(
@@ -356,7 +321,7 @@ fn print_view_can_be_turned_off_and_reports_bad_settings() {
 
 #[test]
 fn images_from_data_uris_become_files_of_the_site() {
-    let root = &Memory::default();
+    let root = &MemoryFiles::new();
     write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
     write(
         root,
@@ -431,7 +396,7 @@ impl CodeEngine for Colours {
 
 #[test]
 fn highlighted_code_carries_light_and_dark_colours() {
-    let root = &Memory::default();
+    let root = &MemoryFiles::new();
     write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
     write(root, "main.md", "# Main\n\n```x\nkey plain\n```\n");
 
@@ -457,7 +422,7 @@ fn highlighted_code_carries_light_and_dark_colours() {
 // Verifies: G-9
 #[test]
 fn raw_html_is_text_unless_the_project_allows_it() {
-    let root = &Memory::default();
+    let root = &MemoryFiles::new();
     write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
     write(
         root,
@@ -501,7 +466,7 @@ fn raw_html_is_text_unless_the_project_allows_it() {
 // Verifies: G-2
 #[test]
 fn included_chapters_go_below_their_heading_and_resolve_against_their_directory() {
-    let root = &Memory::default();
+    let root = &MemoryFiles::new();
     write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
     write(
         root,

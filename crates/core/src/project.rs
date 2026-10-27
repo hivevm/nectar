@@ -20,6 +20,7 @@ pub struct Project {
     config: Config,
     engines: Vec<Box<dyn CodeEngine>>,
     workers: Box<dyn Workers>,
+    environment: Vec<(String, String)>,
     include_drafts: bool,
     cache: EngineCache,
     downloader: Downloader,
@@ -51,6 +52,7 @@ impl Project {
             config,
             engines: Vec::new(),
             workers: Box::new(InTurn),
+            environment: Vec::new(),
             include_drafts: false,
             cache: Mutex::new(HashMap::new()),
             downloader: Downloader::new(),
@@ -71,6 +73,12 @@ impl Project {
         self.workers = workers;
     }
 
+    /// Sets the environment variables of the host. Those named `NECTAR_<name>` override the
+    /// variable `<name>` of `nectar.toml`; without any, the configuration alone counts.
+    pub fn set_environment(&mut self, environment: impl IntoIterator<Item = (String, String)>) {
+        self.environment = environment.into_iter().collect();
+    }
+
     /// Whether files with `draft = true` are part of the documents.
     pub fn set_include_drafts(&mut self, include: bool) {
         self.include_drafts = include;
@@ -88,7 +96,9 @@ impl Project {
 
     /// Loads every start document and runs the transform passes.
     pub fn documents(&self) -> Documents {
-        let vars = self.config.variables_with_environment(std::env::vars());
+        let vars = self
+            .config
+            .variables_with_environment(self.environment.iter().cloned());
         let mut loader = Loader::new(self.files.as_ref(), &vars, self.include_drafts);
         let mut documents = Vec::new();
         let mut diagnostics = Vec::new();

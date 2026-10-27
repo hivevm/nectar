@@ -1,54 +1,19 @@
 //! Typesets small projects into PDF through the core and the PDF renderer.
 
-use std::collections::BTreeMap;
-use std::io;
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::path::Path;
 
-use nectar_core::{Files, Project, Severity};
+use nectar_core::{MemoryFiles, Project, Severity};
 use nectar_pdf::PdfRenderer;
 
-/// The project's files in memory, shared by every clone, so a test can change them between builds.
-#[derive(Clone, Default)]
-struct Memory(Arc<Mutex<BTreeMap<PathBuf, Vec<u8>>>>);
-
-impl Files for Memory {
-    fn read(&self, path: &Path) -> io::Result<Vec<u8>> {
-        let files = self.0.lock().unwrap();
-        files
-            .get(path)
-            .cloned()
-            .ok_or(io::ErrorKind::NotFound.into())
-    }
-
-    fn is_file(&self, path: &Path) -> io::Result<bool> {
-        Ok(self.0.lock().unwrap().contains_key(path))
-    }
-
-    fn list(&self, dir: &Path) -> io::Result<Vec<PathBuf>> {
-        let files = self.0.lock().unwrap();
-        let below: Vec<_> = files
-            .keys()
-            .filter(|p| p.starts_with(dir))
-            .cloned()
-            .collect();
-        if below.is_empty() {
-            return Err(io::ErrorKind::NotFound.into());
-        }
-        Ok(below)
-    }
-}
-
-fn write(root: &Memory, file: &str, bytes: &[u8]) {
-    let bytes = bytes.to_vec();
-    root.0.lock().unwrap().insert(PathBuf::from(file), bytes);
+fn write(root: &MemoryFiles, file: &str, bytes: &[u8]) {
+    root.insert(file, bytes);
 }
 
 const PNG: &[u8] = include_bytes!("../images/draft.png");
 
 #[test]
 fn typesets_every_kind_of_block() {
-    let root = &Memory::default();
+    let root = &MemoryFiles::new();
     write(
         root,
         "nectar.toml",
@@ -82,7 +47,7 @@ fn typesets_every_kind_of_block() {
 
 #[test]
 fn pdf_can_be_turned_off_and_reports_bad_settings() {
-    let root = &Memory::default();
+    let root = &MemoryFiles::new();
     write(root, "main.md", b"# Manual\n");
 
     write(
@@ -114,7 +79,7 @@ fn pdf_can_be_turned_off_and_reports_bad_settings() {
 // Verifies: G-4
 #[test]
 fn embeds_data_uri_images_and_reports_what_is_left_out() {
-    let root = &Memory::default();
+    let root = &MemoryFiles::new();
     // With html = true raw HTML reaches the renderers, and the PDF reports it (G-4).
     write(
         root,
@@ -187,7 +152,7 @@ fn pages(pdf: &[u8]) -> usize {
 
 #[test]
 fn a_thematic_break_starts_a_new_page() {
-    let root = &Memory::default();
+    let root = &MemoryFiles::new();
     write(
         root,
         "nectar.toml",
@@ -213,7 +178,7 @@ fn a_thematic_break_starts_a_new_page() {
 // Verifies: G-3
 #[test]
 fn the_pdf_has_a_cover_contents_and_footnotes() {
-    let root = &Memory::default();
+    let root = &MemoryFiles::new();
     write(
         root,
         "main.md",

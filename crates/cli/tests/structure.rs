@@ -29,8 +29,9 @@ const TECHNOLOGY_CRATES: &[&str] = &[
     "ureq",
 ];
 
-/// Modules of the standard library that reach the host.
-const TECHNOLOGY_MODULES: &[&str] = &["fs", "net", "process", "thread"];
+/// Modules of the standard library that reach the host. `env` is one: the variables of a host
+/// reach the core only as the shell hands them over.
+const TECHNOLOGY_MODULES: &[&str] = &["env", "fs", "net", "process", "thread"];
 
 fn crates_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..")
@@ -137,6 +138,7 @@ fn finds_direct_and_grouped_uses() {
         technology_modules("use std::{io, net::TcpStream};"),
         ["net"]
     );
+    assert_eq!(technology_modules("let vars = std::env::vars();"), ["env"]);
     assert!(technology_modules("use std::fmt; use std::process_id;").is_empty());
     assert!(technology_modules("#[cfg(test)]\nmod tests { use std::fs; }").is_empty());
 }

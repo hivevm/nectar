@@ -24,7 +24,7 @@ pub use config::{CONFIG_FILE, Config, DocumentConfig, Split};
 pub use diagnostic::{Diagnostic, Origin, Severity};
 pub use engine::{CodeEngine, EngineError, EngineOutput};
 pub use fetch::{FetchError, Fetched, Fetcher};
-pub use files::Files;
+pub use files::{Files, MemoryFiles};
 pub use passes::slugify;
 pub use print::{PrintSettings, pdf_file};
 pub use project::{Build, Documents, Project};

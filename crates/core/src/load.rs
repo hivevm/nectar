@@ -255,13 +255,11 @@ fn first_heading(blocks: &[Block]) -> Option<&Heading> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::files::memory::Memory;
+    use crate::files::MemoryFiles;
     use std::sync::{Arc, Mutex};
 
-    fn write(files: &mut Memory, file: &str, text: &str) {
-        files
-            .0
-            .insert(PathBuf::from(file), text.as_bytes().to_vec());
+    fn write(files: &MemoryFiles, file: &str, text: &str) {
+        files.insert(file, text);
     }
 
     fn headings(blocks: &[Block], out: &mut Vec<(u8, String)>) {
@@ -276,14 +274,14 @@ mod tests {
 
     #[test]
     fn includes_shift_headings_and_take_the_link_title() {
-        let mut files = Memory::default();
+        let files = MemoryFiles::new();
         write(
-            &mut files,
+            &files,
             "main.md",
             "# Manual\n\n## Usage\n\n[Install](parts/install.md)\n\n# [Appendix](parts/appendix.md)\n",
         );
-        write(&mut files, "parts/install.md", "# Installing\n\n## Linux\n");
-        write(&mut files, "parts/appendix.md", "# A\n");
+        write(&files, "parts/install.md", "# Installing\n\n## Linux\n");
+        write(&files, "parts/appendix.md", "# A\n");
 
         let vars = BTreeMap::new();
         let mut loader = Loader::new(&files, &vars, false);
@@ -307,13 +305,13 @@ mod tests {
 
     #[test]
     fn missing_includes_are_reported_once() {
-        let mut files = Memory::default();
+        let files = MemoryFiles::new();
         write(
-            &mut files,
+            &files,
             "nectar.toml",
             "[[document]]\nsource = \"main.md\"\n",
         );
-        write(&mut files, "main.md", "# Main\n\n[Gone](gone.md)\n");
+        write(&files, "main.md", "# Main\n\n[Gone](gone.md)\n");
         let build = crate::Project::load(Box::new(files)).unwrap().documents();
         let messages: Vec<&str> = build
             .diagnostics
@@ -324,7 +322,7 @@ mod tests {
     }
 
     /// Refuses `secret.md` as an adapter refuses a path that leads outside the project.
-    struct Refusing(Memory);
+    struct Refusing(MemoryFiles);
 
     impl Files for Refusing {
         fn read(&self, path: &Path) -> std::io::Result<Vec<u8>> {
@@ -349,7 +347,7 @@ mod tests {
 
     #[test]
     fn a_refused_include_is_an_error_and_a_missing_asset_a_warning() {
-        let files = Refusing(Memory::with(&[
+        let files = Refusing(MemoryFiles::from_iter([
             ("nectar.toml", "[[document]]\nsource = \"main.md\"\n"),
             (
                 "main.md",
@@ -375,7 +373,7 @@ mod tests {
     }
 
     /// Records every path asked for.
-    struct Recording(Memory, Arc<Mutex<Vec<PathBuf>>>);
+    struct Recording(MemoryFiles, Arc<Mutex<Vec<PathBuf>>>);
 
     impl Files for Recording {
         fn read(&self, path: &Path) -> std::io::Result<Vec<u8>> {
@@ -397,7 +395,7 @@ mod tests {
     // Verifies: G-7
     #[test]
     fn links_includes_and_images_outside_the_root_are_reported_and_not_followed() {
-        let files = Memory::with(&[
+        let files = MemoryFiles::from_iter([
             ("nectar.toml", "[[document]]\nsource = \"docs/main.md\"\n"),
             (
                 "docs/main.md",
@@ -438,9 +436,9 @@ mod tests {
 
     #[test]
     fn include_cycles_are_errors() {
-        let mut files = Memory::default();
-        write(&mut files, "a.md", "# A\n\n[B](b.md)\n");
-        write(&mut files, "b.md", "# B\n\n[A](a.md)\n");
+        let files = MemoryFiles::new();
+        write(&files, "a.md", "# A\n\n[B](b.md)\n");
+        write(&files, "b.md", "# B\n\n[A](a.md)\n");
 
         let vars = BTreeMap::new();
         let mut loader = Loader::new(&files, &vars, false);
@@ -451,9 +449,9 @@ mod tests {
 
     #[test]
     fn drafts_are_left_out_unless_requested() {
-        let mut files = Memory::default();
-        write(&mut files, "main.md", "# Main\n\n[Draft](draft.md)\n");
-        write(&mut files, "draft.md", "+++\ndraft = true\n+++\n# Draft\n");
+        let files = MemoryFiles::new();
+        write(&files, "main.md", "# Main\n\n[Draft](draft.md)\n");
+        write(&files, "draft.md", "+++\ndraft = true\n+++\n# Draft\n");
 
         let vars = BTreeMap::new();
         let count = |include_drafts| {
@@ -471,14 +469,14 @@ mod tests {
 
     #[test]
     fn images_of_source_files_embed_the_file() {
-        let mut files = Memory::default();
+        let files = MemoryFiles::new();
         write(
-            &mut files,
+            &files,
             "main.md",
             "# Main\n\n![Entry point](src/Main.java)\n\n![](g.railroad)\n\n![logo](logo.png)\n",
         );
-        write(&mut files, "src/Main.java", "class Main {}\n");
-        write(&mut files, "g.railroad", "r = a;\n");
+        write(&files, "src/Main.java", "class Main {}\n");
+        write(&files, "g.railroad", "r = a;\n");
 
         let vars = BTreeMap::new();
         let mut loader = Loader::new(&files, &vars, false);
