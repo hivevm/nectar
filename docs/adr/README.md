@@ -99,6 +99,7 @@ is the table a session reads.
 | [0010](0010-environment-image-features.md) | The Dev Container is a base image with Features and a setup script, and the work needs no containers | `.devcontainer/`, and every change that would have the work start or reach a container | 🟢 accepted |
 | [0011](0011-actions-pinned-by-sha.md) | The workflows reference every action by its full commit SHA, kept current by Dependabot | every `uses:` line under `.github/workflows/`, `.github/dependabot.yml`, and `scripts/check-all.sh` | 🟢 accepted |
 | [0012](0012-textmate-engine-native-only.md) | The TextMate engine runs on native hosts only, and a WebAssembly host highlights through the code engine port | `crates/textmate/`, the WebAssembly step of `scripts/check-build.sh`, and the code engines a WebAssembly shell composes | 🟢 accepted |
+| [draft-ports-and-adapters-technology](draft-ports-and-adapters-technology.md) | A core without technology, the host's environment and the tests' dependencies included, every host-dependent effect behind a port it owns | every crate under `crates/`, the dependencies and dev-dependencies in their `Cargo.toml`, and the structural test that holds the split | 🟡 proposed |
 
 ### Superseded and rejected
 
