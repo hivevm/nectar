@@ -2,8 +2,9 @@
 #
 # Builds, packages and publishes the Nectar command line for a tag nectar-v*.
 #
-# The one script behind .github/workflows/nectar-release.yml, so that every job of a workflow runs
-# a script the local gate runs too (check 9 of scripts/check-docs.sh, ADR-0002). The release itself
+# The one script behind .github/workflows/nectar-release.yml, a workflow that publishes rather than
+# checks and that scripts/check-all.sh names as no gate; check-all.sh still runs this script, so
+# what the release packs is checked before a tag is pushed (ADR-0002). The release itself
 # is the maintainer's (ADR-0007): the workflow runs it on a pushed tag, never this repository's
 # hooks.
 #
