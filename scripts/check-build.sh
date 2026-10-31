@@ -16,7 +16,8 @@
 #   included, which runs on native hosts only; the target comes with the toolchain set-up;
 # - cargo-deny against deny.toml: licences compatible with BSD-3-Clause only, the exception the
 #   specification names aside; the sources of every crate; and none of the technology crates
-#   ADR-0009 keeps out of the core and the renderers. Advisories are not part of the gate.
+#   ADR-0013 keeps out of the core and the renderers. Advisories
+#   are not part of the gate.
 #
 # Needs cargo with the wasm32-unknown-unknown target, and cargo-deny, on PATH. The Dev Container
 # installs them (its Rust feature and .devcontainer/setup.sh); elsewhere a missing cargo-deny is
