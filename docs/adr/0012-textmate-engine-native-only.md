@@ -10,9 +10,10 @@
 Q-1 asks the core and the renderers to run wherever Rust compiles, WebAssembly included, and G-8
 asks a project given as files in memory to produce the same website as the command line with the
 same code engines, once `nectar-core` and the renderers build for `wasm32-unknown-unknown`.
-[ADR-0009](0009-ports-and-adapters.md) counts `nectar-textmate` among the crates that need nothing
-of the host and keeps it free of every technology a host decides; it does not say that the crate
-builds for WebAssembly, and its *Out of scope* leaves the API of the WebAssembly shell open.
+[ADR-0009](0009-ports-and-adapters-technology.md) counts `nectar-textmate` among the crates that
+need nothing of the host and keeps it free of every technology a host decides; it does not say
+that the crate builds for WebAssembly, and its *Out of scope* leaves the API of the WebAssembly
+shell open.
 
 `nectar-textmate` highlights through `giallo` 0.5.2, which depends on `onig` (as `onig-regset`)
 without a feature to turn it off, and, through the `dump` feature that `Registry::builtin()` needs
@@ -34,9 +35,10 @@ We will build `nectar-textmate` for native hosts only and leave highlighting in 
 to a code engine that host provides through the `CodeEngine` port, as it does for Graphviz and
 PlantUML.
 
-- `nectar-textmate` stays free of host technology under [ADR-0009](0009-ports-and-adapters.md)
-  and stays among the crates the structural test reads; the WebAssembly step of
-  `scripts/check-build.sh` checks the core, the renderers and the railroad engine.
+- `nectar-textmate` stays free of host technology under
+  [ADR-0009](0009-ports-and-adapters-technology.md) and stays among the crates the structural
+  test reads; the WebAssembly step of `scripts/check-build.sh` checks the core, the renderers and
+  the railroad engine.
 - In a WebAssembly host without a highlighting engine, code blocks stay plain code, as G-5 has
   them for a missing engine.
 

@@ -1,8 +1,8 @@
-//! The shape of the code (ADR-0013): the core, the renderers and
+//! The shape of the code (ADR-0009): the core, the renderers and
 //! the engines that need nothing of the host use no technology a host decides, and no crate but
 //! this one depends on an adapter.
 //!
-//! Verifies: ADR-0013, Q-1
+//! Verifies: ADR-0009, Q-1
 
 use std::fs;
 use std::path::{Path, PathBuf};
