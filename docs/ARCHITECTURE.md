@@ -25,12 +25,13 @@ Nectar reads a project below its root and nothing outside it; the output is file
 (`nectar build`) or answers from memory (`nectar serve`). Everything that crosses the boundary
 goes through an adapter the host plugs in: the project's files, images from the web, external
 programs for diagrams, and the browser of `nectar serve`; so do the threads that run the code
-engines side by side ([ADR-0009](adr/0009-ports-and-adapters.md)).
+engines side by side
+([ADR-draft-ports-and-adapters-technology](adr/draft-ports-and-adapters-technology.md)).
 
 ## Building blocks
 
 The crates under `crates/`, every dependency pointing toward the core
-([ADR-0009](adr/0009-ports-and-adapters.md)):
+([ADR-draft-ports-and-adapters-technology](adr/draft-ports-and-adapters-technology.md)):
 
 - **`nectar-core`** — loads the project, parses the dialect into the document model, merges the
   chapters and runs the passes; owns the ports `Files`, `Workers`, `CodeEngine`, `Renderer` and

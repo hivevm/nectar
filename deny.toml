@@ -31,8 +31,8 @@ exceptions = [
 multiple-versions = "allow"
 wildcards = "deny"
 allow-wildcard-paths = true
-# The technology crates ADR-0009 keeps out of the core and the renderers: only the adapters and
-# the shells named as wrappers may depend on them.
+# The technology crates ADR-draft-ports-and-adapters-technology keeps out of the core and the
+# renderers: only the adapters and the shells named as wrappers may depend on them.
 deny = [
   { crate = "tokio", wrappers = ["nectar", "nectar-server", "tokio-stream", "tokio-util", "axum", "hyper", "hyper-util", "tower"] },
   { crate = "axum", wrappers = ["nectar-server"] },
