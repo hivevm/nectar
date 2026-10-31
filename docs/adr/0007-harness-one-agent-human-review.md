@@ -57,7 +57,9 @@ the Code Owners review, which a superseding ADR takes up when one joins.
 - Positive: every change passes the one person who decides; no claim, cap or dispatch machinery to
   run or maintain.
 - Negative / trade-offs: throughput is bounded by the maintainer's sessions; a change waits while
-  the maintainer is away.
+  the maintainer is away. The repository's ruleset requires no Code Owners review, which the
+  README's *Repository settings* list, and `scripts/sensor-repo-settings.sh` reports the
+  difference as expected.
 - Follow-ups: unattended tickets, with a cap and the start command, when the work outgrows one
   session at a time; a second maintainer and the Code Owners review when one joins.
 

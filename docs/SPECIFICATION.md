@@ -15,8 +15,9 @@ Today the website comes from Hugo with a theme. Hugo is a Go binary built for on
 site: it gives no PDF, and it runs only as a program on a machine. It cannot be embedded in
 another tool, and it cannot run in a browser or in a WebAssembly host to preview or render
 documentation where it is edited. HiveVM's PDFs came from its own Gradle plugin `org.hivevm.doc`
-through Apache FOP. That is a second tool chain with a Markdown dialect of its own, tied to the JVM
-and to Gradle, so the two outputs drift apart in diagrams, highlighting and includes.
+through Apache FOP, a second tool chain with a Markdown dialect of its own, tied to the JVM and to
+Gradle. The two outputs drifted apart in diagrams, highlighting and includes, and in what raw HTML
+and a page break mean. The plugin has left this repository; its PDFs have to come from somewhere.
 
 What is missing is one engine, written in Rust, that turns the same Markdown into both outputs and
 runs anywhere: as a command line, as a library, and compiled to WebAssembly. With it, the
@@ -29,16 +30,17 @@ PDF from the same engine, wherever that engine runs.
 
 ## Vision
 
-Nectar replaces both Hugo and the Gradle plugin for HiveVM's projects and becomes a tool other
+Nectar replaces Hugo and the former Gradle plugin for HiveVM's projects and becomes a tool other
 projects pick for the same reason: one engine, one dialect, everywhere.
 
 ## Strategy
 
 A core in Rust that parses the sources into a document model of its own and enriches it in passes,
 with renderers for HTML and PDF behind one interface. The command line, the local server, and later
-a WebAssembly build are thin shells around it. The core stays free of file system and process
-access, so that it compiles to WebAssembly. Engines that need external programs, such as Graphviz
-or PlantUML, sit behind a port and can be swapped per host.
+a WebAssembly build are thin shells around it. The core owns a port for every effect that depends
+on the host, such as files, threads and requests to the web, and stays free of the technology
+behind them, so that it compiles to WebAssembly. Code engines that not every host can offer, such
+as Graphviz, PlantUML or the TextMate highlighter, sit behind a port too and are chosen per host.
 
 ## Goals / Success Criteria
 
@@ -56,18 +58,19 @@ Only a normalization renumbers them ([`AGENTS.md` §3](../AGENTS.md#3-adr-rules)
    links and images resolve against its own directory.
 3. **G-3** — When a document is built, the system shall also write a print view and a PDF from the
    same document model as its website, with cover, contents with page numbers, running headers and
-   footnotes.
+   footnotes, and start a new page at every thematic break.
 4. **G-4** — When the PDF cannot show an element of the source, such as raw HTML or an image it
    cannot embed, the system shall report it as a warning with file and line instead of dropping it
    silently.
 5. **G-5** — When a fenced code block names a language with a TextMate grammar, or `railroad`, the
-   system shall highlight or draw it in every output. When a block needs an external program that
-   is missing or fails, it shall keep the block as plain code and report a warning.
+   system shall highlight or draw it in every output. When the engine a block needs is missing on
+   the host, or its program is missing or fails, it shall keep the block as plain code and report a
+   warning.
 6. **G-6** — When a file below the project root changes while `nectar serve` runs, the system shall
    rebuild and reload every connected browser. Errors appear in a panel on the page, and the server
    keeps running.
 7. **G-7** — When a link, include or image points outside the project root, the system shall not
-   follow it and shall report it.
+   follow it and shall report it with file and line.
 8. **G-8** — When `nectar-core` and the renderers are compiled for `wasm32-unknown-unknown`, the
    build shall succeed, and a project given as files in memory shall produce the same website as
    the command line with the same code engines.
@@ -99,14 +102,14 @@ from the threats below.
   in under 200 ms on a developer machine.
 - **Q-5** — Confinement: Nectar touches nothing the writer did not point it at. Measured by tests
   that build fixture projects whose links, includes and images point outside the root and whose
-  code blocks try shell injection, run with `--offline`, and fail on any file access outside the
-  root and the output directory, any extra process, and any network request.
+  code blocks try shell injection, run with `--offline` and traced on Linux, and fail on any file
+  access outside the root and the output directory, any extra process, and any network request.
 
 ## Non-Goals
 
 What this project explicitly does not try to do.
 
-- No JVM tool chain. The former Gradle plugin `org.hivevm.doc` leaves the repository, and Nectar
+- No JVM tool chain. The former Gradle plugin `org.hivevm.doc` has left the repository, and Nectar
   ships no Gradle integration of its own.
 - No general static site generator. Nectar renders documentation: no blog, no taxonomies, no
   pagination of lists, no arbitrary content types as in Hugo.
@@ -136,11 +139,11 @@ rediscovered as a rejected alternative in an ADR.
   works without them and degrades as G-5 says.
 - The licence is BSD-3-Clause; every dependency and everything bundled, themes, fonts, TextMate
   grammars and Paged.js among them, carries a compatible licence. The one exception is `giallo`,
-  the highlighter behind the TextMate code engine, under EUPL-1.2: a release names it and where
-  its source is.
+  the highlighter behind the TextMate code engine, under EUPL-1.2: every release archive carries a
+  notice that names it and where its source is.
 - One maintainer works with one coding agent.
-- Nectar is distributed as binaries in GitHub releases, with SHA-256 checksums, and possibly as a
-  Dev Container Feature; not on crates.io and not on npm.
+- Nectar is distributed as binaries in GitHub releases, with SHA-256 checksums; not on crates.io
+  and not on npm. A Dev Container Feature that installs these binaries may follow.
 
 ## Threats & Forbidden Actions
 
@@ -184,7 +187,7 @@ maintained.
 - The sources are written by the project's own people and reviewed like code; raw HTML is the one
   way a source reaches the readers' browsers, and G-9 gates it.
 - Writers who come from Hugo accept Nectar's dialect, since there is no compatibility.
-- Where diagrams of Graphviz or PlantUML are wanted, the host provides an adapter for them: on the
-  command line the programs are installed, in WebAssembly the host offers an engine, or the
-  diagrams stay code.
+- Where diagrams of Graphviz or PlantUML, or highlighted code in WebAssembly, are wanted, the host
+  provides an engine for them: on the command line the programs are installed and the TextMate
+  engine is built in, in WebAssembly the host offers its own, or the blocks stay code.
 - The bundled TextMate grammars and themes keep licences compatible with BSD-3-Clause.

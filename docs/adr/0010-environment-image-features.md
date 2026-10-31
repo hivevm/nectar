@@ -8,10 +8,12 @@
 ## Context
 
 Nectar is built, tested and run with Cargo, and its tests need no database and start no
-containers; Graphviz and PlantUML are installed for the process adapters of the command line. The
-Dev Container ships as `mcr.microsoft.com/devcontainers/base:debian` with Features for Java and
-Rust and `.devcontainer/setup.sh` for the system packages, and
-[ADR-0004](0004-dev-container-runtime.md) keeps the host engine out of its reach.
+containers; Graphviz and PlantUML are installed for the process engine of the command line, and
+strace for the Q-5 test. The Dev Container ships as `mcr.microsoft.com/devcontainers/base:debian`
+with Features for Java, the runtime of PlantUML, and for Rust with the WebAssembly target;
+`.devcontainer/setup.sh` installs the system packages, the GitHub CLI, and PlantUML and cargo-deny
+pinned by checksum. [ADR-0004](0004-dev-container-runtime.md) keeps the host engine out of its
+reach.
 
 ## Decision
 
@@ -19,7 +21,8 @@ We will keep the Dev Container as a base image with Features and `.devcontainer/
 a `Dockerfile` or Compose, and give the work no access to any container engine.
 
 **Out of scope:** which packages the setup script installs; the Dev Container Feature that would
-install `nectar` for other projects, which the specification names as a possible distribution.
+install `nectar` for other projects, which the specification names as a distribution that may
+follow.
 
 ## Alternatives considered
 
@@ -36,7 +39,7 @@ install `nectar` for other projects, which the specification names as a possible
 
 - Positive: nothing to maintain beyond what ships; no container engine for an agent to reach.
 - Negative / trade-offs: a test that needs a container cannot be written until this is superseded.
-- Follow-ups: Java stays only as the runtime of PlantUML once the Gradle plugin is gone.
+- Follow-ups: none.
 
 ## Enforcement
 

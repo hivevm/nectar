@@ -151,6 +151,7 @@ fn pages(pdf: &[u8]) -> usize {
     text.matches("/Type/Page").count() - text.matches("/Type/Pages").count()
 }
 
+// Verifies: G-3
 #[test]
 fn a_thematic_break_starts_a_new_page() {
     let root = &MemoryFiles::new();
