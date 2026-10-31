@@ -1,4 +1,4 @@
-# ADR-draft-ports-and-adapters-technology: A core without technology, the host's environment and the tests' dependencies included, every host-dependent effect behind a port it owns
+# ADR-0013: A core without technology, the host's environment and the tests' dependencies included, every host-dependent effect behind a port it owns
 
 - **Status:** 🟢 accepted
 - **Date:** 2026-10-31
