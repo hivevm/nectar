@@ -95,11 +95,10 @@ is the table a session reads.
 | [0006](0006-feature-layer.md) | Work larger than one session is planned in the tree as a feature spec cut into tracer-bullet tickets, files deleted when their work lands, and the design is revised when a spec closes or after a number of changes | every change larger than one agent session, `docs/plan/`, the spec and ticket templates of the `plan-feature` skill, the pull request template, the `Last design revision` line of `docs/ARCHITECTURE.md`, `scripts/sensor-revision-due.sh`, `scripts/sensor-plan-frontier.sh`, and the claim script `.agents/skills/work-tickets/claim.sh` | 🟢 accepted |
 | [0007](0007-harness-one-agent-human-review.md) | One coding agent implements, the maintainer reviews every change, nothing runs unattended | every change, every agent session, the specification, the ADR record, and the release workflows under `.github/workflows/` | 🟢 accepted |
 | [0008](0008-toolchain-cargo-clippy-deny.md) | Cargo builds and tests Nectar, rustfmt, Clippy and cargo-deny are its first sensors, run by one script | `Cargo.toml`, `deny.toml`, `scripts/check-build.sh`, `scripts/check-all.sh`, the `build` job of `.github/workflows/checks.yml`, and the Build, Test & Run section of `README.md` | 🟢 accepted |
-| [0009](0009-ports-and-adapters.md) | A core without technology, every host-dependent effect behind a port it owns, adapters and shells at the edge | every crate under `crates/`, the dependencies in their `Cargo.toml`, and the structural test that holds the split | 🟢 accepted |
 | [0010](0010-environment-image-features.md) | The Dev Container is a base image with Features and a setup script, and the work needs no containers | `.devcontainer/`, and every change that would have the work start or reach a container | 🟢 accepted |
 | [0011](0011-actions-pinned-by-sha.md) | The workflows reference every action by its full commit SHA, kept current by Dependabot | every `uses:` line under `.github/workflows/`, `.github/dependabot.yml`, and `scripts/check-all.sh` | 🟢 accepted |
 | [0012](0012-textmate-engine-native-only.md) | The TextMate engine runs on native hosts only, and a WebAssembly host highlights through the code engine port | `crates/textmate/`, the WebAssembly step of `scripts/check-build.sh`, and the code engines a WebAssembly shell composes | 🟢 accepted |
-| [draft-ports-and-adapters-technology](draft-ports-and-adapters-technology.md) | A core without technology, the host's environment and the tests' dependencies included, every host-dependent effect behind a port it owns | every crate under `crates/`, the dependencies and dev-dependencies in their `Cargo.toml`, and the structural test that holds the split | 🟡 proposed |
+| [draft-ports-and-adapters-technology](draft-ports-and-adapters-technology.md) | A core without technology, the host's environment and the tests' dependencies included, every host-dependent effect behind a port it owns | every crate under `crates/`, the dependencies and dev-dependencies in their `Cargo.toml`, and the structural test that holds the split | 🟢 accepted |
 
 ### Superseded and rejected
 
@@ -107,4 +106,6 @@ The record of what was decided against or replaced: read one when a change touch
 governed, to learn why the current decision stands. A row moves here in the change that
 flips its status.
 
-None yet.
+| ADR | Title | Applies to | Status |
+|-----|-------|------------|--------|
+| [0009](0009-ports-and-adapters.md) | A core without technology, every host-dependent effect behind a port it owns, adapters and shells at the edge | every crate under `crates/`, the dependencies in their `Cargo.toml`, and the structural test that holds the split | ⚪ superseded by [ADR-draft-ports-and-adapters-technology](draft-ports-and-adapters-technology.md) |

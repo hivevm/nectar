@@ -1,6 +1,6 @@
 # ADR-0009: A core without technology, every host-dependent effect behind a port it owns, adapters and shells at the edge
 
-- **Status:** 🟢 accepted
+- **Status:** ⚪ superseded by [ADR-draft-ports-and-adapters-technology](draft-ports-and-adapters-technology.md)
 - **Date:** 2026-10-25
 - **Deciders:** Markus Brigl
 - **Applies to:** every crate under `crates/`, the dependencies in their `Cargo.toml`, and the structural test that holds the split
