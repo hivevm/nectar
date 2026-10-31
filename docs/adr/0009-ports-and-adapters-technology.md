@@ -1,10 +1,9 @@
-# ADR-0013: A core without technology, the host's environment and the tests' dependencies included, every host-dependent effect behind a port it owns
+# ADR-0009: A core without technology, the host's environment and the tests' dependencies included, every host-dependent effect behind a port it owns
 
 - **Status:** 🟢 accepted
 - **Date:** 2026-10-31
 - **Deciders:** Markus Brigl
 - **Applies to:** every crate under `crates/`, the dependencies and dev-dependencies in their `Cargo.toml`, and the structural test that holds the split
-- **Supersedes:** [ADR-0009](0009-ports-and-adapters.md)
 
 ## Context
 
@@ -17,27 +16,22 @@ adapters `nectar-native` (a directory on disk, threads), `nectar-fetch` (images 
 `nectar` and `nectar-server` compose them. A WebAssembly host is to fill the same ports with its
 own adapters (G-8).
 
-[ADR-0009](0009-ports-and-adapters.md) decided this shape, and its definition of technology —
-`std::fs`, `std::process`, `std::thread`, `std::net`, an async runtime, an HTTP client or server
-and a file watcher, "the standard library otherwise" not — is narrower than what
-`crates/cli/tests/structure.rs` holds today:
+Three parts of the split are less obvious than the ports themselves:
 
-- **The host's environment.** `Project::documents` read `std::env::vars()` itself until the
-  command line handed the variables over through `Project::set_environment` (0aec603); since then
-  the structural test counts `std::env` as technology, as the maintainer read
-  [ADR-0009](0009-ports-and-adapters.md). A variable of the host that reaches a build unseen breaks
-  Q-3, the same sources giving the same output, and `wasm32-unknown-unknown` has no environment of
-  its own (G-8). [ADR-0009](0009-ports-and-adapters.md) leaves `std::env` under "the standard
-  library otherwise", so a session that follows its text would loosen the test.
-- **The tests' dependencies.** The structural test reads the `[dev-dependencies]` of the portable
-  crates as well, so their tests run against fakes behind the ports, such as the in-memory `Files`
-  adapter `MemoryFiles`, and pull in no crate that creates files, such as `tempfile`. Their test
-  sources are not read: `crates/core/tests/environment.rs` sets a variable with
-  `std::env::set_var` to show that the core ignores it.
-- **Technology crates.** The test names its crates in one list (`axum`, `hyper`, `notify`,
-  `notify-debouncer-full`, `reqwest`, `tempfile`, `tokio`, `ureq`); the bans of `deny.toml` name
-  fewer, the async runtime, server, watcher and HTTP client crates the dependency graph would
-  otherwise let in.
+- **The host's environment.** `Project::documents` once read `std::env::vars()` itself; the
+  command line now hands the variables over through `Project::set_environment`, as it hands over
+  drafts and `--offline`. A variable of the host that reaches a build unseen breaks Q-3, the same
+  sources giving the same output, and `wasm32-unknown-unknown` has no environment of its own
+  (G-8).
+- **The tests' dependencies.** The tests of the portable crates run against fakes behind the
+  ports, such as the in-memory `Files` adapter `MemoryFiles`, and pull in no crate that creates
+  files, such as `tempfile`. Their test sources may still use the standard library:
+  `crates/core/tests/environment.rs` sets a variable with `std::env::set_var` to show that the
+  core ignores it.
+- **Technology crates.** The structural test names its crates in one list (`axum`, `hyper`,
+  `notify`, `notify-debouncer-full`, `reqwest`, `tempfile`, `tokio`, `ureq`); the bans of
+  `deny.toml` name fewer, the async runtime, server, watcher and HTTP client crates the dependency
+  graph would otherwise let in.
 
 The catalogue's *Ports and adapters* fits when the core is expected to outlive its technologies
 and the same behaviour is filled by different technologies per host; that is Nectar's case. Its
@@ -73,9 +67,12 @@ technology crates the bans of `deny.toml` repeat.
 
 ## Alternatives considered
 
-- **ADR-0009 as it stands** — `std::env` as plain standard library, the tests unconstrained. Not
-  chosen: the structural test already holds more, so the record and the check would disagree,
-  and a variable of the host could change a build without the shell knowing (Q-3).
+- **Technology without the host's environment and without crates that create or read files** —
+  `std::env` left with the rest of the standard library, an async runtime, an HTTP client or
+  server and a file watcher the only technology crates, the tests' dependencies unconstrained, as
+  the first decision on this split had it. Did not stand: the structural test came to hold more
+  once the core stopped reading the environment, so the record and the check disagreed, and a
+  variable of the host could change a build without the shell knowing (Q-3).
 - **Test sources read as well** — `tests/` and the code from `#[cfg(test)]` on held to the same
   rule. Not chosen: a test that proves the core ignores the host's environment needs the
   environment, so the rule would need a list of exceptions to keep.
@@ -89,7 +86,7 @@ technology crates the bans of `deny.toml` repeat.
   chosen: Nectar swaps technologies per host behind the same behaviour, which that seam does not
   name and ports do.
 - **No prescribed shape** — as the template ships. Not chosen: Q-1 would rest on review and on
-  cargo-deny alone; before ADR-0009 the core read the project's files itself and fetched images
+  cargo-deny alone; before the split the core read the project's files itself and fetched images
   with `ureq`, which shows how it erodes.
 - **Clean or onion architecture** — the same dependency rule with more prescribed rings; heavier
   vocabulary for the same seam.
@@ -102,8 +99,8 @@ technology crates the bans of `deny.toml` repeat.
 - Robert C. Martin, *The Clean Architecture* —
   <https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html>: source code
   dependencies point inward only.
-- `crates/cli/tests/structure.rs` and `crates/core/tests/environment.rs` at `e40db81`: the rule as
-  the code holds it.
+- `crates/cli/tests/structure.rs` and `crates/core/tests/environment.rs`: the rule as the code
+  holds it.
 
 ## Consequences
 
@@ -114,14 +111,13 @@ technology crates the bans of `deny.toml` repeat.
 - Negative / trade-offs: every new effect on the host costs a port in the core and an adapter at
   the edge before it can be used; a test of a portable crate that needs a real directory belongs
   to an adapter or the shell; the bans of `deny.toml` stay shorter than the test's list.
-- Follow-ups: the WebAssembly shell of G-8 and the adapters it composes; the structural test's
-  marker moves to this ADR once it is accepted.
+- Follow-ups: the WebAssembly shell of G-8 and the adapters it composes.
 
 ## Enforcement
 
-`crates/cli/tests/structure.rs`, which cites this ADR and Q-1 with a `Verifies:` marker once this
-ADR is accepted, reads the manifests, dev-dependencies included, and the sources of the crates
-named above. It fails on a dependency on an adapter crate or a technology crate, and on a use of
-`std::env`, `std::fs`, `std::net`, `std::process` or `std::thread` outside their tests. The bans of
-`deny.toml` ([ADR-0008](0008-toolchain-cargo-clippy-deny.md)) refuse the technology crates they
-list for the same crates. That a port is no wider than its callers need is review.
+`crates/cli/tests/structure.rs`, citing this ADR and Q-1 with a `Verifies:` marker, reads the
+manifests, dev-dependencies included, and the sources of the crates named above. It fails on a
+dependency on an adapter crate or a technology crate, and on a use of `std::env`, `std::fs`,
+`std::net`, `std::process` or `std::thread` outside their tests. The bans of `deny.toml`
+([ADR-0008](0008-toolchain-cargo-clippy-deny.md)) refuse the technology crates they list for the
+same crates. That a port is no wider than its callers need is review.
