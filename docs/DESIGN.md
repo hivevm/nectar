@@ -11,7 +11,7 @@ Nectar turns Markdown sources into HTML. It runs in two modes that share one cor
 1. A start document includes further Markdown files through links. The result is one complete
    document.
 2. The source format is CommonMark with the extensions of the
-   [guide](GUIDE.md#markdown); see [Markdown dialect](#markdown-dialect).
+   [guide](GUIDE.md#extended-syntax); see [Markdown dialect](#markdown-dialect).
 3. A document model of its own, independent of Markdown, describes the document.
 4. Syntax highlighting and diagrams are produced once, by engines behind a single port, in a
    transform pass. Their results are stored in the document model as format-neutral data.
@@ -60,7 +60,7 @@ file; the chapter node carries the front matter.
 
 ## Markdown dialect
 
-The syntax is described once, in the [guide](GUIDE.md#markdown). The parser is
+The syntax is described once, in the [guide](GUIDE.md#common-mark). The parser is
 [comrak](https://docs.rs/comrak) with its extensions for strikethrough, tables, autolinks, task
 lists, footnotes, GitHub alerts, heading ids and link attributes. Before it runs, variables are
 replaced in the source text and the line-start alerts (`!w`, `!!w` … `!!`) are rewritten into
@@ -112,7 +112,7 @@ of the build.
 ## Section numbers and contents
 
 With `numbered` the numbering pass numbers the headings of all chapters in reading order, as the
-[guide](GUIDE.md#markdown) describes, and stores the number in the heading node. Renderers show
+[guide](GUIDE.md#headings) describes, and stores the number in the heading node. Renderers show
 it in front of the heading and of chapter titles. With `contents` the renderers list the
 headings of the whole document on its first page, linked across pages.
 
