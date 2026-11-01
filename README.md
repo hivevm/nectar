@@ -16,8 +16,8 @@ stay explicit and reviewable.
 Nectar is the command line `nectar`, written in Rust under [`crates/`](crates/). It turns a
 project of Markdown files into a website with a print view and a PDF, highlights code with
 TextMate grammars and draws railroad, Graphviz and PlantUML diagrams. The
-[Nectar guide](doc/nectar/README.md) describes it in full, its design is
-[`doc/nectar/design.md`](doc/nectar/design.md), and [`examples/demo/`](examples/demo/) is a
+[Nectar guide](docs/GUIDE.md) describes it in full, its design is
+[`docs/DESIGN.md`](docs/DESIGN.md), and [`examples/demo/`](examples/demo/) is a
 complete project to start from.
 
 The full problem statement and goals live in [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md), the
@@ -63,9 +63,11 @@ lint in one go, as the pre-push hook and the `build` job of CI do
   `scripts/check-all.sh`
 - **Run:** `cargo run -p nectar -- -C examples/demo serve`, then open http://127.0.0.1:1313/
 
-A release of Nectar is a tag `nectar-vX.Y.Z`: the
-[release workflow](.github/workflows/nectar-release.yml) builds `nectar` for Linux, macOS and
-Windows and attaches the archives, with their `SHA256SUMS`, to a GitHub release of that tag.
+The `build` job of [CI](.github/workflows/checks.yml) runs `scripts/check-build.sh` on Linux,
+macOS and Windows. A release of Nectar is a tag `nectar-vX.Y.Z`: the
+[release workflow](.github/workflows/nectar-release.yml) builds `nectar` for Linux (x86-64,
+ARM), macOS (x86-64, ARM) and Windows (x86-64) and attaches the archives, with the notices of
+the crates and their `SHA256SUMS`, to a GitHub release of that tag.
 
 ## Usage
 
@@ -87,17 +89,9 @@ nectar serve            # http://127.0.0.1:1313/, reloads on every change
 nectar build            # writes the site, the print view and the PDF to public/
 ```
 
-| Option | Meaning |
-|---|---|
-| `-C <dir>` | Project directory, the one that holds `nectar.toml`; default the current one |
-| `--offline` | Keep images from the web as links instead of downloading them |
-| `build -o <dir>` | Output directory; overrides `output` in `nectar.toml` |
-| `build --drafts` | Include files whose front matter says `draft = true` |
-| `serve -p <port>`, `serve --bind <addr>` | Address to serve on; default `127.0.0.1:1313` |
-| `serve --no-drafts` | Leave out drafts, which `serve` shows by default |
-
-Chapters, front matter, the Markdown dialect, code engines, the print view, themes and every
-key of `nectar.toml` are described in the [Nectar guide](doc/nectar/README.md).
+The options of the command line, chapters, front matter, the Markdown dialect, code engines,
+the print view, themes and every key of `nectar.toml` are described in the
+[Nectar guide](docs/GUIDE.md).
 
 ## Project Layout
 
@@ -112,6 +106,8 @@ docs/SPECIFICATION.md # the specification: problem, goals, success criteria
 docs/GLOSSARY.md      # the vocabulary everyone uses, kept current inline
 docs/CONVENTIONS.md   # how this project writes what no check decides, kept current inline
 docs/ARCHITECTURE.md  # the system as it currently stands
+docs/GUIDE.md         # Nectar's user guide: dialect, configuration, print view
+docs/DESIGN.md        # Nectar's design: pipeline, document model, ports, renderers
 docs/adr/             # Architecture Decision Records (+ template)
 docs/plan/            # open work: feature specs and their tickets, deleted as they land
 scripts/check-all.sh  # runs the checks, sensors, and self-tests, as the hooks and CI do
@@ -150,7 +146,6 @@ crates/fetch/         # Nectar: fetcher that downloads images from the web
 crates/server/        # Nectar: local server that rebuilds and reloads the browser
 crates/cli/           # Nectar: the nectar command line
 examples/demo/        # a complete Nectar project, built in CI
-doc/nectar/           # Nectar's user guide and design
 ```
 
 ## Dev Container

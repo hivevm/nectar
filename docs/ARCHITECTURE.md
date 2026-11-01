@@ -68,4 +68,4 @@ engines) and hands the enriched documents to each renderer. The build is a map o
 memory, which the command line writes. `nectar serve` keeps the project and its engine cache
 between builds, rebuilds on every change below the root and swaps the build the server answers
 from. Details are in
-[`doc/nectar/design.md`](../doc/nectar/design.md).
+[`docs/DESIGN.md`](DESIGN.md).

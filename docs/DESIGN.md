@@ -10,8 +10,8 @@ Nectar turns Markdown sources into HTML. It runs in two modes that share one cor
 
 1. A start document includes further Markdown files through links. The result is one complete
    document.
-2. The source format is CommonMark with the extensions listed under
-   [Markdown dialect](#markdown-dialect).
+2. The source format is CommonMark with the extensions of the
+   [guide](GUIDE.md#extended-syntax); see [Markdown dialect](#markdown-dialect).
 3. A document model of its own, independent of Markdown, describes the document.
 4. Syntax highlighting and diagrams are produced once, by engines behind a single port, in a
    transform pass. Their results are stored in the document model as format-neutral data.
@@ -44,63 +44,30 @@ and returns its output as data; it never writes files itself.
 
 A project names one or more start documents. Each start document produces one complete document.
 
+Which links include a file, and what happens to the included file, is described in the
+[guide](GUIDE.md#documents-and-chapters).
+
 Every Markdown file is parsed on its own. Merging happens on the document model: an include
-becomes a chapter node that carries the included file's document. A link is an include when
-
-- it stands alone on its line, optionally after a heading marker such as `##`;
-  consecutive lines of such links include one file each,
-- its target ends in `.md`, and
-- the target file exists.
-
-For an included file:
-
-- its heading levels are shifted below the level at which it is included,
-- the link text, if present, replaces the file's first top-level heading,
-- relative paths (images, further includes) resolve against the included file's directory,
-- footnote definitions are scoped to the file and numbered across the whole document.
-
-An include cycle is an error. Every node records its origin (file and line), so diagnostics point
-at the source file and not at a merged text.
+becomes a chapter node that carries the included file's document, with its heading levels shifted
+below the level at which it is included. Every node records its origin (file and line), so
+diagnostics point at the source file and not at a merged text.
 
 ### Front matter
 
-A file may start with TOML front matter between `+++` lines. All fields are optional; a file
-without front matter behaves exactly as one with an empty block.
-
-```toml
-+++
-title = "Installation"   # overrides the first heading as page title
-slug  = "install"        # path segment when the document is split into pages
-draft = false            # drafts are left out by `build` and shown by `serve`
-[vars]
-version = "1.2.0"
-+++
-```
+The fields are described in the [guide](GUIDE.md#front-matter). The parser splits the TOML
+block off before parsing and blanks its lines, so line numbers in diagnostics stay those of the
+file; the chapter node carries the front matter.
 
 ## Markdown dialect
 
-On top of CommonMark:
-
-| Feature | Syntax |
-|---|---|
-| Tables | GFM pipe tables; the number of `-` in a delimiter cell sets the column's relative width (in HTML a preference: no column gets narrower than its longest word) |
-| Image attributes | `{width=50% height=4cm align=center}` right after an image |
-| Alerts | `!n`, `!s`, `!w`, `!e` at line start; multi-line as `!!w` … `!!`; also `> [!NOTE]` |
-| Highlight | `//text//` |
-| Underline | `____text____` |
-| Strikethrough | `~~text~~` |
-| Task lists | `- [ ]` and `- [x]` |
-| Footnotes | `text[^id]` with a definition `[^id]: footnote text` |
-| Links as footnotes | `[text][id]` or `[][id]` with `[id]: url "title"`, scoped to the file; to an external target the link gets a footnote with title and URL |
-| Autolinks | bare URLs such as `https://example.org` |
-| Comments | `[label]: # (comment)`, dropped from the output |
-| Heading ids | `# Heading {#id}` |
-| Internal links | a link target `#id`, `#heading-slug` or `#Heading Text` |
-| Symbols | `@name@`, a named glyph of the theme's symbol font |
-| Variables | `{{name}}` or `{{name;format}}` (format ignored), from `nectar.toml`, environment variables `NECTAR_<name>` and front matter, each overriding the one before; unknown names stay as written and are reported outside code |
-| Code | fenced with ` ``` ` or `~~~`; the info string selects the code engine |
-| Page break | a thematic break, `---`, `___` or `***`: a new page in print, a rule on the website |
-| Raw HTML | shown as text and reported unless `html = true` in `nectar.toml`; the HTML renderers then pass it through and the PDF leaves it out |
+The syntax is described once, in the [guide](GUIDE.md#common-mark). The parser is
+[comrak](https://docs.rs/comrak) with its extensions for strikethrough, tables, autolinks, task
+lists, footnotes, GitHub alerts, heading ids and link attributes. Before it runs, variables are
+replaced in the source text and the line-start alerts (`!w`, `!!w` … `!!`) are rewritten into
+block quotes, one line for one line; the conversion into
+the document model recognises highlight, underline, symbols, image attributes and the column
+widths of tables. Raw HTML becomes text in the first [transform pass](#transform-passes) unless
+`html = true`.
 
 ## Document model
 
@@ -144,13 +111,10 @@ of the build.
 
 ## Section numbers and contents
 
-With `numbered` (default on) the numbering pass numbers the headings of all chapters in reading
-order. The top level stays unnumbered; below it numbers read `1.`, `1.2.`, `1.2.3.`. Below a
-skipped level, as with `####` directly under `##`, numbering continues in Roman numerals.
-Renderers show the number in front of the heading and of chapter titles.
-
-With `contents` (default on) the first page of a document lists the headings of levels 2 and 3
-of the whole document, linked across pages.
+With `numbered` the numbering pass numbers the headings of all chapters in reading order, as the
+[guide](GUIDE.md#headings) describes, and stores the number in the heading node. Renderers show
+it in front of the heading and of chapter titles. With `contents` the renderers list the
+headings of the whole document on its first page, linked across pages.
 
 ## Transform passes
 
@@ -200,18 +164,13 @@ The core defines the port and knows no engine. Engines are adapters in crates of
 | `nectar-railroad` | `railroad` | (E)BNF parser and SVG layout in-process |
 | `nectar-process` | as configured, such as `dot`, `uml`, `ebnf`, `regex`, `jsongraph` | a local command (`dot`, `plantuml`) |
 
-The railroad engine draws every rule of a block under its name and stacks the drawings into one SVG.
-A rule reference written as `\` continues a rule on a new line. A loop is labelled with the number
-of passes through it (`3×`, `1..3×`, `≥2×`); "once or more" has no label. Text boxes are sized with
-Verdana metrics, and texts are stretched to their box, so the drawing does not depend on the fonts
-of the viewer.
+The railroad engine stacks the drawings of a block's rules into one SVG. Text boxes are sized
+with Verdana metrics, and texts are stretched to their box, so the drawing does not depend on the
+fonts of the viewer.
 
-`nectar.toml` selects the adapters and configures them. Process engines are asked first, then
-railroad, then TextMate; railroad and TextMate are on unless their table says `enabled = false`.
-A process engine writes the code, or the
-code filled into its `input` template, to the command's standard input and takes SVG from its
-standard output. A non-zero exit status or a missing `<svg` element is a failure; a command that
-runs longer than its `timeout` is stopped.
+`nectar.toml` selects the adapters and configures them; the order in which they are asked, and
+when a process engine fails, are described in the [guide](GUIDE.md#engines). A process engine
+that runs longer than its `timeout` is stopped.
 
 ## Rendering
 
@@ -243,19 +202,8 @@ script remembers the branches opened in a browser tab (`sessionStorage`); withou
 works the same and just forgets. A
 document on a single page shows its headings of levels 2 and 3 in the tree instead.
 
-The output is laid out as follows:
-
-```
-public/
-  index.html                 site index, when every document has a directory of its own
-  <document>/index.html      root chapter
-  <document>/<slug>/index.html
-  <document>/<asset path>    local images and files, relative to the start document
-  _graphics/<hash>.svg       graphics, named by their content
-  _theme/                    the theme's static files
-```
-
-URLs between output files are relative, so the output also works when opened from disk.
+The renderers write the layout of files described in the [guide](GUIDE.md#output), with
+relative URLs between them.
 
 ### Print renderer
 
@@ -292,57 +240,21 @@ Typst's caches keep rebuilds under `nectar serve` short.
 
 ### Themes
 
-A theme is a directory:
-
-```
-themes/<name>/
-  layouts/     minijinja templates (page, chapter, partials)
-  static/      CSS, fonts, images; copied to the output as they are
-```
-
-A default theme is built into the binary. A project theme overrides it file by file.
+The [guide](GUIDE.md#themes) describes what a theme holds. The default theme lives in
+`crates/html/theme/` and is built into the binary with `include_str!` and `include_bytes!`; a
+project theme overrides it file by file.
 
 ## Configuration
 
-```toml
-# nectar.toml
-title  = "HiveVM Manual"
-theme  = "hive"
-output = "public"
-
-[[document]]
-source = "content/manual.md"
-split  = "chapter"              # "chapter" or "none"
-numbered = true                 # section numbers
-contents = true                 # contents of the whole document on the first page
-
-[vars]
-version = "1.2.0"
-
-[engine.textmate]
-theme = "github-light"             # on by default; `enabled = false` turns it off
-
-[engine.process.dot]
-command   = "dot"
-args      = ["-Tsvg"]
-languages = ["dot"]
-
-[engine.process.plantuml]
-command   = "plantuml"
-args      = ["-tsvg", "-pipe"]
-languages = { uml = "uml", ebnf = "ebnf", regex = "regex", jsongraph = "json" }
-input     = "@start{lang}\n!pragma layout smetana\n{code}\n@end{lang}"
-timeout   = 30                     # seconds
-
-[serve]
-port = 1313
-bind = "127.0.0.1"
-```
+Every key of `nectar.toml` is described in the [guide](GUIDE.md#configuration). The core reads
+the file into its configuration when a project is opened; `[engine.…]` goes to the command line,
+which builds the adapters from it, and `[document.print]` is passed on to the renderers as a
+table.
 
 ## Crates
 
 The crates, what each holds and how their dependencies point are described once, in the
-[building blocks of the architecture overview](../../docs/ARCHITECTURE.md#building-blocks).
+[building blocks of the architecture overview](ARCHITECTURE.md#building-blocks).
 
 ## Core interface
 
@@ -368,13 +280,12 @@ site with dozens of diagrams takes milliseconds.
 
 ## Modes
 
-**`nectar build`** loads the project, builds it and writes the output. It reports all diagnostics
-and exits non-zero when any is an error. `--drafts` includes files marked as draft, `--output`
-overrides the output directory and `-C` names the project root.
+The options of both commands are listed in the [guide](GUIDE.md#quick-start).
 
-**`nectar serve`** builds once, with drafts unless `--no-drafts`, and keeps the build in memory.
-It listens on `127.0.0.1:1313`; `[serve] port` and `bind` in `nectar.toml` or `--port` and
-`--bind` change that.
+**`nectar build`** loads the project, builds it and writes the output. It reports all diagnostics
+and exits non-zero when any is an error.
+
+**`nectar serve`** builds once and keeps the build in memory.
 
 A debounced file watcher reports changes below the project root. Only events that change what a
 file holds count; reading files, as every build does, does not. Hidden files, editor backups and
@@ -394,14 +305,6 @@ only; a directory without its trailing slash is redirected, so relative links ke
 A diagnostic has a severity (error, warning), a message and an origin (file and line).
 Passes, engines and the renderer return diagnostics as data and never print them. The shells
 decide how to show them: the CLI on the terminal, the server on the terminal and in the browser.
-
-## Distribution
-
-The `build` job of `.github/workflows/checks.yml` runs `scripts/check-build.sh` on Linux, macOS
-and Windows; the script names its steps. A tag `nectar-v<version>` starts
-`.github/workflows/nectar-release.yml`, which builds the CLI for Linux (x86-64, ARM), macOS
-(x86-64, ARM) and Windows (x86-64) and publishes the archives, with the notices of the crates and
-their SHA-256 checksums, as a GitHub release. The user guide is `doc/nectar/README.md`.
 
 ## Open points
 
