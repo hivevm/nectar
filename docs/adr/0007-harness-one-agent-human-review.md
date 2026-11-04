@@ -58,8 +58,8 @@ the Code Owners review, which a superseding ADR takes up when one joins.
   run or maintain.
 - Negative / trade-offs: throughput is bounded by the maintainer's sessions; a change waits while
   the maintainer is away. The repository's ruleset requires no Code Owners review, which the
-  README's *Repository settings* list, and `scripts/sensor-repo-settings.sh` reports the
-  difference as expected.
+  *Repository settings* of `CONTRIBUTING.md` list, and `scripts/sensor-repo-settings.sh` reports
+  the difference as expected.
 - Follow-ups: unattended tickets, with a cap and the start command, when the work outgrows one
   session at a time; a second maintainer and the Code Owners review when one joins.
 
@@ -68,4 +68,4 @@ the Code Owners review, which a superseding ADR takes up when one joins.
 **Not mechanically decidable:** who reviews a change, who decides an ADR, and that no session runs
 unattended are decided outside the tree. What the harness relies on mechanically is already
 checked: the git hooks under `.githooks/` and the required checks listed under *Repository
-settings* in the README.
+settings* in `CONTRIBUTING.md`.
