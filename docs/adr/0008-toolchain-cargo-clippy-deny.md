@@ -35,8 +35,8 @@ specification names, and bans the crates Q-1 keeps out of the core and the rende
 
 - `scripts/check-all.sh` runs it with a `run` line, so the pre-push hook refuses a red change.
 - The `build` job of `checks.yml` sets up the stable toolchain with the WebAssembly target and
-  runs it on Linux, macOS and Windows; it is the one workflow job that builds Nectar, and the
-  README lists its matrix runs among the required checks.
+  runs it on Linux, macOS and Windows; it is the one workflow job that builds Nectar, and
+  `CONTRIBUTING.md` lists its matrix runs among the required checks.
 - Which crates the WebAssembly step checks is
   [ADR-0012](0012-textmate-engine-native-only.md)'s to say.
 - The template's `scripts/sensor-tests-kept.sh` reports deleted tests and added `#[ignore]`
@@ -80,4 +80,4 @@ the release workflow `nectar-release.yml` and the packaging of `scripts/release.
 
 The tests of the golden path, in `crates/fetch/`, cite this ADR with a `Verifies: ADR-0008`
 marker. Check 9 of [`scripts/check-docs.sh`](../../scripts/check-docs.sh) holds the `build` job,
-the `run` line of `scripts/check-all.sh`, and the required checks of the README together.
+the `run` line of `scripts/check-all.sh`, and the required checks of `CONTRIBUTING.md` together.
