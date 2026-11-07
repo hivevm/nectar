@@ -1,6 +1,7 @@
 # Output
 
-`nectar build` writes, and `nectar serve` serves:
+`nectar build` writes, and `nectar serve` serves, for a project; `nectar build <file>` writes only
+the PDF of that file ([Quick start](quick-start.md)):
 
 ```
 public/

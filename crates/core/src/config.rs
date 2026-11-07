@@ -97,6 +97,16 @@ impl Config {
         Ok(config)
     }
 
+    /// The configuration of a single Markdown file built without a `nectar.toml`: the defaults,
+    /// with `source` as the one document.
+    pub fn single(source: PathBuf) -> Self {
+        // Through serde, so every default is the one an empty nectar.toml would give.
+        let mut config: Self = toml::from_str("[[document]]\nsource = \"\"\n")
+            .expect("the configuration of a single file deserializes");
+        config.documents[0].source = source;
+        config
+    }
+
     /// The configured variables as text.
     pub fn variables(&self) -> BTreeMap<String, String> {
         to_strings(&self.vars)

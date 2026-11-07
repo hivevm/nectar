@@ -77,6 +77,9 @@ Only a normalization renumbers them ([`AGENTS.md` §3](../AGENTS.md#3-adr-rules)
 9. **G-9** — When a source contains raw HTML and `nectar.toml` does not set `html = true`, the
    system shall show it as text and report a warning with file and line; with `html = true` it
    shall pass it to the website, while the PDF still reports it (G-4).
+10. **G-10** — When `nectar build` is given a Markdown file, the system shall write its PDF next to
+    it, or to the file `-o` names, without reading a `nectar.toml`, and shall read nothing outside
+    the file's directory.
 
 ## Quality Goals
 

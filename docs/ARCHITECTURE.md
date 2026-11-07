@@ -62,10 +62,10 @@ behind the port (`download.rs`), the adapter against a real counterpart on loopb
 ## How it runs
 
 `nectar build`: the command line opens the project on its directory, plugs in the workers, the
-engines and the fetcher, and asks the core for a build; the core loads every start document with
-its chapters, runs the passes (ids, numbers, footnotes, links, assets, images from the web, code
+engines and the fetcher, and asks the core for a build; the core loads every start document with its
+chapters, runs the passes (ids, numbers, footnotes, links, assets, images from the web, code
 engines) and hands the enriched documents to each renderer. The build is a map of output files in
-memory, which the command line writes. `nectar serve` keeps the project and its engine cache
-between builds, rebuilds on every change below the root and swaps the build the server answers
-from. Details are in
-[`docs/DESIGN.md`](DESIGN.md).
+memory, which the command line writes. `nectar build <file>` opens a project of that file's
+directory with `Project::new` and a configuration made in memory, and writes only its PDF. `nectar
+serve` keeps the project and its engine cache between builds, rebuilds on every change below the
+root and swaps the build the server answers from. Details are in [`docs/DESIGN.md`](DESIGN.md).

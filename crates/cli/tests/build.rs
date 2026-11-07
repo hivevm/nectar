@@ -634,6 +634,112 @@ fn the_guide_uses_every_feature_it_explains() {
     );
 }
 
+/// Runs `nectar` in `dir` without `-C`, as a writer calls it on a single file.
+fn nectar_in(dir: &Path, args: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_nectar"))
+        .current_dir(dir)
+        .arg("--offline")
+        .args(args)
+        .output()
+        .unwrap()
+}
+
+/// The names of the files directly in `dir`, sorted.
+fn names(dir: &Path) -> Vec<String> {
+    let mut names: Vec<_> = fs::read_dir(dir)
+        .unwrap()
+        .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+        .collect();
+    names.sort();
+    names
+}
+
+// Verifies: G-10, ADR-0015
+#[test]
+fn a_markdown_file_builds_to_its_pdf_without_a_configuration() {
+    let dir = tempfile::tempdir().unwrap();
+    let notes = dir.path().join("notes");
+    write(
+        &notes,
+        "readme.md",
+        "# Notes\n\nSome *text*.\n\n```railroad\nrule = \"a\" { \"b\" } ;\n```\n",
+    );
+
+    // Run from the parent: the file's directory is the root, and the PDF lands next to the file.
+    let output = nectar_in(dir.path(), &["build", "notes/readme.md"]);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(output.status.success(), "{stderr}");
+    assert_eq!(names(&notes), ["readme.md", "readme.pdf"]);
+    assert_eq!(names(dir.path()), ["notes"]);
+    assert!(
+        fs::read(notes.join("readme.pdf"))
+            .unwrap()
+            .starts_with(b"%PDF")
+    );
+
+    // -o names the PDF file instead, and nothing lands next to the source; an existing directory
+    // takes the PDF under its usual name, and the source itself is never overwritten.
+    fs::remove_file(notes.join("readme.pdf")).unwrap();
+    let output = nectar_in(&notes, &["build", "readme.md", "-o", "readme.md"]);
+    assert!(!output.status.success());
+    assert!(
+        fs::read_to_string(notes.join("readme.md"))
+            .unwrap()
+            .starts_with("# Notes")
+    );
+    let output = nectar_in(&notes, &["build", "readme.md", "-o", "out/manual.pdf"]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(names(&notes), ["out", "readme.md"]);
+    assert_eq!(names(&notes.join("out")), ["manual.pdf"]);
+    let output = nectar_in(&notes, &["build", "readme.md", "-o", "out"]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(names(&notes.join("out")), ["manual.pdf", "readme.pdf"]);
+}
+
+// Verifies: G-10, ADR-0015
+#[test]
+fn a_markdown_file_ignores_a_configuration_beside_it_and_stays_in_its_directory() {
+    let dir = tempfile::tempdir().unwrap();
+    let notes = dir.path().join("notes");
+    write(dir.path(), "secret.md", "# Secret\n\nTOPSECRET\n");
+    write(dir.path(), "secret.png", "TOPSECRET");
+    write(&notes, "nectar.toml", "this is not a configuration");
+    write(
+        &notes,
+        "readme.md",
+        "# Notes\n\n[Secret](../secret.md)\n\n![Secret](../secret.png)\n",
+    );
+
+    // Run from the parent: were the current directory the root, ../secret.md from notes/ would lie
+    // inside it and be read; with the file's directory as the root it lies outside.
+    let output = nectar_in(dir.path(), &["build", "notes/readme.md"]);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(output.status.success(), "{stderr}");
+    assert_eq!(
+        stderr.matches("points outside the project").count(),
+        2,
+        "{stderr}"
+    );
+    assert_eq!(names(&notes), ["nectar.toml", "readme.md", "readme.pdf"]);
+
+    // -C names a project; together with a file it is refused.
+    let output = nectar_in(dir.path(), &["-C", "notes", "build", "notes/readme.md"]);
+    assert!(!output.status.success());
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("not both"),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
 // Verifies: G-8
 #[test]
 fn files_in_memory_build_the_same_website_as_the_command_line() {

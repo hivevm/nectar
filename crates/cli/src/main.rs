@@ -25,9 +25,9 @@ const DEFAULT_PORT: u16 = 1313;
 #[derive(Parser)]
 #[command(name = "nectar", version, about = "Turns Markdown sources into HTML")]
 struct Cli {
-    /// Project root, the directory that holds nectar.toml
-    #[arg(long, short = 'C', default_value = ".", global = true)]
-    root: PathBuf,
+    /// Project root, the directory that holds nectar.toml [default: .]
+    #[arg(long, short = 'C', global = true)]
+    root: Option<PathBuf>,
 
     /// Keep images from the web as links instead of downloading them
     #[arg(long, global = true)]
@@ -39,9 +39,12 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Build the site into the output directory
+    /// Build the site into the output directory, or the PDF of one Markdown file
     Build {
-        /// Output directory; overrides `output` in nectar.toml
+        /// A Markdown file to build alone, without nectar.toml: its PDF is written next to it
+        file: Option<PathBuf>,
+
+        /// Output directory; overrides `output` in nectar.toml. With a file, the PDF file to write
         #[arg(long, short)]
         output: Option<PathBuf>,
 
@@ -68,13 +71,26 @@ enum Command {
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
+    let root = cli.root.clone().unwrap_or_else(|| PathBuf::from("."));
     let result = match cli.command {
-        Command::Build { output, drafts } => build(&cli.root, output, drafts, cli.offline),
+        Command::Build {
+            file: Some(file),
+            output,
+            drafts,
+        } => match cli.root {
+            Some(_) => Err(anyhow!("give either -C <dir> or a Markdown file, not both")),
+            None => build_file(&file, output, drafts, cli.offline),
+        },
+        Command::Build {
+            file: None,
+            output,
+            drafts,
+        } => build(&root, output, drafts, cli.offline),
         Command::Serve {
             port,
             bind,
             no_drafts,
-        } => serve(&cli.root, port, bind, !no_drafts, cli.offline),
+        } => serve(&root, port, bind, !no_drafts, cli.offline),
     };
     match result {
         Ok(code) => code,
@@ -103,6 +119,74 @@ fn build(root: &Path, output: Option<PathBuf>, drafts: bool, offline: bool) -> R
         "{} files written to {} in {} ms",
         build.files.len(),
         dir.display(),
+        started.elapsed().as_millis()
+    );
+    Ok(ExitCode::SUCCESS)
+}
+
+/// Builds one Markdown file without a `nectar.toml`: its directory is the project root, and only
+/// its PDF is written, next to it or to `output`.
+fn build_file(
+    file: &Path,
+    output: Option<PathBuf>,
+    drafts: bool,
+    offline: bool,
+) -> Result<ExitCode> {
+    let started = Instant::now();
+    if !file.is_file() {
+        bail!("{} is not a file", file.display());
+    }
+    let name = file.file_name().context("the file has no name")?;
+    let root = match file.parent() {
+        Some(parent) if !parent.as_os_str().is_empty() => parent,
+        _ => Path::new("."),
+    };
+
+    // Settings come from the file's front matter alone: no nectar.toml, no NECTAR_ variables.
+    let config = Config::single(PathBuf::from(name));
+    let project = prepare(
+        Project::new(Box::new(Directory::new(root)), config),
+        drafts,
+        offline,
+    )?;
+
+    let build = project.build(&[&PdfRenderer]);
+    report(&build.diagnostics);
+    if build.has_errors() {
+        eprintln!("build failed");
+        return Ok(ExitCode::FAILURE);
+    }
+    let pdf = build
+        .files
+        .iter()
+        .find(|(path, _)| path.extension().is_some_and(|e| e == "pdf"))
+        .map(|(_, bytes)| bytes)
+        .with_context(|| {
+            format!(
+                "{} gave no PDF; a file whose front matter says draft = true needs --drafts",
+                file.display()
+            )
+        })?;
+
+    let pdf_name = Path::new(name).with_extension("pdf");
+    let target = match output {
+        // An existing directory takes the PDF under its usual name, as -o takes a directory for a
+        // project.
+        Some(dir) if dir.is_dir() => dir.join(&pdf_name),
+        Some(path) => path,
+        None => root.join(&pdf_name),
+    };
+    if std::fs::canonicalize(&target).ok() == std::fs::canonicalize(file).ok() {
+        bail!("{} would overwrite the source", target.display());
+    }
+    if let Some(parent) = target.parent().filter(|p| !p.as_os_str().is_empty()) {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("cannot create {}", parent.display()))?;
+    }
+    std::fs::write(&target, pdf).with_context(|| format!("cannot write {}", target.display()))?;
+    eprintln!(
+        "{} written in {} ms",
+        target.display(),
         started.elapsed().as_millis()
     );
     Ok(ExitCode::SUCCESS)
@@ -166,8 +250,13 @@ fn renderers() -> Renderers {
 
 fn open(root: &Path, drafts: bool, offline: bool) -> Result<Project> {
     let mut project = Project::load(Box::new(Directory::new(root))).map_err(|d| anyhow!("{d}"))?;
-    project.set_workers(Box::new(Threads));
     project.set_environment(std::env::vars());
+    prepare(project, drafts, offline)
+}
+
+/// Plugs the workers, the fetcher and the configured code engines into `project`.
+fn prepare(mut project: Project, drafts: bool, offline: bool) -> Result<Project> {
+    project.set_workers(Box::new(Threads));
     project.set_include_drafts(drafts);
     project.set_offline(offline);
     project.set_fetcher(Box::new(Http::new()));

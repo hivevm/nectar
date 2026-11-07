@@ -100,6 +100,7 @@ is the table a session reads.
 | [0012](0012-textmate-engine-native-only.md) | The TextMate engine runs on native hosts only, and a WebAssembly host highlights through the code engine port | `crates/textmate/`, the WebAssembly step of `scripts/check-build.sh`, and the code engines a WebAssembly shell composes | 🟢 accepted |
 | [0013](0013-release-interface.md) | A Nectar release is archives, their checksums and a provenance attestation for each, and the repository carries the installer that verifies them | `.github/workflows/nectar-release.yml`, `scripts/release.sh`, `release/install-nectar.sh` and the check that tests it, and every installer outside this repository that takes a Nectar release, such as the Dev Container Feature of `hivevm/features` | 🟢 accepted |
 | [0014](0014-guide-as-reference-project.md) | Cargo builds and tests Nectar, rustfmt, Clippy and cargo-deny are its first sensors, run by one script, and the user guide is the project the checks build | `Cargo.toml`, `deny.toml`, `scripts/check-build.sh`, `scripts/check-all.sh`, the `build` job of `.github/workflows/checks.yml`, the Build, Test & Run section of `README.md`, `docs/guide/`, and the tests that measure Q-2, Q-3 and Q-4 | 🟢 accepted |
+| [0015](0015-single-file-build.md) | `nectar build` given a Markdown file writes its PDF next to it, without a `nectar.toml` | the command line in `crates/cli/`, its `build` command and its arguments, and the tests that verify G-10 | 🟢 accepted |
 
 ### Superseded and rejected
 
