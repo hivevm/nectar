@@ -3,7 +3,8 @@
 Nectar turns Markdown into a website. `nectar build` writes the site to a directory;
 `nectar serve` serves it on your machine and reloads the browser whenever a source file
 changes. Every document also gets a print view and a PDF, and `nectar build notes.md` turns a
-single file into its PDF without any configuration.
+single file into its PDF without any configuration. `nectar render` draws or highlights a single
+snippet on the command line.
 
 [Install](chapters/install.md)
 [Quick start](chapters/quick-start.md)

@@ -11,7 +11,8 @@ use typst::text::{Font, FontBook};
 use typst::utils::LazyHash;
 use typst::{Library, LibraryExt, World};
 
-static FONT_FILES: &[&[u8]] = &[
+/// The fonts bundled with Nectar, as font files: Ubuntu Sans, Victor Mono and Material Icons.
+pub static FONT_FILES: &[&[u8]] = &[
     include_bytes!("../fonts/UbuntuSans-Regular.ttf"),
     include_bytes!("../fonts/UbuntuSans-Italic.ttf"),
     include_bytes!("../fonts/UbuntuSans-Bold.ttf"),

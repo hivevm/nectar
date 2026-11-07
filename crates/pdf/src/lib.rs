@@ -19,6 +19,7 @@ use typst_pdf::PdfOptions;
 
 use crate::typeset::{Page, Typesetter, virtual_path};
 use crate::world::DocumentWorld;
+pub use crate::world::FONT_FILES;
 
 const WATERMARKS: &[(&str, &[u8])] = &[
     ("draft", include_bytes!("../images/draft.png")),

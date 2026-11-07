@@ -230,3 +230,35 @@ plain code. A process engine passes the code, or the code filled into `input`, o
 and expects SVG on standard output. When a command is missing, exits non-zero, writes no `<svg`
 element or runs longer than `timeout` seconds, the block stays plain code and Nectar reports a
 warning.
+
+## On the command line
+
+`nectar render` runs the engine of one language on one text, without a document. It reads the
+file it is given, or standard input, and writes to the file `-o` names, or to standard output:
+
+```sh
+echo 'rule ::= "a" | "b" ;' | nectar render railroad > rule.svg
+nectar render railroad grammar.txt -o grammar.png
+nectar render rust main.rs -f ansi            # coloured in the terminal
+nectar -C docs render dot graph.gv -o graph.svg
+```
+
+| Output of the engine | Formats (`-f`) | Default |
+|----------------------|----------------|---------|
+| a diagram            | `svg`, `png`   | `svg`   |
+| highlighted code     | `html`, `ansi` | `html`  |
+
+Without `-f`, the extension of `-o` picks the format; an extension of the other kind, such as
+`-o main.png` for highlighted code, is an error, and one that names no format gives the
+default. `html` is a `<pre>` with inline styles in the colours of `theme`; `ansi` is
+24-bit colour for a terminal. A PNG has the size of the SVG, and its text is set in the fonts
+the PDF uses; like the SVG, it has a transparent background, so dark lines on a dark page are
+hard to see.
+
+Without `-C`, railroad and the TextMate grammars run with their defaults, and no `nectar.toml`
+is read. With `-C <dir>`, the `[engine]` table of that directory's `nectar.toml` configures
+them, process engines included; the file has to be a complete project configuration, with at
+least one `[[document]]`. The file to read and the file `-o` names stay relative to the
+current directory, not to `<dir>`: `nectar -C docs render dot graph.gv` reads `./graph.gv`.
+A language no engine takes, a format the output does not have,
+or an engine that fails is an error, and nothing is written.
