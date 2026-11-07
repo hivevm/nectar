@@ -91,14 +91,14 @@ from the threats below.
   crates; only the adapters (`nectar-fetch`, `nectar-native`, `nectar-process`) and the shells
   (`nectar`, `nectar-server`) use them.
 - **Q-2** — Fidelity between outputs: a source means the same thing on the website and in the PDF,
-  so nobody maintains the documentation twice. Measured on the documents in `examples/demo`: every
+  so nobody maintains the documentation twice. Measured on the user guide in `docs/guide`: every
   heading, paragraph, table, figure and code block of the website appears in the PDF, or a
   diagnostic says it does not (G-4).
 - **Q-3** — Determinism: the same sources and configuration give byte-identical output, so a build
-  can be diffed and cached. Measured by two builds of `examples/demo` in a row, on the same machine
+  can be diffed and cached. Measured by two builds of the user guide in a row, on the same machine
   and with images from the web offline, giving identical files.
 - **Q-4** — Responsiveness while writing: an edit shows up in the browser before the writer looks
-  over. Measured as a rebuild of `examples/demo` after a one-line edit, with the engine cache warm,
+  over. Measured as a rebuild of the user guide after a one-line edit, with the engine cache warm,
   in under 200 ms on a developer machine.
 - **Q-5** — Confinement: Nectar touches nothing the writer did not point it at. Measured by tests
   that build fixture projects whose links, includes and images point outside the root and whose
