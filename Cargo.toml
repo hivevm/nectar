@@ -12,6 +12,7 @@ members = [
     "crates/pdf",
     "crates/server",
     "crates/cli",
+    "crates/wasm-link",
 ]
 
 [workspace.package]
@@ -24,3 +25,14 @@ repository = "https://github.com/hivevm/doc"
 # `nectar serve` from the debugger stays quick. Nectar's own crates stay debuggable.
 [profile.dev.package."*"]
 opt-level = 2
+
+# The WebAssembly step of scripts/check-build.sh only needs nectar-wasm-link to link, so nothing
+# is optimised and no debug information is written: about a fifth of the CPU time of the dev
+# profile, whose dependencies are optimised.
+[profile.wasm-link]
+inherits = "dev"
+debug = false
+
+[profile.wasm-link.package."*"]
+opt-level = 0
+debug = false
