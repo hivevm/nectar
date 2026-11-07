@@ -35,8 +35,8 @@ We will add a code engine in a crate of its own, `nectar-rough` under `crates/ro
 supports the language `rough`, takes the text of its code block as one SVG document and returns
 a `Graphic`: the same document with every shape (path, rectangle, circle, ellipse, line,
 polyline, polygon) redrawn in Rough.js's sketch style in its own stroke and fill colours and stroke
-width, its text drawn as plain outlines, and the style of each shape taken from `data-rough-*`
-attributes on it or an ancestor.
+width, faded by the opacity of the groups around it, its text drawn as plain outlines, and the
+style of each shape taken from `data-rough-*` attributes on it or an ancestor.
 
 - **Attributes.** One per option of Rough.js that applies to a shape, named in kebab case:
   `data-rough-fill-style` (`hachure`, `solid`, `zigzag`, `cross-hatch`, `dots`, `dashed`,
@@ -44,17 +44,27 @@ attributes on it or an ancestor.
   `data-rough-hachure-gap`, `data-rough-fill-weight`, `data-rough-dash-offset`,
   `data-rough-dash-gap`, `data-rough-zigzag-offset`, `data-rough-disable-multi-stroke`,
   `data-rough-preserve-vertices` and `data-rough-seed`. The nearest element that sets one wins;
-  without any, Rough.js's defaults apply. A value the engine cannot read is an `EngineError` that
-  names the attribute.
+  without any, Rough.js's defaults apply. A `data-rough-*` attribute the engine does not know, or
+  a value it cannot read, is an `EngineError` that names the attribute.
+- **`<use>`.** A shape drawn through a `<use>` takes the attributes on it and its ancestors
+  within the referenced content, over those on the `<use>` and its ancestors, as SVG inherits
+  properties into a `<use>`. A shape inside a marker, a shape expanded from an entity of the
+  DTD, and a shape drawn through a `<use>` the engine cannot resolve, such as one that nests
+  deeper than eight, points outside the document, is placed in units other than pixels, sizes a
+  referenced `<svg>`, or lies beyond the size the resolution may grow to, take the defaults. A
+  `<use>` that references itself, directly or through others, draws nothing, as SVG has it,
+  unless it lies beyond those limits and is left to usvg.
+- **Paint.** A gradient fills or strokes with its first stop; a pattern does not paint.
 - **Seed.** Without `data-rough-seed`, a fixed seed, so the same text gives the same graphic.
 - **Errors.** Text that is no SVG is an `EngineError`, as a failing engine is under G-5 and
   ADR-0018.
 
-**Out of scope:** settings for the whole engine under `[engine.rough]` in `nectar.toml`; a sketch
+**Out of scope:** settings for the whole engine under `[engine.rough]` in `nectar.toml` beyond
+the `enabled` every built-in engine has; a sketch
 style for the graphics of other engines, such as railroad, without passing their SVG through
-`rough`; gradients, patterns, filters, masks and clip paths, which the engine does not sketch;
-raster images inside the SVG; the technology the engine draws and parses with, which a separate
-ADR decides.
+`rough`; gradients beyond their first stop, patterns, filters, masks and clip paths, which the
+engine does not draw; styles for the shapes of markers; raster images inside the SVG; the
+technology the engine draws and parses with, which a separate ADR decides.
 
 ## Alternatives considered
 
@@ -101,5 +111,5 @@ Tests in `crates/rough/` cite this ADR (`Verifies: ADR-draft-rough-engine`). The
 examples of hivevm/rough as SVG through the engine and check: every shape comes back as paths in
 its own colours; each of the seven fill styles gives its pattern; an attribute on a group reaches
 its shapes and one on a shape overrides it; the same text gives the same bytes; text that is no
-SVG and an unreadable attribute value are errors. A test in `crates/cli/tests/render.rs` cites it
-too: `nectar render rough` writes SVG and PNG.
+SVG, an unknown attribute and an unreadable value are errors. A test in
+`crates/cli/tests/render.rs` cites it too: `nectar render rough` writes SVG and PNG.

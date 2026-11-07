@@ -39,8 +39,17 @@ database that holds only the fonts `nectar-pdf` bundles, handed in by the shell,
 
 - `usvg` turns every shape into a path with its absolute transform and resolved paint; the engine
   hands each path to `roughr`'s `Generator::path` with options from the `data-rough-*`
-  attributes, always with a seed, and writes the result with `Generator::to_paths` as SVG path
-  data.
+  attributes, always with a seed, and writes the operations of the `Drawable` it returns as SVG
+  path data itself: `roughr` 0.14's `Generator::ops_to_path`, which `to_paths` uses, writes a
+  move as a line (`L` for `M`), which is no valid path data.
+- usvg keeps no unknown attribute, so the engine traces each path back to its style by the `id`
+  usvg keeps on a shape's path, inserting an id where a shape has none and renaming a duplicate.
+  usvg gives a path drawn through a `<use>` no id, so before usvg reads the SVG the engine
+  replaces every drawn `<use>` it can resolve, as ADR-draft-rough-engine lists them, with a
+  group of the `<use>`'s attributes around a copy of the referenced content, a `<symbol>` copied
+  as a nested `<svg>`, round by round for at most eight rounds while the text stays within
+  sixteen times its length or 1 MiB, whichever is larger; a circular `<use>` is dropped, since
+  usvg would unroll an indirect cycle to its node limit.
 - Text: `usvg` flattens it to outlines with the given font database. `<image>` elements are
   dropped, with the image resolver set to resolve nothing, so no file is read.
 - `nectar-rough` joins the `PORTABLE` crates of the structural test and the WebAssembly step of
@@ -51,6 +60,10 @@ does not need because it writes SVG and PNG comes from ADR-0017; raster images i
 
 ## Alternatives considered
 
+- **Match the paths usvg draws for a `<use>` to the referenced shapes in order.** Not chosen:
+  usvg adds the paths of markers to the `<use>`'s group and drops shapes without paint, so the
+  order shifts and a shape silently takes another's style, as a review of the first
+  implementation showed.
 - **A port of Rough.js of our own, in Rust.** Not chosen: the code of `roughr` again, maintained
   by us.
 - **Migrate hivevm/rough.** Not chosen by the writer: unfinished, in Java, and no further than
@@ -84,17 +97,27 @@ does not need because it writes SVG and PNG comes from ADR-0017; raster images i
   writes a tree back as SVG.
 - `Cargo.lock`: `usvg`, `svgtypes` 0.16, `euclid` 0.22, `palette` 0.7 and `rand` 0.8 are already in
   the build through `typst` and `resvg`.
+- `getrandom` 0.2.17, `src/custom.rs`: "Functions can only be registered in the root binary
+  crate"; a second registration fails to link.
+- `cargo tree -i i_overlay` and `cargo deny check licenses` after adding `roughr` 0.14.0: the
+  seventeen new crates and their licences.
 
 ## Consequences
 
-- Positive: Rough.js's full set of fill styles and options with three new crates in the build
-  (`roughr`, `points_on_curve`, `svg_path_ops`) and `derive_builder`; no licence beyond MIT.
+- Positive: Rough.js's full set of fill styles and options. Seventeen crates join the build, all
+  under MIT or MIT/Apache-2.0, which `deny.toml` already allows: `roughr`, `points_on_curve`,
+  `svg_path_ops`; `i_overlay` with `i_float`, `i_shape`, `i_tree` and `i_key_sort` through
+  `svg_path_ops`; `derive_builder` with its macro crates, `darling`, `ident_case`, `strsim` 0.10
+  and `syn` 1 at build time.
 - Positive: the engine is portable; a WebAssembly host can compose it like railroad.
 - Negative / trade-offs: `roughr` is 0.x with one maintainer; an upgrade may change its API or its
   output, and the tests that pin bytes will show it. The version of `usvg` follows Typst's, as
   `resvg`'s does in ADR-0017.
-- Negative / trade-offs: the `custom` backend is registered in a library crate; a second crate in
-  the same WebAssembly build that registers one would clash at link time. A call without a seed
+- Negative / trade-offs: the `custom` backend is registered in a library crate, against
+  `getrandom` 0.2's own advice to register only in the root binary crate; a second crate in the
+  same WebAssembly build that registers one would clash at link time. A wasm32 `cdylib` that
+  calls the engine links, as a review of this change found by building one; the WebAssembly step
+  of `scripts/check-build.sh` runs `cargo check`, which does not link. A call without a seed
   would fail in WebAssembly, which the always-seeded generator rules out.
 - Negative / trade-offs: `nectar-pdf` has to hand its bundled fonts to a second consumer.
 - Follow-ups: `getrandom` 0.3 changes how a custom backend is chosen, when `roughr` moves to
@@ -107,4 +130,6 @@ the WebAssembly step of `scripts/check-build.sh` compiles it for `wasm32-unknown
 in `crates/rough/` cites this ADR (`Verifies: ADR-draft-roughr-usvg`): an SVG with text and an
 `<image href>` to a file renders with the text as outlines and without the image, and the same
 text gives the same bytes. **Not mechanically decidable:** that the font database holds only the
-bundled fonts; the review checks how the shell builds it.
+bundled fonts, and that no file is read for an image, since the engine drops images in any case;
+the review checks how the shell builds the database and that the image resolver resolves
+nothing.
