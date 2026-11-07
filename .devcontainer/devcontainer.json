@@ -16,6 +16,11 @@
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.claude,target=/home/vscode/.claude,type=bind"
   ],
 
+  // A fresh, world-writable /tmp at run time. Under Podman, the build steps that install the
+  // Features bind-mount their sources under /tmp, and buildah commits /tmp as root-owned 0755;
+  // VS Code then fails to attach because the remote user cannot create /tmp/.X11-unix.
+  "runArgs": ["--tmpfs", "/tmp:mode=1777"],
+
   "shutdownAction": "stopContainer",
 
   // Runs on the host before the container is created. Ensures the bind-mount source for the agent
