@@ -20,7 +20,7 @@ fail() { echo "install-nectar: $1" >&2; exit 1; }
 [ $# -eq 3 ] || fail "usage: install-nectar.sh <SHA256SUMS> <VERSION file> <destination directory>"
 sums="$1" version_file="$2" dest="$3"
 if [ ! -f "$sums" ] || [ ! -f "$version_file" ]; then
-  fail "no SHA256SUMS or VERSION beside the installer — this names no release of nectar"
+  fail "$sums or $version_file is missing — no release of nectar is named"
 fi
 version="$(tr -d '[:space:]' < "$version_file")"
 printf '%s\n' "$version" | grep -Eqx '(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)' \
@@ -29,9 +29,6 @@ printf '%s\n' "$version" | grep -Eqx '(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9]
 target="${NECTAR_TARGET:-}"
 if [ -z "$target" ]; then
   os="$(uname -s)" arch="$(uname -m)"
-  if [ "$os" = Linux ] && ls /lib/ld-musl-* > /dev/null 2>&1; then
-    fail "the release builds nectar for glibc; this host runs musl, as Alpine does"
-  fi
   case "$os/$arch" in
     Linux/x86_64 | Linux/amd64) target=x86_64-unknown-linux-gnu ;;
     Linux/aarch64 | Linux/arm64) target=aarch64-unknown-linux-gnu ;;
@@ -40,6 +37,15 @@ if [ -z "$target" ]; then
     MINGW*/x86_64 | MSYS*/x86_64 | CYGWIN*/x86_64) target=x86_64-pc-windows-msvc ;;
     *) fail "no release archive for $os on $arch" ;;
   esac
+  # The Linux archives need glibc: its loader is there, whatever else is installed beside it.
+  case "$target" in
+    x86_64-unknown-linux-gnu) loader=/lib64/ld-linux-x86-64.so.2 ;;
+    aarch64-unknown-linux-gnu) loader=/lib/ld-linux-aarch64.so.1 ;;
+    *) loader= ;;
+  esac
+  if [ -n "$loader" ] && [ ! -e "$loader" ]; then
+    fail "the release builds nectar for glibc, and this host has no $loader, as Alpine has none"
+  fi
 fi
 name="nectar-$version-$target"
 binary=nectar
