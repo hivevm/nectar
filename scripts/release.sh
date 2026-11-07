@@ -12,7 +12,7 @@
 #   there — LICENSE, at least one crates/*/NOTICE — and the package nectar is the command line;
 #   the workflow attests every archive by an action pinned to a commit; and release/install-nectar.sh
 #   installs an archive packed as package packs it, refuses one altered after its checksum, and
-#   refuses a target SHA256SUMS does not name (Verifies: ADR-draft-release-interface);
+#   refuses a target SHA256SUMS does not name (Verifies: ADR-0013);
 # - package <target> builds nectar for the Rust target in release mode with the locked versions,
 #   and packs the binary, LICENSE and the NOTICE files of the crates into
 #   nectar-<version>-<target>.tar.gz, or .zip for Windows, the version taken from GITHUB_REF_NAME;
