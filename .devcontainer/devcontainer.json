@@ -12,8 +12,13 @@
   // The host's agent config directory. HOME is set on Linux and macOS, USERPROFILE on Windows;
   // exactly one of the two is non-empty, so concatenating both yields the home directory on every
   // host (the pattern the Dev Containers documentation recommends).
+  // The host's GitHub CLI directory, so `gh auth login` survives a rebuild: on Linux and macOS
+  // the one the host's gh uses too; on Windows, whose gh keeps its login under %AppData%, a
+  // directory of the container's own. With no keyring in the container, gh writes its token in
+  // plain text to hosts.yml there, outside the repository (SECURITY.md).
   "mounts": [
-    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.claude,target=/home/vscode/.claude,type=bind"
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.claude,target=/home/vscode/.claude,type=bind",
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.config/gh,target=/home/vscode/.config/gh,type=bind"
   ],
 
   // A fresh, world-writable /tmp at run time. Under Podman, the build steps that install the
@@ -23,13 +28,14 @@
 
   "shutdownAction": "stopContainer",
 
-  // Runs on the host before the container is created. Ensures the bind-mount source for the agent
-  // config exists, so Docker does not auto-create it as a root-owned directory (which breaks
-  // credential writes inside the container). Written to work in both a POSIX shell and cmd.exe:
-  // plain `mkdir` (cmd.exe knows no `-p`; the parent is the home directory and always exists) and
-  // `|| exit 0` so an already existing directory — an error for both shells — does not abort the
-  // container build.
-  "initializeCommand": "mkdir \"${localEnv:HOME}${localEnv:USERPROFILE}/.claude\" || exit 0",
+  // Runs on the host before the container is created. Ensures the bind-mount sources for the agent
+  // config and the GitHub CLI exist, so Docker does not auto-create them as root-owned directories
+  // (which breaks credential writes inside the container). Written to work in both a POSIX shell
+  // and cmd.exe: plain `mkdir` one level at a time (cmd.exe knows no `-p`), each in a group that
+  // ends in `cd .`, which succeeds in both shells, so an already existing directory — an error for
+  // both — skips no later `mkdir`; the closing `exit 0` ends with success in both, since cmd.exe
+  // keeps the ERRORLEVEL of a failed `mkdir` past a successful `cd .`.
+  "initializeCommand": "(mkdir \"${localEnv:HOME}${localEnv:USERPROFILE}/.claude\" || cd .) && (mkdir \"${localEnv:HOME}${localEnv:USERPROFILE}/.config\" || cd .) && (mkdir \"${localEnv:HOME}${localEnv:USERPROFILE}/.config/gh\" || cd .) && exit 0",
 
   // System packages, the GitHub CLI, Graphviz and PlantUML; see the script.
   "onCreateCommand": "bash .devcontainer/setup.sh",

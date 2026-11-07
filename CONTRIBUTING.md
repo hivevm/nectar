@@ -98,6 +98,13 @@ or adding extensions. Features are pinned by major tag and resolved in the commi
 `devcontainer-lock.json`. Extensions are listed by identifier only, because a published extension
 version cannot be repointed and a version suffix is VS Code-specific.
 
+The container mounts the host's `~/.config/gh`, so a `gh auth login` through its web flow
+survives a rebuild. On Linux and macOS it is the login of the host's `gh` too; on Windows, whose
+`gh` keeps its login under `%AppData%`, the directory is the container's own. gh writes its token
+in plain text to `hosts.yml` there, since the container has no keyring; it is never in the
+repository. So agents in the container act with the host account's login, and a login inside the
+container moves a host `gh` that kept its token in a keyring to that plain-text file.
+
 ### Host container management
 
 The Dev Container deliberately has **no access to the host Docker daemon**: the socket is not
