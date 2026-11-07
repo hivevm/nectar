@@ -1,6 +1,6 @@
 # ADR-draft-rough-engine: A code engine `rough` redraws an SVG in a hand-drawn style
 
-- **Status:** 🟡 proposed
+- **Status:** 🟢 accepted
 - **Date:** 2026-11-07
 - **Deciders:** Markus Brigl
 - **Applies to:** the code engine for the language `rough` in `crates/rough/`, the input it accepts and its `data-rough-*` attributes, the shell that composes it in `crates/cli/`, and the tests that verify it

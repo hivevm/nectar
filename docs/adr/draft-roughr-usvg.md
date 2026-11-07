@@ -1,6 +1,6 @@
 # ADR-draft-roughr-usvg: The rough engine sketches with `roughr` and reads SVG with `usvg`
 
-- **Status:** 🟡 proposed
+- **Status:** 🟢 accepted
 - **Date:** 2026-11-07
 - **Deciders:** Markus Brigl
 - **Applies to:** the dependencies of `crates/rough/Cargo.toml`, the `PORTABLE` list of `crates/cli/tests/structure.rs`, the WebAssembly step of `scripts/check-build.sh`, and the fonts the rough engine draws text with
