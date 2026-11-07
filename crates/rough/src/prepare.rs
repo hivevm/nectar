@@ -39,7 +39,7 @@ pub type Styles = HashMap<String, Style>;
 
 /// The SVG with every `<use>` resolved and an id of its own on every shape, and the styles by
 /// those ids.
-pub fn prepare(svg: &str) -> Result<(String, Styles), String> {
+pub fn prepare(svg: &str, defaults: &Style) -> Result<(String, Styles), String> {
     let svg = resolve_uses(svg)?;
     let document = parse(&svg)?;
 
@@ -69,8 +69,8 @@ pub fn prepare(svg: &str) -> Result<(String, Styles), String> {
         let inherited = node
             .parent_element()
             .and_then(|parent| effective.get(&parent.id()))
-            .cloned()
-            .unwrap_or_default();
+            .unwrap_or(defaults)
+            .clone();
         let style = Style::of(node)?.over(&inherited);
         effective.insert(node.id(), style.clone());
 

@@ -19,7 +19,7 @@ use nectar_native::{Directory, Threads};
 use nectar_pdf::PdfRenderer;
 use nectar_process::Process;
 use nectar_railroad::Railroad;
-use nectar_rough::Rough;
+use nectar_rough::{Rough, Style as RoughStyle};
 use nectar_server::{OpenProject, Renderers, ServeOptions};
 use nectar_textmate::{DEFAULT_DARK_THEME, DEFAULT_THEME, TextMate};
 
@@ -378,6 +378,32 @@ fn write(build: &Build, dir: &Path) -> io::Result<()> {
     Ok(())
 }
 
+/// The defaults of the rough engine from `[engine.rough]`, every key but `enabled` an option of
+/// its `data-rough-*` attributes in snake case (ADR-0021).
+fn rough_defaults(config: &toml::Table) -> Result<RoughStyle> {
+    let mut defaults = RoughStyle::default();
+    let Some(table) = config.get("rough") else {
+        return Ok(defaults);
+    };
+    let table = table.as_table().context("[engine.rough] must be a table")?;
+    for (key, value) in table {
+        if key == "enabled" {
+            continue;
+        }
+        let text = match value {
+            toml::Value::String(text) => text.clone(),
+            toml::Value::Integer(_) | toml::Value::Float(_) | toml::Value::Boolean(_) => {
+                value.to_string()
+            }
+            _ => bail!("[engine.rough]: {key} must be a string, a number or a boolean"),
+        };
+        defaults
+            .set_default(key, &text, &value.to_string())
+            .map_err(|e| anyhow!("[engine.rough]: {e}"))?;
+    }
+    Ok(defaults)
+}
+
 /// The code engines configured under `[engine]`: every `[engine.process.<name>]` first, then
 /// the built-in railroad and rough engines and TextMate highlighting, each on unless
 /// `enabled = false`.
@@ -414,8 +440,12 @@ fn engines(config: &toml::Table) -> Result<Vec<Box<dyn CodeEngine>>> {
         engines.push(Box::new(Railroad));
     }
 
+    // Checked even when the engine is off, so a mistyped key is not kept silently.
+    let rough = rough_defaults(config)?;
     if enabled("rough") {
-        engines.push(Box::new(Rough::new(nectar_pdf::FONT_FILES)));
+        engines.push(Box::new(
+            Rough::new(nectar_pdf::FONT_FILES).with_defaults(rough),
+        ));
     }
 
     if enabled("textmate") {

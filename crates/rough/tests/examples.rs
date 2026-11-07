@@ -666,3 +666,87 @@ fn a_shape_keeps_its_id_and_its_css_when_an_entity_shares_the_id_without_a_shape
     let paths = paths(&engine().sketch(svg).unwrap());
     assert_eq!(attribute(&paths[0], "fill"), Some("#00ff00"), "{paths:?}");
 }
+
+/// An engine with `fill_style = "solid"` and `disable_multi_stroke = true` as defaults.
+fn engine_with_defaults() -> Rough {
+    let mut defaults = nectar_rough::Style::default();
+    defaults
+        .set_default("fill_style", "solid", "\"solid\"")
+        .unwrap();
+    defaults
+        .set_default("disable_multi_stroke", "true", "true")
+        .unwrap();
+    engine().with_defaults(defaults)
+}
+
+// Verifies: G-12, ADR-0021
+#[test]
+fn defaults_style_a_shape_without_attributes_and_every_attribute_overrides_them() {
+    let engine = engine_with_defaults();
+    let sketch = |body: &str| paths(&engine.sketch(&svg(body)).unwrap());
+
+    let plain = sketch(r#"<rect width="40" height="40" fill="red"/>"#);
+    assert_eq!(attribute(&plain[0], "fill"), Some("#ff0000"), "{plain:?}");
+    let line = sketch(r#"<line x2="100" y2="10" stroke="black"/>"#);
+    assert_eq!(
+        attribute(&line[0], "d").unwrap().matches('M').count(),
+        2,
+        "one stroke: {line:?}"
+    );
+
+    // An attribute on the shape, on a group around it, or on the `<use>` that draws it wins.
+    for body in [
+        r#"<rect width="40" height="40" fill="red" data-rough-fill-style="hachure"/>"#,
+        r#"<g data-rough-fill-style="hachure"><rect width="40" height="40" fill="red"/></g>"#,
+        r##"<defs><rect id="r" width="40" height="40" fill="red"/></defs>
+            <use href="#r" data-rough-fill-style="hachure"/>"##,
+    ] {
+        let paths = sketch(body);
+        assert_eq!(
+            attribute(&paths[0], "stroke"),
+            Some("#ff0000"),
+            "{body}: {paths:?}"
+        );
+    }
+}
+
+// Verifies: G-12, ADR-0021
+#[test]
+fn a_shape_in_a_marker_takes_the_configured_defaults() {
+    let engine = engine_with_defaults();
+    let paths = paths(
+        &engine
+            .sketch(&svg(
+                r##"<defs><marker id="m" markerWidth="10" markerHeight="10">
+                  <rect width="10" height="10" fill="blue"/></marker></defs>
+                <line x1="20" y1="20" x2="200" y2="20" stroke="black" marker-end="url(#m)"/>"##,
+            ))
+            .unwrap(),
+    );
+    assert!(
+        paths
+            .iter()
+            .any(|p| attribute(p, "fill") == Some("#0000ff")),
+        "the marker's rect is solid, as the defaults say: {paths:?}"
+    );
+}
+
+// Verifies: ADR-0021
+#[test]
+fn an_unknown_default_or_an_unreadable_value_is_an_error_that_names_it() {
+    let mut defaults = nectar_rough::Style::default();
+    let unknown = defaults
+        .set_default("colour", "red", "\"red\"")
+        .unwrap_err();
+    assert!(unknown.contains("colour"), "{unknown}");
+    let kebab = defaults
+        .set_default("fill-style", "solid", "\"solid\"")
+        .unwrap_err();
+    assert!(kebab.contains("fill-style"), "{kebab}");
+    let unreadable = defaults
+        .set_default("roughness", "much", "\"much\"")
+        .unwrap_err();
+    assert!(unreadable.contains("roughness = \"much\""), "{unreadable}");
+    let fraction = defaults.set_default("seed", "1.5", "1.5").unwrap_err();
+    assert!(fraction.contains("seed = 1.5 "), "{fraction}");
+}
