@@ -99,6 +99,7 @@ is the table a session reads.
 | [0010](0010-environment-image-features.md) | The Dev Container is a base image with Features and a setup script, and the work needs no containers | `.devcontainer/`, and every change that would have the work start or reach a container | 🟢 accepted |
 | [0011](0011-actions-pinned-by-sha.md) | The workflows reference every action by its full commit SHA, kept current by Dependabot | every `uses:` line under `.github/workflows/`, `.github/dependabot.yml`, and `scripts/check-all.sh` | 🟢 accepted |
 | [0012](0012-textmate-engine-native-only.md) | The TextMate engine runs on native hosts only, and a WebAssembly host highlights through the code engine port | `crates/textmate/`, the WebAssembly step of `scripts/check-build.sh`, and the code engines a WebAssembly shell composes | 🟢 accepted |
+| [draft-guide-as-reference-project](draft-guide-as-reference-project.md) | Cargo builds and tests Nectar, rustfmt, Clippy and cargo-deny are its first sensors, run by one script, and the user guide is the project the checks build | `Cargo.toml`, `deny.toml`, `scripts/check-build.sh`, `scripts/check-all.sh`, the `build` job of `.github/workflows/checks.yml`, the Build, Test & Run section of `README.md`, `docs/guide/`, and the tests that measure Q-2, Q-3 and Q-4 | 🟡 proposed |
 
 ### Superseded and rejected
 
