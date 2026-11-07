@@ -89,6 +89,9 @@ nectar serve            # http://127.0.0.1:1313/, reloads on every change
 nectar build            # writes the site, the print view and the PDF to public/
 ```
 
+A single Markdown file needs no `nectar.toml`: `nectar build notes.md` writes `notes.pdf` next
+to it.
+
 The options of the command line, chapters, front matter, the Markdown dialect, code engines,
 the print view, themes and every key of `nectar.toml` are described in the
 [Nectar guide](docs/guide/GUIDE.md).

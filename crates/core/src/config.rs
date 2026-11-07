@@ -97,6 +97,28 @@ impl Config {
         Ok(config)
     }
 
+    /// The configuration of a single Markdown file built without a `nectar.toml`: the defaults,
+    /// with `source` as the one document.
+    pub fn single(source: PathBuf) -> Self {
+        Self {
+            title: String::new(),
+            theme: None,
+            output: default_output(),
+            documents: vec![DocumentConfig {
+                source,
+                split: Split::default(),
+                path: None,
+                numbered: enabled(),
+                contents: enabled(),
+                print: toml::Table::new(),
+            }],
+            vars: BTreeMap::new(),
+            html: false,
+            engine: toml::Table::new(),
+            serve: toml::Table::new(),
+        }
+    }
+
     /// The configured variables as text.
     pub fn variables(&self) -> BTreeMap<String, String> {
         to_strings(&self.vars)

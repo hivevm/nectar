@@ -47,7 +47,12 @@ impl Project {
     /// Opens the project whose files `files` gives, reading its `nectar.toml`.
     pub fn load(files: Box<dyn Files>) -> Result<Self, Diagnostic> {
         let config = Config::load(files.as_ref())?;
-        Ok(Self {
+        Ok(Self::new(files, config))
+    }
+
+    /// Opens the project whose files `files` gives with `config`, reading no `nectar.toml`.
+    pub fn new(files: Box<dyn Files>, config: Config) -> Self {
+        Self {
             files,
             config,
             engines: Vec::new(),
@@ -56,7 +61,7 @@ impl Project {
             include_drafts: false,
             cache: Mutex::new(HashMap::new()),
             downloader: Downloader::new(),
-        })
+        }
     }
 
     pub fn config(&self) -> &Config {

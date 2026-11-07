@@ -2,7 +2,8 @@
 
 Nectar turns Markdown sources into HTML. It runs in two modes that share one core:
 
-- `nectar build` writes a complete static site to an output directory.
+- `nectar build` writes a complete static site to an output directory, or, given one Markdown
+  file, only its PDF.
 - `nectar serve` serves the site over local HTTP, watches the sources and reloads the browser as
   soon as a source changes.
 
@@ -284,6 +285,11 @@ The options of both commands are listed in the [guide](guide/chapters/quick-star
 
 **`nectar build`** loads the project, builds it and writes the output. It reports all diagnostics
 and exits non-zero when any is an error.
+
+**`nectar build <file>`** builds one Markdown file without a `nectar.toml`
+([ADR-draft-single-file-build](adr/draft-single-file-build.md)). The command line gives the core
+the file's directory as the project root and the default configuration with the file as its one
+document, runs only the PDF renderer and writes its PDF next to the file, or to `-o`.
 
 **`nectar serve`** builds once and keeps the build in memory.
 
