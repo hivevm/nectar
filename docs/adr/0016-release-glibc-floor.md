@@ -1,4 +1,4 @@
-# ADR-draft-release-glibc-floor: A Nectar release is archives built against glibc 2.35, their checksums and a provenance attestation for each, and the repository carries the installer that verifies them
+# ADR-0016: A Nectar release is archives built against glibc 2.35, their checksums and a provenance attestation for each, and the repository carries the installer that verifies them
 
 - **Status:** 🟢 accepted
 - **Date:** 2026-11-07
