@@ -633,8 +633,16 @@ fn a_markdown_file_builds_to_its_pdf_without_a_configuration() {
             .starts_with(b"%PDF")
     );
 
-    // -o names the PDF file instead, and nothing lands next to the source.
+    // -o names the PDF file instead, and nothing lands next to the source; an existing directory
+    // takes the PDF under its usual name, and the source itself is never overwritten.
     fs::remove_file(notes.join("readme.pdf")).unwrap();
+    let output = nectar_in(&notes, &["build", "readme.md", "-o", "readme.md"]);
+    assert!(!output.status.success());
+    assert!(
+        fs::read_to_string(notes.join("readme.md"))
+            .unwrap()
+            .starts_with("# Notes")
+    );
     let output = nectar_in(&notes, &["build", "readme.md", "-o", "out/manual.pdf"]);
     assert!(
         output.status.success(),
@@ -643,6 +651,13 @@ fn a_markdown_file_builds_to_its_pdf_without_a_configuration() {
     );
     assert_eq!(names(&notes), ["out", "readme.md"]);
     assert_eq!(names(&notes.join("out")), ["manual.pdf"]);
+    let output = nectar_in(&notes, &["build", "readme.md", "-o", "out"]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(names(&notes.join("out")), ["manual.pdf", "readme.pdf"]);
 }
 
 // Verifies: ADR-draft-single-file-build
@@ -659,7 +674,9 @@ fn a_markdown_file_ignores_a_configuration_beside_it_and_stays_in_its_directory(
         "# Notes\n\n[Secret](../secret.md)\n\n![Secret](../secret.png)\n",
     );
 
-    let output = nectar_in(&notes, &["build", "readme.md"]);
+    // Run from the parent: were the current directory the root, ../secret.md from notes/ would lie
+    // inside it and be read; with the file's directory as the root it lies outside.
+    let output = nectar_in(dir.path(), &["build", "notes/readme.md"]);
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(output.status.success(), "{stderr}");
     assert_eq!(

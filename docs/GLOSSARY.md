@@ -31,7 +31,8 @@ to invent.
   engines. _Avoid:_ filter, plugin.
 - **Print view** — the whole document as one HTML page, laid out into pages in the browser.
   _Avoid:_ print page.
-- **Project** — a directory with a `nectar.toml`; its root bounds everything Nectar reads.
+- **Project** — a directory with a `nectar.toml`, or, for `nectar build <file>`, the directory of
+  that file; its root bounds everything Nectar reads.
 - **Renderer** — the port that turns the enriched document model into output files: the website,
   the print view, the PDF.
 - **Shell** — a thin program around the core: the command line, the server, a WebAssembly build.

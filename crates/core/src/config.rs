@@ -100,23 +100,11 @@ impl Config {
     /// The configuration of a single Markdown file built without a `nectar.toml`: the defaults,
     /// with `source` as the one document.
     pub fn single(source: PathBuf) -> Self {
-        Self {
-            title: String::new(),
-            theme: None,
-            output: default_output(),
-            documents: vec![DocumentConfig {
-                source,
-                split: Split::default(),
-                path: None,
-                numbered: enabled(),
-                contents: enabled(),
-                print: toml::Table::new(),
-            }],
-            vars: BTreeMap::new(),
-            html: false,
-            engine: toml::Table::new(),
-            serve: toml::Table::new(),
-        }
+        // Through serde, so every default is the one an empty nectar.toml would give.
+        let mut config: Self = toml::from_str("[[document]]\nsource = \"\"\n")
+            .expect("the configuration of a single file deserializes");
+        config.documents[0].source = source;
+        config
     }
 
     /// The configured variables as text.

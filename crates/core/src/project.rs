@@ -50,7 +50,8 @@ impl Project {
         Ok(Self::new(files, config))
     }
 
-    /// Opens the project whose files `files` gives with `config`, reading no `nectar.toml`.
+    /// Opens the project whose files `files` gives with `config`, reading no `nectar.toml`: the
+    /// single file `nectar build <file>` builds, its directory as the project root.
     pub fn new(files: Box<dyn Files>, config: Config) -> Self {
         Self {
             files,

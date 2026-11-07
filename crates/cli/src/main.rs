@@ -142,15 +142,13 @@ fn build_file(
         _ => Path::new("."),
     };
 
+    // Settings come from the file's front matter alone: no nectar.toml, no NECTAR_ variables.
     let config = Config::single(PathBuf::from(name));
-    let mut project = Project::new(Box::new(Directory::new(root)), config);
-    project.set_workers(Box::new(Threads));
-    project.set_include_drafts(drafts);
-    project.set_offline(offline);
-    project.set_fetcher(Box::new(Http::new()));
-    for engine in engines(project.config())? {
-        project.add_engine(engine);
-    }
+    let project = prepare(
+        Project::new(Box::new(Directory::new(root)), config),
+        drafts,
+        offline,
+    )?;
 
     let build = project.build(&[&PdfRenderer]);
     report(&build.diagnostics);
@@ -163,9 +161,24 @@ fn build_file(
         .iter()
         .find(|(path, _)| path.extension().is_some_and(|e| e == "pdf"))
         .map(|(_, bytes)| bytes)
-        .context("the build wrote no PDF")?;
+        .with_context(|| {
+            format!(
+                "{} gave no PDF; a file whose front matter says draft = true needs --drafts",
+                file.display()
+            )
+        })?;
 
-    let target = output.unwrap_or_else(|| root.join(Path::new(name).with_extension("pdf")));
+    let pdf_name = Path::new(name).with_extension("pdf");
+    let target = match output {
+        // An existing directory takes the PDF under its usual name, as -o takes a directory for a
+        // project.
+        Some(dir) if dir.is_dir() => dir.join(&pdf_name),
+        Some(path) => path,
+        None => root.join(&pdf_name),
+    };
+    if std::fs::canonicalize(&target).ok() == std::fs::canonicalize(file).ok() {
+        bail!("{} would overwrite the source", target.display());
+    }
     if let Some(parent) = target.parent().filter(|p| !p.as_os_str().is_empty()) {
         std::fs::create_dir_all(parent)
             .with_context(|| format!("cannot create {}", parent.display()))?;
@@ -237,8 +250,13 @@ fn renderers() -> Renderers {
 
 fn open(root: &Path, drafts: bool, offline: bool) -> Result<Project> {
     let mut project = Project::load(Box::new(Directory::new(root))).map_err(|d| anyhow!("{d}"))?;
-    project.set_workers(Box::new(Threads));
     project.set_environment(std::env::vars());
+    prepare(project, drafts, offline)
+}
+
+/// Plugs the workers, the fetcher and the configured code engines into `project`.
+fn prepare(mut project: Project, drafts: bool, offline: bool) -> Result<Project> {
+    project.set_workers(Box::new(Threads));
     project.set_include_drafts(drafts);
     project.set_offline(offline);
     project.set_fetcher(Box::new(Http::new()));

@@ -8,9 +8,11 @@ nectar build notes.md                 # writes notes.pdf
 nectar build notes.md -o manual.pdf   # writes manual.pdf
 ```
 
-The file's directory is the project then: includes, images and embedded files must lie below
-it, and a `nectar.toml` there is ignored. Railroad diagrams and highlighted code work as in a
-project; Graphviz and PlantUML blocks stay code, since nothing configures their programs.
+The file's directory is the project then: includes, images and embedded files must lie below it, and
+a `nectar.toml` there is ignored, as are `NECTAR_<name>` variables; settings come from the file's
+front matter alone. `-o` may also name a directory, which takes `notes.pdf`. Railroad diagrams and
+highlighted code work as in a project; Graphviz and PlantUML blocks stay code, since nothing
+configures their programs.
 
 A project is a directory with a `nectar.toml`:
 
