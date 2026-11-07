@@ -15,7 +15,7 @@
 #   refuses a target SHA256SUMS does not name; the workflow builds every Linux target on
 #   ubuntu-22.04 or ubuntu-22.04-arm, never on a *-latest runner; and the glibc floor package
 #   enforces refuses a binary that needs more than glibc 2.35, in package too, which writes no
-#   archive then (Verifies: ADR-draft-release-glibc-floor);
+#   archive then (Verifies: ADR-0016);
 # - package <target> builds nectar for the Rust target in release mode with the locked versions,
 #   fails for a Linux target whose binary needs a glibc newer than 2.35, and packs the binary,
 #   LICENSE and the NOTICE files of the crates into

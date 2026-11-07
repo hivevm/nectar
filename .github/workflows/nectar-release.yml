@@ -2,7 +2,7 @@ name: Nectar release
 
 # A tag such as nectar-v0.1.0 builds the CLI for every platform and attaches the archives to a
 # GitHub release of that tag, with their SHA256SUMS and a build-provenance attestation for each
-# archive (ADR-draft-release-glibc-floor).
+# archive (ADR-0016).
 on:
   push:
     tags: ["nectar-v*"]
@@ -20,7 +20,7 @@ jobs:
       matrix:
         include:
           # Linux on Ubuntu 22.04, never *-latest: an archive needs the glibc it is built with,
-          # 2.35 at most (ADR-draft-release-glibc-floor).
+          # 2.35 at most (ADR-0016).
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-22.04
           - target: aarch64-unknown-linux-gnu

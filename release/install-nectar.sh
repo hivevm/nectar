@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Installs the nectar of one release, verified against the checksums the caller carries
-# (ADR-draft-release-glibc-floor). The Dev Container Feature of hivevm/features runs a copy of it
+# (ADR-0016). The Dev Container Feature of hivevm/features runs a copy of it
 # with the SHA256SUMS and the VERSION its release commit holds; an archive whose checksum differs
 # is deleted and the installation fails.
 #
