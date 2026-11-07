@@ -1,7 +1,9 @@
 //! Nectar command line. This is the one place that composes the core with the renderers, the code
 //! engines and the adapters, so every command uses the same set.
 
-use std::io;
+mod render;
+
+use std::io::{self, Read, Write};
 use std::net::{IpAddr, SocketAddr};
 use std::path::{Component, Path, PathBuf};
 use std::process::ExitCode;
@@ -17,6 +19,7 @@ use nectar_native::{Directory, Threads};
 use nectar_pdf::PdfRenderer;
 use nectar_process::Process;
 use nectar_railroad::Railroad;
+use nectar_rough::Rough;
 use nectar_server::{OpenProject, Renderers, ServeOptions};
 use nectar_textmate::{DEFAULT_DARK_THEME, DEFAULT_THEME, TextMate};
 
@@ -25,7 +28,8 @@ const DEFAULT_PORT: u16 = 1313;
 #[derive(Parser)]
 #[command(name = "nectar", version, about = "Turns Markdown sources into HTML")]
 struct Cli {
-    /// Project root, the directory that holds nectar.toml [default: .]
+    /// Project root, the directory that holds nectar.toml [default: .]; for render, the directory
+    /// whose nectar.toml configures the engines, without a default
     #[arg(long, short = 'C', global = true)]
     root: Option<PathBuf>,
 
@@ -67,6 +71,24 @@ enum Command {
         #[arg(long)]
         no_drafts: bool,
     },
+
+    /// Run the code engine of one language on one text and write its output
+    Render {
+        /// The language, as in a code block's info string, such as railroad or rust
+        language: String,
+
+        /// The file to read; standard input when it is missing or -
+        file: Option<PathBuf>,
+
+        /// The file to write; standard output when it is missing or -
+        #[arg(long, short)]
+        output: Option<PathBuf>,
+
+        /// svg or png for a graphic, html or ansi for highlighted code; without it, the extension
+        /// of --output, or svg and html
+        #[arg(long, short, value_enum)]
+        format: Option<render::Format>,
+    },
 }
 
 fn main() -> ExitCode {
@@ -91,6 +113,12 @@ fn main() -> ExitCode {
             bind,
             no_drafts,
         } => serve(&root, port, bind, !no_drafts, cli.offline),
+        Command::Render {
+            language,
+            file,
+            output,
+            format,
+        } => render_text(cli.root.as_deref(), &language, file, output, format),
     };
     match result {
         Ok(code) => code,
@@ -235,6 +263,72 @@ fn serve(
     Ok(ExitCode::SUCCESS)
 }
 
+/// Runs `nectar render`. Without `-C` the built-in engines run with their defaults; with it,
+/// `[engine]` of that directory's `nectar.toml` configures them, process engines included.
+fn render_text(
+    root: Option<&Path>,
+    language: &str,
+    file: Option<PathBuf>,
+    output: Option<PathBuf>,
+    format: Option<render::Format>,
+) -> Result<ExitCode> {
+    let table = match root {
+        Some(root) => {
+            Config::load(&Directory::new(root))
+                .map_err(|d| anyhow!("{d}"))?
+                .engine
+        }
+        None => toml::Table::new(),
+    };
+    let engines = engines(&table)?;
+    let engine = engines
+        .iter()
+        .find(|engine| engine.supports(language))
+        .ok_or_else(|| match root {
+            None => anyhow!(
+                "no engine supports '{language}'; without -C <dir>, only railroad, rough and \
+                 TextMate grammars are available"
+            ),
+            Some(_) => anyhow!("no engine supports '{language}'"),
+        })?;
+
+    let mut code = String::new();
+    match file.as_deref() {
+        Some(path) if path != Path::new("-") => {
+            code = std::fs::read_to_string(path)
+                .with_context(|| format!("cannot read {}", path.display()))?;
+        }
+        _ => {
+            io::stdin()
+                .read_to_string(&mut code)
+                .context("cannot read standard input")?;
+        }
+    }
+
+    // `-o -` is standard output, as `-` for the file is standard input.
+    let output = output.filter(|path| path != Path::new("-"));
+    let bytes = render::render(engine.as_ref(), language, &code, format, output.as_deref())?;
+
+    match output {
+        Some(path) => {
+            if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
+                std::fs::create_dir_all(parent)
+                    .with_context(|| format!("cannot create {}", parent.display()))?;
+            }
+            std::fs::write(&path, bytes)
+                .with_context(|| format!("cannot write {}", path.display()))?;
+        }
+        None => {
+            let mut stdout = io::stdout().lock();
+            stdout
+                .write_all(&bytes)
+                .and_then(|()| stdout.flush())
+                .context("cannot write standard output")?;
+        }
+    }
+    Ok(ExitCode::SUCCESS)
+}
+
 /// The renderers of every build: the website with its print view and PDF links, the print view
 /// and the PDF. `build` and `serve` share them, so both write the same site.
 fn renderers() -> Renderers {
@@ -260,7 +354,7 @@ fn prepare(mut project: Project, drafts: bool, offline: bool) -> Result<Project>
     project.set_include_drafts(drafts);
     project.set_offline(offline);
     project.set_fetcher(Box::new(Http::new()));
-    for engine in engines(project.config())? {
+    for engine in engines(&project.config().engine)? {
         project.add_engine(engine);
     }
     Ok(project)
@@ -285,24 +379,24 @@ fn write(build: &Build, dir: &Path) -> io::Result<()> {
 }
 
 /// The code engines configured under `[engine]`: every `[engine.process.<name>]` first, then
-/// the built-in railroad engine and TextMate highlighting, each on unless `enabled = false`.
-fn engines(config: &Config) -> Result<Vec<Box<dyn CodeEngine>>> {
+/// the built-in railroad and rough engines and TextMate highlighting, each on unless
+/// `enabled = false`.
+fn engines(config: &toml::Table) -> Result<Vec<Box<dyn CodeEngine>>> {
     let mut engines: Vec<Box<dyn CodeEngine>> = Vec::new();
-    for key in config.engine.keys() {
-        if !["process", "railroad", "textmate"].contains(&key.as_str()) {
+    for key in config.keys() {
+        if !["process", "railroad", "rough", "textmate"].contains(&key.as_str()) {
             bail!("unknown engine [engine.{key}]");
         }
     }
     let enabled = |name: &str| {
         config
-            .engine
             .get(name)
             .and_then(|table| table.get("enabled"))
             .and_then(toml::Value::as_bool)
             .unwrap_or(true)
     };
 
-    if let Some(processes) = config.engine.get("process") {
+    if let Some(processes) = config.get("process") {
         let processes = processes
             .as_table()
             .context("[engine.process] must be a table")?;
@@ -320,10 +414,13 @@ fn engines(config: &Config) -> Result<Vec<Box<dyn CodeEngine>>> {
         engines.push(Box::new(Railroad));
     }
 
+    if enabled("rough") {
+        engines.push(Box::new(Rough::new(nectar_pdf::FONT_FILES)));
+    }
+
     if enabled("textmate") {
         let setting = |name: &str| {
             config
-                .engine
                 .get("textmate")
                 .and_then(|table| table.get(name))
                 .and_then(toml::Value::as_str)

@@ -5,6 +5,7 @@ The info string of a fenced code block picks an engine:
 - Every language with a TextMate grammar is highlighted, from `rust` and `java` to `yaml` and
   `sql`.
 - `railroad` draws railroad diagrams from (E)BNF.
+- `rough` redraws an SVG as a sketch, in a hand-drawn style.
 - `dot`, `uml`, `ebnf`, `regex` and `jsongraph` are drawn by Graphviz and PlantUML, once they
   are configured ([Engines](#engines)).
 
@@ -89,6 +90,49 @@ The notation:
 
 A loop is labelled with the number of passes, such as `3×` for `3 * a`, `1..3×` or `≥2×`;
 "once or more" has no label.
+
+## Sketches
+
+A `rough` block takes an SVG and draws it again as if sketched by hand: every shape with wobbly,
+doubled strokes, and its fill as hachure lines in the fill colour. Text is drawn as outlines in
+the fonts the PDF uses; raster images, patterns, filters, masks and clip paths are not drawn, and
+a gradient fills with its first colour.
+
+```rough
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="130">
+  <rect x="10" y="10" width="120" height="80" fill="#e8a33d" stroke="#333"/>
+  <circle cx="210" cy="50" r="40" fill="#4a90d9" stroke="#333" data-rough-fill-style="cross-hatch"/>
+  <g data-rough-fill-style="zigzag" data-rough-hachure-gap="6">
+    <polygon points="290,90 340,10 390,90" fill="#6ab04c" stroke="#333"/>
+  </g>
+  <text x="10" y="120" font-size="16" fill="#333">Drawn by hand</text>
+</svg>
+```
+
+Attributes `data-rough-*` on a shape, or on a group around it, set its style; the nearest wins.
+A shape drawn by a `<use>` takes its own attributes over those of the `<use>`. A shape inside a
+marker, from an entity of a DTD, or drawn by a `<use>` that cannot be resolved, such as one placed
+in units other than pixels, is drawn in the defaults. A `<use>` that references itself, directly
+or through others, draws nothing, as SVG has it.
+
+| Attribute | Values | Default |
+|---|---|---|
+| `data-rough-fill-style` | `hachure`, `solid`, `zigzag`, `cross-hatch`, `dots`, `dashed`, `zigzag-line` | `hachure` |
+| `data-rough-roughness` | how far a stroke strays; 0 is a straight line | `1` |
+| `data-rough-bowing` | how much a line bends | `1` |
+| `data-rough-hachure-angle` | the angle of the fill lines, in degrees | `-41` |
+| `data-rough-hachure-gap` | the distance between fill lines | four stroke widths |
+| `data-rough-fill-weight` | the width of the fill lines | half the stroke width |
+| `data-rough-dash-offset`, `data-rough-dash-gap` | dash length and gap of `dashed` | the hachure gap |
+| `data-rough-zigzag-offset` | the size of the zigzags of `zigzag-line` | the hachure gap |
+| `data-rough-disable-multi-stroke` | `true` draws each stroke once | `false` |
+| `data-rough-preserve-vertices` | `true` keeps the corners where they are | `false` |
+| `data-rough-seed` | a whole number; another seed, another sketch | `1` |
+
+The same SVG always gives the same sketch. An attribute the engine does not know, or a value it
+cannot read, stops the block like an engine that fails. The colours and stroke widths are the
+shape's own; a shape without `fill` is filled black, as SVG has it, so write `fill="none"` for
+an outline.
 
 ## Graphviz and PlantUML
 
@@ -212,6 +256,9 @@ dark_theme = "github-dark"        # for a dark colour scheme; "" turns it off
 [engine.railroad]
 enabled = true                    # on by default
 
+[engine.rough]
+enabled = true                    # on by default
+
 [engine.process.dot]
 command   = "dot"
 args      = ["-Tsvg"]
@@ -225,8 +272,42 @@ input     = "@start{lang}\n!pragma layout smetana\n{code}\n@end{lang}"
 timeout   = 30
 ```
 
-Process engines are asked first, then railroad, then TextMate; a language no engine takes stays
-plain code. A process engine passes the code, or the code filled into `input`, on standard input
-and expects SVG on standard output. When a command is missing, exits non-zero, writes no `<svg`
-element or runs longer than `timeout` seconds, the block stays plain code and Nectar reports a
-warning.
+Process engines are asked first, then railroad and rough, then TextMate; a language no engine takes
+stays plain code. A process engine passes the code, or the code filled into `input`, on standard
+input and expects SVG on standard output. When a command is missing, exits non-zero, writes no
+`<svg` element or runs longer than `timeout` seconds, the block stays plain code and Nectar reports
+a warning.
+
+## On the command line
+
+`nectar render` runs the engine of one language on one text, without a document. It reads the
+file it is given, or standard input (also for `-`), and writes to the file `-o` names, or to
+standard output (also for `-o -`):
+
+```sh
+echo 'rule ::= "a" | "b" ;' | nectar render railroad > rule.svg
+nectar render railroad grammar.txt -o grammar.png
+nectar render railroad grammar.txt | nectar render rough -o grammar.png   # a sketch
+nectar render rust main.rs -f ansi            # coloured in the terminal
+nectar -C docs render dot graph.gv -o graph.svg
+```
+
+| Output of the engine | Formats (`-f`) | Default |
+|----------------------|----------------|---------|
+| a diagram            | `svg`, `png`   | `svg`   |
+| highlighted code     | `html`, `ansi` | `html`  |
+
+Without `-f`, the extension of `-o` picks the format; an extension of the other kind, such as
+`-o main.png` for highlighted code, is an error, and one that names no format gives the
+default. `html` is a `<pre>` with inline styles in the colours of `theme`; `ansi` is
+24-bit colour for a terminal. A PNG has the size of the SVG, and its text is set in the fonts
+the PDF uses; like the SVG, it has a transparent background, so dark lines on a dark page are
+hard to see.
+
+Without `-C`, railroad, rough and the TextMate grammars run with their defaults, and no
+`nectar.toml` is read. With `-C <dir>`, the `[engine]` table of that directory's `nectar.toml`
+configures them, process engines included; the file has to be a complete project configuration, with
+at least one `[[document]]`. The file to read and the file `-o` names stay relative to the current
+directory, not to `<dir>`: `nectar -C docs render dot graph.gv` reads `./graph.gv`. A language no
+engine takes, a format the output does not have, or an engine that fails is an error, and nothing is
+written.

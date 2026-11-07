@@ -94,7 +94,7 @@ nectar build            # writes the site, the print view and the PDF to public/
 ```
 
 A single Markdown file needs no `nectar.toml`: `nectar build notes.md` writes `notes.pdf` next
-to it.
+to it. `nectar render railroad grammar.txt -o grammar.png` runs one code engine on one text.
 
 The options of the command line, chapters, front matter, the Markdown dialect, code engines,
 the print view, themes and every key of `nectar.toml` are described in the

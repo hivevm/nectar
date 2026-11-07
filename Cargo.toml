@@ -8,6 +8,7 @@ members = [
     "crates/fetch",
     "crates/native",
     "crates/railroad",
+    "crates/rough",
     "crates/pdf",
     "crates/server",
     "crates/cli",

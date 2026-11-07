@@ -11,7 +11,7 @@
 # - the tests of the workspace;
 # - a build of the user guide in docs/guide, which has to succeed where Graphviz and PlantUML
 #   are missing: their blocks stay code and are reported as warnings;
-# - a check of the core, the renderers and the railroad engine for wasm32-unknown-unknown
+# - a check of the core, the renderers and the railroad and rough engines for wasm32-unknown-unknown
 #   (Verifies: G-8, ADR-0012), so nothing that cannot run in a browser creeps in, nectar-textmate
 #   included, which runs on native hosts only; the target comes with the toolchain set-up;
 # - cargo-deny against deny.toml: licences compatible with BSD-3-Clause only, the exception the
@@ -47,7 +47,7 @@ step "Clippy" cargo clippy --workspace --all-targets -- -D warnings
 step "Tests" cargo test --workspace
 step "Guide build" cargo run --quiet -p nectar -- -C docs/guide build --output "$ROOT/target/guide"
 step "WebAssembly" cargo check --quiet --target wasm32-unknown-unknown \
-  -p nectar-core -p nectar-html -p nectar-pdf -p nectar-railroad
+  -p nectar-core -p nectar-html -p nectar-pdf -p nectar-railroad -p nectar-rough
 step "Dependencies" cargo deny --all-features check licenses bans sources
 
 printf '\n'

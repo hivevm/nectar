@@ -32,11 +32,14 @@ to invent.
 - **Print view** — the whole document as one HTML page, laid out into pages in the browser.
   _Avoid:_ print page.
 - **Project** — a directory with a `nectar.toml`, or, for `nectar build <file>`, the directory of
-  that file; its root bounds everything Nectar reads.
+  that file; its root bounds everything a build reads. `nectar render` reads only the file it is
+  given and, with `-C`, the project's `nectar.toml`.
 - **Renderer** — the port that turns the enriched document model into output files: the website,
   the print view, the PDF.
 - **Shell** — a thin program around the core: the command line, the server, a WebAssembly build.
   _Avoid:_ frontend, wrapper.
+- **Sketch** — a graphic the rough engine redrew from an SVG in a hand-drawn style: wobbly
+  strokes and fills of hachure lines. _Avoid:_ rough version, hand-drawing.
 - **Start document** — the Markdown file a `[[document]]` names; it and its chapters make one
   document. _Avoid:_ main file, index.
 - **Workers** — the port through which the core runs code engines side by side; the host's adapter

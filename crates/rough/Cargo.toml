@@ -1,0 +1,20 @@
+[package]
+name = "nectar-rough"
+description = "Nectar code engine that redraws an SVG as a sketch in a hand-drawn style"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+nectar-core = { version = "0.1.0", path = "../core" }
+roughr = "0.14.0"
+usvg = { version = "0.47.0", default-features = false, features = ["text"] }
+
+# roughr pulls getrandom 0.2 through rand, which needs a backend on wasm32-unknown-unknown. The
+# engine always seeds roughr, so the backend is one that fails (ADR-0020).
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+getrandom = { version = "0.2.17", features = ["custom"] }
+
+[dev-dependencies]
+nectar-pdf = { version = "0.1.0", path = "../pdf" }

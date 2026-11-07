@@ -40,9 +40,11 @@ The crates under `crates/`, every dependency pointing toward the core
   for a host without a file system and for the tests of every crate.
 - **`nectar-html`** — the renderer for the website and the print view, with the built-in theme.
 - **`nectar-pdf`** — the renderer for the PDF, typeset with Typst in memory.
-- **`nectar-textmate`**, **`nectar-railroad`** — code engines that need nothing of the host.
-  The railroad engine builds for WebAssembly; the TextMate engine does not, since `giallo` needs
-  the C libraries Oniguruma and zstd.
+- **`nectar-textmate`**, **`nectar-railroad`**, **`nectar-rough`** — code engines that need
+  nothing of the host. The rough engine redraws an SVG as a sketch with `roughr`, reading it with
+  `usvg` and drawing text with the fonts the shell hands it. The railroad and rough engines build
+  for WebAssembly; the TextMate engine does not, since `giallo` needs the C libraries Oniguruma
+  and zstd.
 - **`nectar-process`** — the code engine that runs a program named in `nectar.toml`, such as
   Graphviz or PlantUML.
 - **`nectar-fetch`** — the fetcher that downloads images from the web over HTTP, within limits
@@ -67,5 +69,7 @@ chapters, runs the passes (ids, numbers, footnotes, links, assets, images from t
 engines) and hands the enriched documents to each renderer. The build is a map of output files in
 memory, which the command line writes. `nectar build <file>` opens a project of that file's
 directory with `Project::new` and a configuration made in memory, and writes only its PDF. `nectar
+render` builds no project: it composes the same engines, runs the one that takes the language on
+one text, and serializes its output in the command line (`crates/cli/src/render.rs`). `nectar
 serve` keeps the project and its engine cache between builds, rebuilds on every change below the
 root and swaps the build the server answers from. Details are in [`docs/DESIGN.md`](DESIGN.md).

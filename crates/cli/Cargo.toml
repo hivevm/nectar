@@ -16,7 +16,9 @@ nectar-native = { version = "0.1.0", path = "../native" }
 nectar-pdf = { version = "0.1.0", path = "../pdf" }
 nectar-process = { version = "0.1.0", path = "../process" }
 nectar-railroad = { version = "0.1.0", path = "../railroad" }
+nectar-rough = { version = "0.1.0", path = "../rough" }
 nectar-textmate = { version = "0.1.0", path = "../textmate" }
+resvg = { version = "0.47.0", default-features = false, features = ["text"] }
 toml = "1.1.8"
 nectar-server = { version = "0.1.0", path = "../server" }
 tokio = { version = "1.54.1", features = ["rt-multi-thread"] }
