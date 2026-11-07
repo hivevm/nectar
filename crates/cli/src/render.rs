@@ -1,6 +1,6 @@
 //! `nectar render`: one code engine on one text, its output written as SVG, PNG, HTML or ANSI
-//! (ADR-0018). A PNG is the SVG rasterized with the bundled fonts only
-//! (ADR-0017).
+//! (ADR-0018). A PNG is the SVG rasterized with the bundled fonts only (ADR-0017); the same
+//! database of them is the one the command line hands to the rough engine (ADR-0020).
 
 use std::path::Path;
 use std::sync::{Arc, LazyLock};

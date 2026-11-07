@@ -7,14 +7,15 @@ use nectar_core::{CodeEngine, EngineOutput};
 use nectar_rough::Rough;
 use usvg::roxmltree;
 
-/// The engine with the bundled fonts, a family they lack falling back to Ubuntu Sans, as the
-/// command line hands them in.
+/// The engine with the bundled fonts, a family they lack falling back to Ubuntu Sans and
+/// `monospace` to Victor Mono, as the command line hands them in.
 fn engine() -> Rough {
     let mut fonts = usvg::fontdb::Database::new();
     for data in nectar_pdf::FONT_FILES {
         fonts.load_font_source(usvg::fontdb::Source::Binary(Arc::new(*data)));
     }
     fonts.set_serif_family("Ubuntu Sans");
+    fonts.set_monospace_family("Victor Mono");
     Rough::new(Arc::new(fonts))
 }
 
