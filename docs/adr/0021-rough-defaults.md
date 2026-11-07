@@ -1,6 +1,6 @@
 # ADR-0021: `[engine.rough]` in `nectar.toml` sets the defaults of the rough engine
 
-- **Status:** 🟡 proposed
+- **Status:** 🟢 accepted
 - **Date:** 2026-11-07
 - **Deciders:** Markus Brigl
 - **Applies to:** the keys of `[engine.rough]` in `nectar.toml`, how the command line hands them to the rough engine in `crates/cli/` and `crates/rough/`, and the tests that verify them
