@@ -170,6 +170,33 @@ fn a_rough_block_is_drawn_in_every_output_and_kept_when_it_is_no_svg() {
     assert!(root.join("public/print/main.pdf").is_file());
 }
 
+// Verifies: G-5
+#[test]
+fn a_code_block_with_crlf_line_ends_is_highlighted_with_the_lines_of_its_text() {
+    let block = |line_end: &str, page: &str| {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
+        let text = "# Main\n\n```rust\nfn main() {\n    let x = 1;\n}\n```\n";
+        write(root, "main.md", &text.replace('\n', line_end));
+        let output = nectar(root, &["build"]);
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let html = fs::read_to_string(root.join(page)).unwrap();
+        let start = html.find("<pre class=\"code highlighted\"").unwrap();
+        let end = start + html[start..].find("</pre>").unwrap();
+        html[start..end].to_string()
+    };
+    for page in ["public/index.html", "public/print/index.html"] {
+        let lf = block("\n", page);
+        assert_eq!(lf.lines().count(), 3, "{lf}");
+        assert_eq!(block("\r\n", page), lf, "{page}");
+    }
+}
+
 /// Every file below `dir`, relative to it, with its content.
 fn files(dir: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
     let mut found = BTreeMap::new();

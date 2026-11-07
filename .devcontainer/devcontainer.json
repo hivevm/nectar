@@ -43,11 +43,14 @@
   // Runs inside the container on every start, so the settings are set again should a session
   // have changed them: the repository's git hooks under .githooks/ and the merge settings they
   // rely on. What each refuses, and the same commands for a clone outside the container,
-  // are under "Git hooks" in CONTRIBUTING.md.
+  // are under "Git hooks" in CONTRIBUTING.md. The `gh` entry lets git push and fetch
+  // over HTTPS with gh's login, should gh be logged in: its helper replaces every helper for
+  // github.com before it, VS Code's forwarded one included, so it is set only where gh can answer.
   "postStartCommand": {
     "hooks": "git config core.hooksPath .githooks",
     "merge": "git config merge.ff false && git config pull.ff only",
-    "index": "git config merge.adr-index.driver '.githooks/merge-adr-index %O %A %B %S %X %Y'"
+    "index": "git config merge.adr-index.driver '.githooks/merge-adr-index %O %A %B %S %X %Y'",
+    "gh": "gh auth status --hostname github.com >/dev/null 2>&1 && gh auth setup-git --hostname github.com || true"
   },
 
   // Runs inside the container once it is created. ShellCheck comes from the base image's signed

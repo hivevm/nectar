@@ -394,3 +394,23 @@ fn engine_rough_in_the_nectar_toml_of_c_sets_the_defaults_of_the_rough_engine() 
         assert!(!dir.path().join("out.svg").exists());
     }
 }
+
+// Verifies: G-11, ADR-0018
+#[test]
+fn highlighted_code_with_crlf_line_ends_has_the_lines_of_its_text() {
+    let dir = tempfile::tempdir().unwrap();
+    let lf = "fn main() {\n    let x = 1;\n}\n";
+    let crlf = lf.replace('\n', "\r\n");
+    for format in ["html", "ansi"] {
+        let render = |code: &str| {
+            let output = nectar(dir.path(), &["render", "rust", "-f", format], code);
+            assert!(output.status.success(), "{}", stderr(&output));
+            String::from_utf8(output.stdout).unwrap()
+        };
+        let expected = render(lf);
+        assert_eq!(render(&crlf), expected, "{format}");
+        // A last line without a line end renders as before.
+        assert_eq!(render(lf.trim_end()), expected, "{format}");
+        assert_eq!(render(crlf.trim_end()), expected, "{format}");
+    }
+}

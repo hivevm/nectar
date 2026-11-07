@@ -66,9 +66,13 @@ impl CodeEngine for TextMate {
         let options = HighlightOptions::new(language, themes)
             .merge_whitespace(true)
             .merge_same_style_tokens(true);
-        let highlighted = self
-            .registry
-            .highlight(code.strip_suffix('\n').unwrap_or(code), &options)?;
+        // The highlighter splits lines at `\n` and at `\r\n` alike; a final line end, of either
+        // kind, would give one empty line more than the text has.
+        let code = code
+            .strip_suffix('\n')
+            .map(|code| code.strip_suffix('\r').unwrap_or(code))
+            .unwrap_or(code);
+        let highlighted = self.registry.highlight(code, &options)?;
         let (light, dark) = match highlighted.theme {
             ThemeVariant::Single(theme) => (theme.default_style, None),
             ThemeVariant::Dual { light, dark } => (light.default_style, Some(dark.default_style)),
@@ -146,5 +150,20 @@ mod tests {
     #[test]
     fn unknown_theme_is_an_error() {
         assert!(TextMate::new("no-such-theme", None).is_err());
+    }
+
+    #[test]
+    fn crlf_line_ends_give_the_lines_lf_line_ends_give() {
+        let engine = TextMate::new(DEFAULT_THEME, None).unwrap();
+        let lines = |code: &str| match engine.render("rust", code).unwrap() {
+            EngineOutput::Highlighted(code) => code.lines,
+            _ => panic!("expected highlighted code"),
+        };
+        let lf = lines("fn main() {\n    let x = 1;\n}\n");
+        assert_eq!(lf.len(), 3);
+        assert_eq!(lines("fn main() {\r\n    let x = 1;\r\n}\r\n"), lf);
+        // A last line without a line end is highlighted as before.
+        assert_eq!(lines("fn main() {\n    let x = 1;\n}"), lf);
+        assert_eq!(lines("fn main() {\r\n    let x = 1;\r\n}"), lf);
     }
 }
