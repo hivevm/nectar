@@ -58,6 +58,7 @@ scripts/lib/          # what the scripts share: the ADR header, git, the ticket 
 scripts/*.sh          # run by hand, steps 7 and 8 of the integration branches: number-adrs.sh,
                       # ready-for-main.sh, drop-merged-branch.sh
 scripts/release.sh    # builds and publishes the release archives; checks without a command
+release/install-nectar.sh # installs one release, verified against its checksums
 .githooks/            # git hooks: nothing lands on main locally; checks before a merge and a push
 .github/workflows/    # checks.yml runs the checks; review-binding.yml reads each pull request's hand-off;
                       # nectar-release.yml builds the release archives of a nectar-v* tag

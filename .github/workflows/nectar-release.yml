@@ -1,7 +1,8 @@
 name: Nectar release
 
 # A tag such as nectar-v0.1.0 builds the CLI for every platform and attaches the archives to a
-# GitHub release of that tag.
+# GitHub release of that tag, with their SHA256SUMS and a build-provenance attestation for each
+# archive (ADR-draft-release-interface).
 on:
   push:
     tags: ["nectar-v*"]
@@ -51,6 +52,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write # the attestations' signing identity
+      attestations: write # store the attestations
     steps:
       # The checkout first: it would clear the archives downloaded before it.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -60,6 +63,11 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      # One attestation per archive, signed by this workflow; gh attestation verify
+      # --signer-workflow hivevm/nectar/.github/workflows/nectar-release.yml checks it.
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: "dist/nectar-*"
       - name: Publish with checksums
         env:
           GH_TOKEN: ${{ github.token }}
