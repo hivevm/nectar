@@ -1,6 +1,6 @@
 # ADR-draft-single-file-build: `nectar build` given a Markdown file writes its PDF next to it, without a `nectar.toml`
 
-- **Status:** 🟡 proposed
+- **Status:** 🟢 accepted
 - **Date:** 2026-11-07
 - **Deciders:** Markus Brigl
 - **Applies to:** the command line in `crates/cli/`, its `build` command and its arguments, and the tests that verify G-10
