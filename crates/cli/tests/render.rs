@@ -249,3 +249,36 @@ fn a_png_is_the_same_every_time_and_draws_its_text() {
     // The same boxes with other glyphs: without a font for the text, both pictures are equal.
     assert_ne!(first, render("rule ::= \"ba\" ;\n"));
 }
+
+// Verifies: G-12, ADR-draft-rough-engine
+#[test]
+fn an_svg_becomes_a_sketch_as_svg_and_as_png() {
+    let dir = tempfile::tempdir().unwrap();
+    let input = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"120\" height=\"80\">\
+                 <rect x=\"10\" y=\"10\" width=\"100\" height=\"60\" fill=\"red\" stroke=\"black\" \
+                 data-rough-fill-style=\"cross-hatch\"/></svg>";
+    fs::write(dir.path().join("in.svg"), input).unwrap();
+
+    let output = nectar(dir.path(), &["render", "rough"], input);
+    assert!(output.status.success(), "{}", stderr(&output));
+    let svg = String::from_utf8(output.stdout).unwrap();
+    assert!(svg.starts_with("<svg"), "{svg}");
+    assert!(svg.contains("stroke=\"#ff0000\""), "{svg}");
+    assert!(!svg.contains("<rect"), "{svg}");
+
+    let output = nectar(
+        dir.path(),
+        &["render", "rough", "in.svg", "-o", "out.png"],
+        "",
+    );
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert!(
+        fs::read(dir.path().join("out.png"))
+            .unwrap()
+            .starts_with(PNG_SIGNATURE)
+    );
+
+    let output = nectar(dir.path(), &["render", "rough"], "rule ::= 'a' ;");
+    assert!(!output.status.success());
+    assert!(output.stdout.is_empty());
+}

@@ -19,6 +19,7 @@ use nectar_native::{Directory, Threads};
 use nectar_pdf::PdfRenderer;
 use nectar_process::Process;
 use nectar_railroad::Railroad;
+use nectar_rough::Rough;
 use nectar_server::{OpenProject, Renderers, ServeOptions};
 use nectar_textmate::{DEFAULT_DARK_THEME, DEFAULT_THEME, TextMate};
 
@@ -285,8 +286,8 @@ fn render_text(
         .find(|engine| engine.supports(language))
         .ok_or_else(|| match root {
             None => anyhow!(
-                "no engine supports '{language}'; without -C <dir>, only railroad and TextMate \
-                 grammars are available"
+                "no engine supports '{language}'; without -C <dir>, only railroad, rough and \
+                 TextMate grammars are available"
             ),
             Some(_) => anyhow!("no engine supports '{language}'"),
         })?;
@@ -376,11 +377,12 @@ fn write(build: &Build, dir: &Path) -> io::Result<()> {
 }
 
 /// The code engines configured under `[engine]`: every `[engine.process.<name>]` first, then
-/// the built-in railroad engine and TextMate highlighting, each on unless `enabled = false`.
+/// the built-in railroad and rough engines and TextMate highlighting, each on unless
+/// `enabled = false`.
 fn engines(config: &toml::Table) -> Result<Vec<Box<dyn CodeEngine>>> {
     let mut engines: Vec<Box<dyn CodeEngine>> = Vec::new();
     for key in config.keys() {
-        if !["process", "railroad", "textmate"].contains(&key.as_str()) {
+        if !["process", "railroad", "rough", "textmate"].contains(&key.as_str()) {
             bail!("unknown engine [engine.{key}]");
         }
     }
@@ -408,6 +410,10 @@ fn engines(config: &toml::Table) -> Result<Vec<Box<dyn CodeEngine>>> {
 
     if enabled("railroad") {
         engines.push(Box::new(Railroad));
+    }
+
+    if enabled("rough") {
+        engines.push(Box::new(Rough::new(nectar_pdf::FONT_FILES)));
     }
 
     if enabled("textmate") {

@@ -40,9 +40,11 @@ The crates under `crates/`, every dependency pointing toward the core
   for a host without a file system and for the tests of every crate.
 - **`nectar-html`** — the renderer for the website and the print view, with the built-in theme.
 - **`nectar-pdf`** — the renderer for the PDF, typeset with Typst in memory.
-- **`nectar-textmate`**, **`nectar-railroad`** — code engines that need nothing of the host.
-  The railroad engine builds for WebAssembly; the TextMate engine does not, since `giallo` needs
-  the C libraries Oniguruma and zstd.
+- **`nectar-textmate`**, **`nectar-railroad`**, **`nectar-rough`** — code engines that need
+  nothing of the host. The rough engine redraws an SVG as a sketch with `roughr`, reading it with
+  `usvg` and drawing text with the fonts the shell hands it. The railroad and rough engines build
+  for WebAssembly; the TextMate engine does not, since `giallo` needs the C libraries Oniguruma
+  and zstd.
 - **`nectar-process`** — the code engine that runs a program named in `nectar.toml`, such as
   Graphviz or PlantUML.
 - **`nectar-fetch`** — the fetcher that downloads images from the web over HTTP, within limits

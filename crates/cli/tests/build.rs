@@ -130,6 +130,46 @@ fn code_is_highlighted_or_drawn_in_every_output_and_kept_when_a_program_is_missi
     assert!(root.join("public/print/main.pdf").is_file());
 }
 
+// Verifies: G-5, G-12
+#[test]
+fn a_rough_block_is_drawn_in_every_output_and_kept_when_it_is_no_svg() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(root, "nectar.toml", "[[document]]\nsource = \"main.md\"\n");
+    write(
+        root,
+        "main.md",
+        "# Main\n\n```rough\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"60\" height=\"40\">\
+         <rect x=\"5\" y=\"5\" width=\"50\" height=\"30\" fill=\"red\"/></svg>\n```\n\n\
+         ```rough\nnot an svg\n```\n",
+    );
+
+    let output = nectar(root, &["build"]);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(output.status.success(), "{stderr}");
+    let warnings: Vec<_> = stderr
+        .lines()
+        .filter(|l| l.starts_with("warning:"))
+        .collect();
+    assert_eq!(warnings.len(), 1, "{stderr}");
+    assert!(
+        warnings[0].contains("main.md:7") && warnings[0].contains("rough"),
+        "{stderr}"
+    );
+    for page in ["public/index.html", "public/print/index.html"] {
+        let html = fs::read_to_string(root.join(page)).unwrap();
+        assert!(
+            html.contains("<figure class=\"graphic graphic-rough\">"),
+            "{page} draws: {html}"
+        );
+        assert!(
+            html.contains("language-rough\">not an svg"),
+            "{page} keeps: {html}"
+        );
+    }
+    assert!(root.join("public/print/main.pdf").is_file());
+}
+
 /// Every file below `dir`, relative to it, with its content.
 fn files(dir: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
     let mut found = BTreeMap::new();

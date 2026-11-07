@@ -8,7 +8,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// The crates that must run wherever Rust compiles, WebAssembly included.
-const PORTABLE: &[&str] = &["core", "html", "pdf", "textmate", "railroad"];
+const PORTABLE: &[&str] = &["core", "html", "pdf", "textmate", "railroad", "rough"];
 
 /// The adapter crates; only the shell composes them.
 const ADAPTERS: &[&str] = &[
