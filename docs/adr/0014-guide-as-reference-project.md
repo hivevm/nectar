@@ -1,4 +1,4 @@
-# ADR-draft-guide-as-reference-project: Cargo builds and tests Nectar, rustfmt, Clippy and cargo-deny are its first sensors, run by one script, and the user guide is the project the checks build
+# ADR-0014: Cargo builds and tests Nectar, rustfmt, Clippy and cargo-deny are its first sensors, run by one script, and the user guide is the project the checks build
 
 - **Status:** 🟢 accepted
 - **Date:** 2026-11-07
