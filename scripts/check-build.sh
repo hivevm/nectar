@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Builds, tests and lints Nectar (ADR-draft-guide-as-reference-project).
+# Builds, tests and lints Nectar (ADR-0014).
 #
 # The one script behind the Build, Test & Run section of README.md: scripts/check-all.sh runs it
 # before a push, and the build job of .github/workflows/checks.yml runs it on Linux, macOS and

@@ -548,7 +548,7 @@ fn live_markdown(dir: &Path) -> (Vec<String>, Vec<String>, Vec<String>) {
     (lines, fences, front)
 }
 
-// Verifies: ADR-draft-guide-as-reference-project
+// Verifies: ADR-0014
 #[test]
 fn the_guide_uses_every_feature_it_explains() {
     let guide = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/guide");

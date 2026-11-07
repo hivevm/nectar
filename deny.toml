@@ -1,4 +1,4 @@
-# cargo-deny configuration, run by scripts/check-build.sh (ADR-draft-guide-as-reference-project).
+# cargo-deny configuration, run by scripts/check-build.sh (ADR-0014).
 
 [graph]
 all-features = true
