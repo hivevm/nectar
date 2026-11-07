@@ -50,7 +50,7 @@ The Dev Container brings Rust with the `wasm32-unknown-unknown` target, cargo-de
 PlantUML, with Java 21 as PlantUML's runtime, and strace, under which a test traces a build on
 Linux. The commands run from the repository root; `scripts/check-build.sh` runs build, test and
 lint in one go, as the pre-push hook and the `build` job of CI do
-([ADR-0008](docs/adr/0008-toolchain-cargo-clippy-deny.md)):
+([ADR-draft-guide-as-reference-project](docs/adr/draft-guide-as-reference-project.md)):
 
 - **Build:** `cargo build --workspace`
 - **Test:** `cargo test --workspace`, then `cargo run -p nectar -- -C docs/guide build`,

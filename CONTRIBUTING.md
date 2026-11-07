@@ -74,7 +74,7 @@ scripts/release.sh    # builds and publishes the release archives; checks withou
 .claude/settings.json # Claude Code permissions: deny reading .env files (see SECURITY.md)
 Cargo.toml            # Cargo workspace of Nectar
 Cargo.lock            # the versions of every crate Nectar builds with, kept for --locked
-deny.toml             # cargo-deny: the licences and the crates allowed (ADR-0008)
+deny.toml             # cargo-deny: the licences and the crates allowed (ADR-draft-guide-as-reference-project)
 crates/core/          # Nectar: Markdown dialect, document model and transform passes
 crates/html/          # Nectar: website, print view and the built-in theme
 crates/pdf/           # Nectar: PDF typeset with Typst, with its fonts

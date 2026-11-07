@@ -1,5 +1,8 @@
 +++
+title = "Extended syntax"
 slug = "syntax"
+[vars]
+page = "syntax/"
 +++
 # Extended syntax
 
@@ -51,8 +54,8 @@ version = "1.2.0"
 +++
 ```
 
-This chapter starts with `slug = "syntax"`, so its page is `syntax/` rather than
-`extended-syntax/`.
+This chapter starts with such a block: its `slug` makes its page {{page}}, a value its own `[vars]`
+give, rather than `extended-syntax/`.
 
 ## Comments
 
@@ -153,6 +156,14 @@ Sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat.
 
 GitHub's notation `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]` and `> [!CAUTION]`
 gives alerts as well.
+
+```md
+> [!TIP]
+> GitHub shows this as an alert too.
+```
+
+> [!TIP]
+> GitHub shows this as an alert too.
 
 ## Footnotes
 
