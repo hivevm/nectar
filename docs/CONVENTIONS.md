@@ -22,3 +22,7 @@ skimmed. The design revision drops what prevented nothing
 - **A self-test asserts what it builds** — it takes its fixtures from the tree it copies or writes
   them itself, never from the template's own ADRs, scripts, or numbers, so it holds in a derived
   project and after a normalization.
+- **A font whose licence reserves its name is bundled unmodified,** as its foundry publishes it:
+  the SIL Open Font License withholds a Reserved Font Name from a modified version, and a subset
+  or a conversion is one, as the Latin subset of IBM Plex Mono was. Every bundled font has its
+  licence beside it and its line in the crate's `NOTICE`.
