@@ -80,6 +80,10 @@ Only a normalization renumbers them ([`AGENTS.md` §3](../AGENTS.md#3-adr-rules)
 10. **G-10** — When `nectar build` is given a Markdown file, the system shall write its PDF next to
     it, or to the file `-o` names, without reading a `nectar.toml`, and shall read nothing outside
     the file's directory.
+11. **G-11** — When `nectar render` is given a language and a text, the system shall write the
+    output of the code engine that supports the language, as the format `-f` or the extension of
+    `-o` names, to the file `-o` names or to standard output, and shall exit non-zero and write
+    nothing when no engine supports the language or the output does not allow the format.
 
 ## Quality Goals
 
