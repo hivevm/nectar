@@ -82,7 +82,7 @@ const ROUGH_TEST: &[&str] = &[
     r##"<path d="M230 230 A 45 45, 0, 1, 1, 275 275 L 275 230 Z" fill="none" stroke="#000"/>"##,
 ];
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn every_shape_of_rough_test_comes_back_as_sketched_paths_in_its_own_colour() {
     for shape in ROUGH_TEST {
@@ -104,7 +104,7 @@ fn every_shape_of_rough_test_comes_back_as_sketched_paths_in_its_own_colour() {
     assert_eq!(attribute(&blue[0], "stroke-width"), Some("3"));
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn the_whole_rough_test_drawing_is_one_sketch() {
     let mut body = ROUGH_TEST.concat();
@@ -124,7 +124,7 @@ fn the_whole_rough_test_drawing_is_one_sketch() {
 }
 
 /// The fills `RoughTest` keeps commented out, each with what its sketch must show.
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn the_fills_of_rough_test_are_drawn_in_their_colours_and_weights() {
     // rc.circle(50, 50, 80, {fill: 'red'}): a hachure of red lines.
@@ -171,7 +171,7 @@ fn the_fills_of_rough_test_are_drawn_in_their_colours_and_weights() {
     assert_eq!(attribute(&solid[0], "stroke"), Some("none"));
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn each_of_the_seven_fill_styles_gives_a_pattern_of_its_own() {
     let styles = [
@@ -206,7 +206,7 @@ fn each_of_the_seven_fill_styles_gives_a_pattern_of_its_own() {
     }
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn the_polygon_of_hachure_test_is_filled_with_lines_at_its_angle_and_gap() {
     let body = r#"<polygon points="10,10 200,10 100,100 300,100 60,200" fill="teal"
@@ -218,7 +218,7 @@ fn the_polygon_of_hachure_test_is_filled_with_lines_at_its_angle_and_gap() {
     assert!(lines >= 40, "{lines} strokes");
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn the_curves_of_bezier_test_and_the_paths_of_parser_test_are_traced() {
     for body in [
@@ -234,7 +234,7 @@ fn the_curves_of_bezier_test_and_the_paths_of_parser_test_are_traced() {
     }
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn a_style_on_a_group_reaches_its_shapes_and_one_on_a_shape_overrides_it() {
     let body = r#"<g data-rough-fill-style="solid">
@@ -247,7 +247,7 @@ fn a_style_on_a_group_reaches_its_shapes_and_one_on_a_shape_overrides_it() {
     assert_eq!(attribute(&paths[1], "stroke"), Some("#ff0000"));
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn the_same_text_gives_the_same_sketch_and_another_seed_another() {
     let body = ROUGH_TEST.concat();
@@ -256,7 +256,7 @@ fn the_same_text_gives_the_same_sketch_and_another_seed_another() {
     assert_ne!(sketch(&body), sketch(&seeded));
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn text_that_is_no_svg_and_an_unreadable_attribute_are_errors() {
     let engine = engine();
@@ -279,7 +279,7 @@ fn text_that_is_no_svg_and_an_unreadable_attribute_are_errors() {
     assert!(error.contains("data-rough-colour"), "{error}");
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn the_engine_supports_rough_and_returns_a_graphic() {
     let engine = engine();
@@ -296,7 +296,7 @@ fn the_engine_supports_rough_and_returns_a_graphic() {
     }
 }
 
-// Verifies: ADR-draft-roughr-usvg
+// Verifies: ADR-0020
 #[test]
 fn text_becomes_outlines_and_an_image_is_dropped_without_reading_it() {
     let body = r#"<text x="10" y="40" font-family="NoSuchFont" font-size="24" fill="black">Nectar</text>
@@ -316,7 +316,7 @@ fn text_becomes_outlines_and_an_image_is_dropped_without_reading_it() {
     assert_eq!(sketch, self::sketch(body));
 }
 
-// Verifies: ADR-draft-roughr-usvg
+// Verifies: ADR-0020
 #[test]
 fn text_and_shapes_are_scaled_alike_by_the_view_box() {
     let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 100 100">
@@ -330,7 +330,7 @@ fn text_and_shapes_are_scaled_alike_by_the_view_box() {
     );
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn a_shape_drawn_through_use_keeps_its_style_and_takes_the_style_of_the_use() {
     // The style on the referenced shape.
@@ -370,7 +370,7 @@ fn paths_of(body: &str) -> Vec<Vec<(String, String)>> {
     paths(&sketch(body))
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn duplicate_ids_and_ids_like_the_engines_own_keep_each_shape_its_style() {
     let paths = paths_of(
@@ -388,7 +388,7 @@ fn duplicate_ids_and_ids_like_the_engines_own_keep_each_shape_its_style() {
     assert_eq!(attribute(&paths[1], "fill"), Some("#ff0000"));
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn an_svg_with_entities_from_its_dtd_is_sketched() {
     let svg = r#"<!DOCTYPE svg [<!ENTITY r "<rect width='40' height='40' fill='red'/>">]>
@@ -397,7 +397,7 @@ fn an_svg_with_entities_from_its_dtd_is_sketched() {
     assert_eq!(attribute(&paths[0], "stroke"), Some("#ff0000"));
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn every_shape_that_encloses_an_area_is_filled_and_a_line_is_not() {
     for body in [
@@ -414,7 +414,7 @@ fn every_shape_that_encloses_an_area_is_filled_and_a_line_is_not() {
     assert!(paths_of(r#"<line x1="0" y1="0" x2="100" y2="50" fill="red"/>"#).is_empty());
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn the_opacity_of_a_group_fades_its_shapes() {
     let paths = paths_of(
@@ -424,7 +424,7 @@ fn the_opacity_of_a_group_fades_its_shapes() {
     assert_eq!(attribute(&paths[1], "stroke-opacity"), Some("0.5"));
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn a_shape_inside_a_marker_is_drawn_in_the_default_style() {
     let paths = paths_of(
@@ -440,7 +440,7 @@ fn a_shape_inside_a_marker_is_drawn_in_the_default_style() {
     );
 }
 
-// Verifies: G-12, ADR-draft-rough-engine, ADR-draft-roughr-usvg
+// Verifies: G-12, ADR-0019, ADR-0020
 #[test]
 fn every_shape_drawn_through_use_keeps_its_own_style_beside_markers_and_unpainted_shapes() {
     // A marker adds paths to what a `<use>` draws; the marked shape keeps its own style.
@@ -486,7 +486,7 @@ fn every_shape_drawn_through_use_keeps_its_own_style_beside_markers_and_unpainte
     }
 }
 
-// Verifies: G-12, ADR-draft-roughr-usvg
+// Verifies: G-12, ADR-0020
 #[test]
 fn a_use_is_placed_by_its_position_and_a_symbol_by_its_view_box() {
     let placed = r##"<defs><rect id="r" width="40" height="40" fill="none" stroke="black"/></defs>
@@ -513,7 +513,7 @@ fn a_use_is_placed_by_its_position_and_a_symbol_by_its_view_box() {
     assert_eq!(attribute(&paths(&sketch)[0], "fill"), Some("#ff0000"));
 }
 
-// Verifies: ADR-draft-rough-engine
+// Verifies: ADR-0019
 #[test]
 fn a_use_that_references_itself_draws_nothing() {
     let body = r##"<g id="loop"><rect width="20" height="20" fill="none" stroke="black"/><use href="#loop" x="30"/></g>"##;
@@ -524,7 +524,7 @@ fn a_use_that_references_itself_draws_nothing() {
     );
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn a_symbol_lends_its_paint_and_style_to_its_shapes() {
     let paths = paths_of(
@@ -534,7 +534,7 @@ fn a_symbol_lends_its_paint_and_style_to_its_shapes() {
     assert_eq!(attribute(&paths[0], "fill"), Some("#00ff00"), "{paths:?}");
 }
 
-// Verifies: G-12, ADR-draft-roughr-usvg
+// Verifies: G-12, ADR-0020
 #[test]
 fn a_use_inside_a_clip_path_leaves_the_clipped_shape_drawn() {
     let paths = paths_of(
@@ -544,7 +544,7 @@ fn a_use_inside_a_clip_path_leaves_the_clipped_shape_drawn() {
     assert_eq!(paths.len(), 1, "{paths:?}");
 }
 
-// Verifies: ADR-draft-rough-engine
+// Verifies: ADR-0019
 #[test]
 fn a_symbol_with_a_shape_from_an_entity_is_an_svg_and_no_crash() {
     let svg = r##"<!DOCTYPE svg [<!ENTITY sh "<rect x='20' width='10' height='10' fill='red'/>">]>
@@ -554,7 +554,7 @@ fn a_symbol_with_a_shape_from_an_entity_is_an_svg_and_no_crash() {
     assert!(!paths(&engine().sketch(svg).unwrap()).is_empty());
 }
 
-// Verifies: ADR-draft-rough-engine
+// Verifies: ADR-0019
 #[test]
 fn uses_that_reference_each_other_or_grow_without_end_stop() {
     let cycle = paths_of(
@@ -588,7 +588,7 @@ fn uses_that_reference_each_other_or_grow_without_end_stop() {
     assert!(started.elapsed().as_secs() < 30, "{:?}", started.elapsed());
 }
 
-// Verifies: G-12, ADR-draft-roughr-usvg
+// Verifies: G-12, ADR-0020
 #[test]
 fn a_use_in_a_prefixed_svg_namespace_is_resolved_in_it() {
     let svg = r##"<s:svg xmlns:s="http://www.w3.org/2000/svg" width="100" height="100">
@@ -598,7 +598,7 @@ fn a_use_in_a_prefixed_svg_namespace_is_resolved_in_it() {
     assert_eq!(attribute(&paths[0], "fill"), Some("#ff0000"));
 }
 
-// Verifies: ADR-draft-rough-engine
+// Verifies: ADR-0019
 #[test]
 fn a_use_that_sizes_an_svg_is_left_to_usvg_which_scales_it() {
     let body = r##"<defs><svg id="v" width="10" height="10" viewBox="0 0 10 10">
@@ -611,7 +611,7 @@ fn a_use_that_sizes_an_svg_is_left_to_usvg_which_scales_it() {
     assert_eq!(attribute(&paths(&sketch)[0], "stroke"), Some("#ff0000"));
 }
 
-// Verifies: ADR-draft-roughr-usvg
+// Verifies: ADR-0020
 #[test]
 fn a_copy_that_does_not_parse_where_it_lands_spoils_no_other_use() {
     // The copy of `g` would carry `n:a` outside the element that declares `n`.
@@ -629,7 +629,7 @@ fn a_copy_that_does_not_parse_where_it_lands_spoils_no_other_use() {
     );
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn a_shape_from_an_entity_takes_no_style_from_a_shape_that_shares_its_id() {
     let svg = r##"<!DOCTYPE svg [<!ENTITY b "<rect id='a' x='50' width='40' height='40' fill='blue'/>">]>

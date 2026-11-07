@@ -250,7 +250,7 @@ fn a_png_is_the_same_every_time_and_draws_its_text() {
     assert_ne!(first, render("rule ::= \"ba\" ;\n"));
 }
 
-// Verifies: G-12, ADR-draft-rough-engine
+// Verifies: G-12, ADR-0019
 #[test]
 fn an_svg_becomes_a_sketch_as_svg_and_as_png() {
     let dir = tempfile::tempdir().unwrap();
