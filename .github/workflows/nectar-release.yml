@@ -19,10 +19,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Linux on Ubuntu 22.04, never *-latest: an archive needs the glibc it is built with,
+          # 2.35 at most (ADR-draft-release-glibc-floor).
           - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
+            os: ubuntu-22.04
           - target: aarch64-unknown-linux-gnu
-            os: ubuntu-24.04-arm
+            os: ubuntu-22.04-arm
           - target: x86_64-apple-darwin
             os: macos-15-intel
           - target: aarch64-apple-darwin

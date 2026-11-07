@@ -1743,7 +1743,7 @@ checksum = "13d2233c9842d08cfe13f9eac96e207ca6a2ea10b80259ebe8ad0268be27d2af"
 
 [[package]]
 name = "nectar"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -1763,7 +1763,7 @@ dependencies = [
 
 [[package]]
 name = "nectar-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "comrak",
  "regex",
@@ -1773,7 +1773,7 @@ dependencies = [
 
 [[package]]
 name = "nectar-fetch"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "nectar-core",
  "ureq",
@@ -1781,7 +1781,7 @@ dependencies = [
 
 [[package]]
 name = "nectar-html"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "minijinja",
  "nectar-core",
@@ -1791,7 +1791,7 @@ dependencies = [
 
 [[package]]
 name = "nectar-native"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "nectar-core",
  "tempfile",
@@ -1799,7 +1799,7 @@ dependencies = [
 
 [[package]]
 name = "nectar-pdf"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "miniz_oxide 0.8.9",
  "nectar-core",
@@ -1810,7 +1810,7 @@ dependencies = [
 
 [[package]]
 name = "nectar-process"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "nectar-core",
  "serde",
@@ -1819,14 +1819,14 @@ dependencies = [
 
 [[package]]
 name = "nectar-railroad"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "nectar-core",
 ]
 
 [[package]]
 name = "nectar-server"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "axum",
@@ -1840,7 +1840,7 @@ dependencies = [
 
 [[package]]
 name = "nectar-textmate"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "giallo",
  "nectar-core",
