@@ -1,4 +1,4 @@
-# ADR-draft-roughr-usvg: The rough engine sketches with `roughr` and reads SVG with `usvg`
+# ADR-0020: The rough engine sketches with `roughr` and reads SVG with `usvg`
 
 - **Status:** 🟢 accepted
 - **Date:** 2026-11-07
@@ -7,7 +7,7 @@
 
 ## Context
 
-[ADR-draft-rough-engine](draft-rough-engine.md) adds an engine that redraws an SVG in Rough.js's
+[ADR-0019](0019-rough-engine.md) adds an engine that redraws an SVG in Rough.js's
 sketch style. It has to read an SVG with its transforms, styles and shapes, and to compute
 Rough.js's strokes and fills.
 
@@ -45,7 +45,7 @@ database that holds only the fonts `nectar-pdf` bundles, handed in by the shell,
 - usvg keeps no unknown attribute, so the engine traces each path back to its style by the `id`
   usvg keeps on a shape's path, inserting an id where a shape has none and renaming a duplicate.
   usvg gives a path drawn through a `<use>` no id, so before usvg reads the SVG the engine
-  replaces every drawn `<use>` it can resolve, as ADR-draft-rough-engine lists them, with a
+  replaces every drawn `<use>` it can resolve, as ADR-0019 lists them, with a
   group of the `<use>`'s attributes around a copy of the referenced content, a `<symbol>` copied
   as a nested `<svg>`, round by round for at most eight rounds while the text stays within
   sixteen times its length or 1 MiB, whichever is larger; a circular `<use>` is dropped, since
@@ -127,7 +127,7 @@ does not need because it writes SVG and PNG comes from ADR-0017; raster images i
 
 `crates/cli/tests/structure.rs` holds `nectar-rough` to ADR-0009 through the `PORTABLE` list, and
 the WebAssembly step of `scripts/check-build.sh` compiles it for `wasm32-unknown-unknown`. A test
-in `crates/rough/` cites this ADR (`Verifies: ADR-draft-roughr-usvg`): an SVG with text and an
+in `crates/rough/` cites this ADR (`Verifies: ADR-0020`): an SVG with text and an
 `<image href>` to a file renders with the text as outlines and without the image, and the same
 text gives the same bytes. **Not mechanically decidable:** that the font database holds only the
 bundled fonts, and that no file is read for an image, since the engine drops images in any case;

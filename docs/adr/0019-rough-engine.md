@@ -1,4 +1,4 @@
-# ADR-draft-rough-engine: A code engine `rough` redraws an SVG in a hand-drawn style
+# ADR-0019: A code engine `rough` redraws an SVG in a hand-drawn style
 
 - **Status:** 🟢 accepted
 - **Date:** 2026-11-07
@@ -107,7 +107,7 @@ technology the engine draws and parses with, which a separate ADR decides.
 
 ## Enforcement
 
-Tests in `crates/rough/` cite this ADR (`Verifies: ADR-draft-rough-engine`). They draw the
+Tests in `crates/rough/` cite this ADR (`Verifies: ADR-0019`). They draw the
 examples of hivevm/rough as SVG through the engine and check: every shape comes back as paths in
 its own colours; each of the seven fill styles gives its pattern; an attribute on a group reaches
 its shapes and one on a shape overrides it; the same text gives the same bytes; text that is no
