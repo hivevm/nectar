@@ -1,6 +1,6 @@
 # ADR-0013: A Nectar release is archives, their checksums and a provenance attestation for each, and the repository carries the installer that verifies them
 
-- **Status:** 🟢 accepted
+- **Status:** ⚪ superseded by ADR-draft-release-glibc-floor
 - **Date:** 2026-11-07
 - **Deciders:** Markus Brigl
 - **Applies to:** `.github/workflows/nectar-release.yml`, `scripts/release.sh`, `release/install-nectar.sh` and the check that tests it, and every installer outside this repository that takes a Nectar release, such as the Dev Container Feature of `hivevm/features`
