@@ -29,8 +29,10 @@ These properties shape the security posture of the coding agents working here:
   stop an agent from running `git push`, and a tool's own configuration enforces none.
   Authentication uses the web flow of `gh`; no personal access token is stored. The token gh keeps
   from that flow lies in plain text in the host's `~/.config/gh`, which the Dev Container mounts
-  ([Dev Container](CONTRIBUTING.md#dev-container)). What the repository's own git
-  hooks guarantee for every agent and every human, and what bypasses each, is under
+  ([Dev Container](CONTRIBUTING.md#dev-container)); with gh logged in, git uses it for every
+  HTTPS push and fetch to github.com, so any process in the container can push as that account
+  without a prompt, as VS Code's forwarded credentials already allowed. What the repository's
+  own git hooks guarantee for every agent and every human, and what bypasses each, is under
   [Git hooks](CONTRIBUTING.md#git-hooks) in the contributing guide.
 - **The specification and the decision record change only by human decision.** A change to
   [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md) is a decision rather than an edit, and only a

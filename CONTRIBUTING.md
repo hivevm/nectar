@@ -103,7 +103,10 @@ survives a rebuild. On Linux and macOS it is the login of the host's `gh` too; o
 `gh` keeps its login under `%AppData%`, the directory is the container's own. gh writes its token
 in plain text to `hosts.yml` there, since the container has no keyring; it is never in the
 repository. So agents in the container act with the host account's login, and a login inside the
-container moves a host `gh` that kept its token in a keyring to that plain-text file.
+container moves a host `gh` that kept its token in a keyring to that plain-text file. On
+every start where gh is logged in, the container runs `gh auth setup-git`, so `git` pushes and
+fetches github.com over HTTPS with that login instead of the credentials VS Code forwards; after a
+first `gh auth login`, run `gh auth setup-git` once or restart the container.
 
 ### Host container management
 
