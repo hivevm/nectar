@@ -11,7 +11,7 @@ Nectar turns Markdown sources into HTML. It runs in two modes that share one cor
 1. A start document includes further Markdown files through links. The result is one complete
    document.
 2. The source format is CommonMark with the extensions of the
-   [guide](GUIDE.md#extended-syntax); see [Markdown dialect](#markdown-dialect).
+   [guide](guide/chapters/extended-syntax.md); see [Markdown dialect](#markdown-dialect).
 3. A document model of its own, independent of Markdown, describes the document.
 4. Syntax highlighting and diagrams are produced once, by engines behind a single port, in a
    transform pass. Their results are stored in the document model as format-neutral data.
@@ -45,7 +45,7 @@ and returns its output as data; it never writes files itself.
 A project names one or more start documents. Each start document produces one complete document.
 
 Which links include a file, and what happens to the included file, is described in the
-[guide](GUIDE.md#documents-and-chapters).
+[guide](guide/chapters/extended-syntax.md#documents-and-chapters).
 
 Every Markdown file is parsed on its own. Merging happens on the document model: an include
 becomes a chapter node that carries the included file's document, with its heading levels shifted
@@ -54,13 +54,13 @@ diagnostics point at the source file and not at a merged text.
 
 ### Front matter
 
-The fields are described in the [guide](GUIDE.md#front-matter). The parser splits the TOML
-block off before parsing and blanks its lines, so line numbers in diagnostics stay those of the
-file; the chapter node carries the front matter.
+The fields are described in the [guide](guide/chapters/extended-syntax.md#front-matter). The parser
+splits the TOML block off before parsing and blanks its lines, so line numbers in diagnostics stay
+those of the file; the chapter node carries the front matter.
 
 ## Markdown dialect
 
-The syntax is described once, in the [guide](GUIDE.md#common-mark). The parser is
+The syntax is described once, in the [guide](guide/chapters/commonmark.md). The parser is
 [comrak](https://docs.rs/comrak) with its extensions for strikethrough, tables, autolinks, task
 lists, footnotes, GitHub alerts, heading ids and link attributes. Before it runs, variables are
 replaced in the source text and the line-start alerts (`!w`, `!!w` … `!!`) are rewritten into
@@ -112,9 +112,9 @@ of the build.
 ## Section numbers and contents
 
 With `numbered` the numbering pass numbers the headings of all chapters in reading order, as the
-[guide](GUIDE.md#headings) describes, and stores the number in the heading node. Renderers show
-it in front of the heading and of chapter titles. With `contents` the renderers list the
-headings of the whole document on its first page, linked across pages.
+[guide](guide/chapters/commonmark.md#headings) describes, and stores the number in the heading node.
+Renderers show it in front of the heading and of chapter titles. With `contents` the renderers list
+the headings of the whole document on its first page, linked across pages.
 
 ## Transform passes
 
@@ -168,9 +168,9 @@ The railroad engine stacks the drawings of a block's rules into one SVG. Text bo
 with Verdana metrics, and texts are stretched to their box, so the drawing does not depend on the
 fonts of the viewer.
 
-`nectar.toml` selects the adapters and configures them; the order in which they are asked, and
-when a process engine fails, are described in the [guide](GUIDE.md#engines). A process engine
-that runs longer than its `timeout` is stopped.
+`nectar.toml` selects the adapters and configures them; the order in which they are asked, and when
+a process engine fails, are described in the [guide](guide/chapters/code-and-diagrams.md#engines). A
+process engine that runs longer than its `timeout` is stopped.
 
 ## Rendering
 
@@ -202,7 +202,7 @@ script remembers the branches opened in a browser tab (`sessionStorage`); withou
 works the same and just forgets. A
 document on a single page shows its headings of levels 2 and 3 in the tree instead.
 
-The renderers write the layout of files described in the [guide](GUIDE.md#output), with
+The renderers write the layout of files described in the [guide](guide/chapters/output.md), with
 relative URLs between them.
 
 ### Print renderer
@@ -240,15 +240,15 @@ Typst's caches keep rebuilds under `nectar serve` short.
 
 ### Themes
 
-The [guide](GUIDE.md#themes) describes what a theme holds. The default theme lives in
+The [guide](guide/chapters/themes.md) describes what a theme holds. The default theme lives in
 `crates/html/theme/` and is built into the binary with `include_str!` and `include_bytes!`; a
 project theme overrides it file by file.
 
 ## Configuration
 
-Every key of `nectar.toml` is described in the [guide](GUIDE.md#configuration). The core reads
-the file into its configuration when a project is opened; `[engine.…]` goes to the command line,
-which builds the adapters from it, and `[document.print]` is passed on to the renderers as a
+Every key of `nectar.toml` is described in the [guide](guide/chapters/configuration.md). The core
+reads the file into its configuration when a project is opened; `[engine.…]` goes to the command
+line, which builds the adapters from it, and `[document.print]` is passed on to the renderers as a
 table.
 
 ## Crates
@@ -280,7 +280,7 @@ site with dozens of diagrams takes milliseconds.
 
 ## Modes
 
-The options of both commands are listed in the [guide](GUIDE.md#quick-start).
+The options of both commands are listed in the [guide](guide/chapters/quick-start.md).
 
 **`nectar build`** loads the project, builds it and writes the output. It reports all diagnostics
 and exits non-zero when any is an error.

@@ -1,0 +1,3 @@
+list = item { ',' item } ;
+item = name [ '=' value ] \
+       [ '(' ( option | (? any text ?) ) ')' ] ;

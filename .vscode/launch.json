@@ -36,7 +36,7 @@
       "id": "project",
       "type": "promptString",
       "description": "Nectar project directory (holds nectar.toml)",
-      "default": "examples/demo"
+      "default": "docs/guide"
     }
   ]
 }

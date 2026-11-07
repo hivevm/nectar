@@ -150,14 +150,14 @@ fn files(dir: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
 
 // Verifies: Q-3
 #[test]
-fn two_builds_of_the_demo_are_byte_identical() {
-    let demo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/demo");
+fn two_builds_of_the_guide_are_byte_identical() {
+    let guide = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/guide");
     let out = tempfile::tempdir().unwrap();
     let builds: Vec<_> = ["first", "second"]
         .iter()
         .map(|name| {
             let dir = out.path().join(name);
-            let output = nectar(&demo, &["build", "--output", dir.to_str().unwrap()]);
+            let output = nectar(&guide, &["build", "--output", dir.to_str().unwrap()]);
             assert!(
                 output.status.success(),
                 "{}",
@@ -424,10 +424,10 @@ fn a_project_reaches_nothing_outside_its_root_runs_no_injected_command_and_stays
 
 // Verifies: Q-2
 #[test]
-fn every_block_of_the_demo_website_is_in_the_pdf_or_reported() {
-    let demo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/demo");
+fn every_block_of_the_guide_website_is_in_the_pdf_or_reported() {
+    let guide = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/guide");
     let out = tempfile::tempdir().unwrap();
-    let output = nectar(&demo, &["build", "--output", out.path().to_str().unwrap()]);
+    let output = nectar(&guide, &["build", "--output", out.path().to_str().unwrap()]);
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(output.status.success(), "{stderr}");
     let reported = |message: &str| stderr.lines().filter(|l| l.contains(message)).count();
@@ -446,7 +446,7 @@ fn every_block_of_the_demo_website_is_in_the_pdf_or_reported() {
         web.push_str(&page[start..end]);
     }
     // The PDF is tagged: every element is a structure element named by its kind.
-    let pdf = String::from_utf8_lossy(&files(&out.path().join("print"))[Path::new("manual.pdf")])
+    let pdf = String::from_utf8_lossy(&files(&out.path().join("print"))[Path::new("GUIDE.pdf")])
         .into_owned();
     let count = |text: &str, patterns: &[&str]| -> usize {
         patterns.iter().map(|p| text.matches(p).count()).sum()
@@ -473,7 +473,7 @@ fn every_block_of_the_demo_website_is_in_the_pdf_or_reported() {
             // A block without a language is `<pre class="code"><code>`: one block, not two.
             on_web -= count(&web, &["<pre class=\"code\"><code>"]);
         }
-        assert!(on_web > 0, "the demo has no {kind}");
+        assert!(on_web > 0, "the guide has no {kind}");
         assert_eq!(
             in_pdf + left_out,
             on_web,
@@ -485,6 +485,108 @@ fn every_block_of_the_demo_website_is_in_the_pdf_or_reported() {
     assert!(
         pdf_paragraphs + html_left_out >= web_paragraphs,
         "{web_paragraphs} paragraphs on the website, {pdf_paragraphs} in the PDF"
+    );
+}
+
+/// The lines of every Markdown file below `dir` that Nectar reads as Markdown, with inline code
+/// cut out, and the info strings of the fenced code blocks among them: what a guide uses itself
+/// rather than shows as a sample.
+fn live_markdown(dir: &Path) -> (Vec<String>, Vec<String>) {
+    let (mut lines, mut fences) = (Vec::new(), Vec::new());
+    let mut paths: Vec<_> = files(dir)
+        .into_keys()
+        .filter(|p| p.extension().is_some_and(|e| e == "md"))
+        .collect();
+    paths.sort();
+    for path in paths {
+        let text = fs::read_to_string(dir.join(&path)).unwrap();
+        let mut open: Option<(char, usize)> = None;
+        for line in text.lines() {
+            let trimmed = line.trim_start();
+            let mark = trimmed.chars().next().filter(|c| *c == '`' || *c == '~');
+            let run = mark.map_or(0, |m| trimmed.chars().take_while(|c| *c == m).count());
+            if let (Some(m), true) = (mark, run >= 3) {
+                match open {
+                    None => {
+                        open = Some((m, run));
+                        fences.push(trimmed[run..].trim().to_string());
+                    }
+                    Some((o, n)) if o == m && run >= n && trimmed[run..].trim().is_empty() => {
+                        open = None;
+                    }
+                    Some(_) => {}
+                }
+                continue;
+            }
+            if open.is_none() {
+                // Inline code is a sample too: drop every span between backticks.
+                let live: String = line.split('`').step_by(2).collect();
+                lines.push(live);
+            }
+        }
+    }
+    (lines, fences)
+}
+
+// Verifies: ADR-draft-guide-as-reference-project
+#[test]
+fn the_guide_uses_every_feature_it_explains() {
+    let guide = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/guide");
+    let (lines, fences) = live_markdown(&guide);
+    let any = |test: &dyn Fn(&str) -> bool| lines.iter().any(|l| test(l));
+    let image = |l: &str, ends: &[&str]| {
+        l.starts_with("![")
+            && ends
+                .iter()
+                .any(|e| l.split("](").nth(1).is_some_and(|t| t.contains(e)))
+    };
+    let symbol = |l: &str| {
+        l.split('@')
+            .skip(1)
+            .step_by(2)
+            .any(|s| !s.is_empty() && s.chars().all(|c| c.is_ascii_lowercase() || c == '_'))
+            && l.matches('@').count() >= 2
+    };
+    let features: [(&str, bool); 12] = [
+        (
+            "an included chapter",
+            any(&|l| l.starts_with('[') && l.contains("](") && l.ends_with(".md)")),
+        ),
+        ("front matter", lines.iter().any(|l| l == "+++")),
+        ("an embedded source file", any(&|l| image(l, &[".java)"]))),
+        (
+            "an embedded grammar file",
+            any(&|l| image(l, &[".railroad)"])),
+        ),
+        (
+            "a raster image with attributes",
+            any(&|l| image(l, &[".png){"])),
+        ),
+        ("a railroad diagram", fences.iter().any(|f| f == "railroad")),
+        ("a Graphviz diagram", fences.iter().any(|f| f == "dot")),
+        ("a PlantUML diagram", fences.iter().any(|f| f == "uml")),
+        (
+            "an alert",
+            any(&|l| {
+                ["!n ", "!s ", "!w ", "!e ", "!!"]
+                    .iter()
+                    .any(|a| l.starts_with(a))
+            }),
+        ),
+        ("a footnote", any(&|l| l.starts_with("[^"))),
+        ("a symbol", any(&symbol)),
+        ("a variable", any(&|l| l.contains("{{"))),
+    ];
+    for (feature, used) in features {
+        assert!(used, "the guide no longer uses {feature} itself");
+    }
+    assert!(
+        any(&|l| l.starts_with("- [x]") || l.starts_with("- [ ]")),
+        "no task list"
+    );
+    assert!(
+        any(&|l| l.starts_with("|--") || l.starts_with("|:-")),
+        "no table"
     );
 }
 
