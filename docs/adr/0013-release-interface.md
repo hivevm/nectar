@@ -1,4 +1,4 @@
-# ADR-draft-release-interface: A Nectar release is archives, their checksums and a provenance attestation for each, and the repository carries the installer that verifies them
+# ADR-0013: A Nectar release is archives, their checksums and a provenance attestation for each, and the repository carries the installer that verifies them
 
 - **Status:** 🟢 accepted
 - **Date:** 2026-11-07
