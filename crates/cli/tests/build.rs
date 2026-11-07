@@ -178,7 +178,8 @@ fn two_builds_of_the_guide_are_byte_identical() {
 
 /// What a build may touch outside its project on Linux besides the root's own parents: the
 /// dynamic loader and the libraries it finds, under `/lib` or, where `/lib` is merged into it,
-/// `/usr/lib`; and what the standard library reads to count the cores.
+/// `/usr/lib`; what the standard library reads to count the cores; and what glibc's allocator
+/// reads to count them when it sizes its arenas (get_nprocs, called from free in glibc 2.41).
 const SYSTEM: &[&str] = &[
     "/etc/ld.so.cache",
     "/etc/ld.so.preload",
@@ -187,6 +188,7 @@ const SYSTEM: &[&str] = &[
     "/proc/self/cgroup",
     "/proc/self/maps",
     "/proc/self/mountinfo",
+    "/sys/devices/system/cpu/online",
     "/sys/fs/cgroup/",
 ];
 

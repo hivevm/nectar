@@ -73,7 +73,11 @@ the crates and their `SHA256SUMS`, to a GitHub release of that tag.
 
 Download the archive for your platform from the
 [releases](https://github.com/hivevm/nectar/releases), unpack it and put `nectar` on your
-`PATH`, or build it from source with `cargo install --path crates/cli`.
+`PATH`, or build it from source with `cargo install --path crates/cli`. Each release lists the
+SHA-256 checksums of its archives in `SHA256SUMS`, and each archive carries a build-provenance
+attestation: `gh attestation verify <archive> --repo hivevm/nectar` checks it.
+[`release/install-nectar.sh`](release/install-nectar.sh) installs one release, verified
+against its checksums.
 
 A project is a directory with a `nectar.toml`:
 
