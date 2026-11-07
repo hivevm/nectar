@@ -12,9 +12,13 @@
 #   there — LICENSE, at least one crates/*/NOTICE — and the package nectar is the command line;
 #   the workflow attests every archive by an action pinned to a commit; and release/install-nectar.sh
 #   installs an archive packed as package packs it, refuses one altered after its checksum, and
-#   refuses a target SHA256SUMS does not name (Verifies: ADR-0013);
+#   refuses a target SHA256SUMS does not name; the workflow builds every Linux target on
+#   ubuntu-22.04 or ubuntu-22.04-arm, never on a *-latest runner; and the glibc floor package
+#   enforces refuses a binary that needs more than glibc 2.35, in package too, which writes no
+#   archive then (Verifies: ADR-0016);
 # - package <target> builds nectar for the Rust target in release mode with the locked versions,
-#   and packs the binary, LICENSE and the NOTICE files of the crates into
+#   fails for a Linux target whose binary needs a glibc newer than 2.35, and packs the binary,
+#   LICENSE and the NOTICE files of the crates into
 #   nectar-<version>-<target>.tar.gz, or .zip for Windows, the version taken from GITHUB_REF_NAME;
 #   the archive's name goes to GITHUB_ENV as ARCHIVE where that is set, and to stdout;
 # - publish <directory> writes SHA256SUMS of the archives in the directory and creates the GitHub
@@ -25,6 +29,9 @@
 # Exit code 0 on success, 1 when a step fails, 2 on an unknown command.
 
 set -euo pipefail
+
+# The newest glibc a Linux archive may need: that of ubuntu-22.04, where it is built.
+GLIBC_FLOOR=2.35
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
@@ -46,9 +53,78 @@ check() {
     echo "the release job of nectar-release.yml does not attest the archives by actions/attest-build-provenance pinned to a commit, with id-token and attestations to write" >&2
     errors=1
   fi
+  # Every Linux target is built on a runner with glibc 2.35, never on one that moves.
+  local linux
+  linux="$(awk '/^ +- target: / { target = $3 }
+    /^ +os: / && target ~ /linux/ { print target, $2 }' .github/workflows/nectar-release.yml)"
+  if [[ -z "$linux" ]] || grep -Evq ' ubuntu-22\.04(-arm)?$' <<< "$linux"; then
+    echo "nectar-release.yml builds a Linux target on a runner other than ubuntu-22.04 or" \
+      "ubuntu-22.04-arm: ${linux:-none}" >&2
+    errors=1
+  fi
+  check_glibc || errors=1
   check_installer || errors=1
   ((errors == 0)) || { echo "Release check FAILED." >&2; return 1; }
   echo "Release check passed."
+}
+
+# check_glibc — the floor package enforces: versions up to GLIBC_FLOOR pass, newer ones fail, and
+# on a Linux host the versions a binary of the host needs are read.
+check_glibc() {
+  local errors=0 version
+  for version in 2.2.5 2.17 2.34 2.35; do
+    glibc_within_floor "$version" || { echo "the glibc floor refuses $version" >&2; errors=1; }
+  done
+  for version in 2.36 2.39 2.43 3.0; do
+    ! glibc_within_floor "$version" || { echo "the glibc floor allows $version" >&2; errors=1; }
+  done
+  if [[ "$(uname -s)" == Linux ]] && command -v objdump > /dev/null 2>&1; then
+    version="$(glibc_needed "$(command -v ls)")"
+    [[ "$version" =~ ^[0-9]+(\.[0-9]+)+$ ]] \
+      || { echo "no glibc version read from $(command -v ls): '$version'" >&2; errors=1; }
+  fi
+  check_package_floor || errors=1
+  return "$errors"
+}
+
+# check_package_floor — package itself, with stand-ins for cargo and objdump: a binary that needs
+# glibc 2.43 fails and leaves no archive, one that needs 2.35 is packed.
+check_package_floor() {
+  local work errors=0 target=x86_64-floorcheck-linux-gnu out
+  local archive=nectar-9.9.9-x86_64-floorcheck-linux-gnu.tar.gz
+  work="$(mktemp -d)"
+  # shellcheck disable=SC2064 # the paths are fixed now
+  trap "rm -rf '$work' 'target/$target' '$archive'" RETURN
+  printf '#!/bin/sh\nmkdir -p "target/%s/release" && echo stand-in > "target/%s/release/nectar"\n' \
+    "$target" "$target" > "$work/cargo"
+  # shellcheck disable=SC2016 # $NEEDED expands in the stand-in, not here
+  printf '#!/bin/sh\necho "0000000000000000 DF *UND* 0000000000000000 (GLIBC_$NEEDED) memcpy"\n' \
+    > "$work/objdump"
+  chmod 755 "$work/cargo" "$work/objdump"
+  try_package() {
+    NEEDED="$1" PATH="$work:$PATH" GITHUB_REF_NAME=nectar-v9.9.9 GITHUB_ENV='' \
+      bash scripts/release.sh package "$target" 2>&1
+  }
+  if out="$(try_package 2.43)" || [[ -e "$archive" ]] || [[ "$out" != *"needs glibc 2.43"* ]]; then
+    echo "package did not refuse a binary that needs glibc 2.43: $out" >&2; errors=1
+  fi
+  if ! out="$(try_package 2.35)" || [[ ! -e "$archive" ]]; then
+    echo "package did not pack a binary that needs glibc 2.35: $out" >&2; errors=1
+  fi
+  return "$errors"
+}
+
+# glibc_needed <binary> — the newest GLIBC_ symbol version the binary needs, empty for none; fails
+# when objdump cannot read the binary.
+glibc_needed() {
+  local symbols
+  symbols="$(objdump -T "$1")" || return 1
+  grep -o 'GLIBC_[0-9][0-9.]*' <<< "$symbols" | sed 's/^GLIBC_//' | sort -uV | tail -n 1 || true
+}
+
+# glibc_within_floor <version> — whether a glibc version is GLIBC_FLOOR or older.
+glibc_within_floor() {
+  [[ "$(printf '%s\n%s\n' "$1" "$GLIBC_FLOOR" | sort -V | tail -n 1)" == "$GLIBC_FLOOR" ]]
 }
 
 # check_installer — release/install-nectar.sh against archives packed and summed by the functions
@@ -138,6 +214,13 @@ package() {
   cargo build --release --locked -p nectar --target "$target"
   binary="target/$target/release/nectar"
   [[ "$target" == *windows* ]] && binary="$binary.exe"
+  if [[ "$target" == *-linux-gnu ]]; then
+    local needed
+    needed="$(glibc_needed "$binary")" \
+      || { echo "objdump cannot read the glibc versions $binary needs" >&2; return 1; }
+    glibc_within_floor "${needed:-0}" \
+      || { echo "$binary needs glibc $needed, newer than the floor $GLIBC_FLOOR" >&2; return 1; }
+  fi
   archive="$(pack "$target" "${ref#nectar-v}" "$binary" .)"
   [[ -n "${GITHUB_ENV:-}" ]] && echo "ARCHIVE=$archive" >> "$GITHUB_ENV"
   echo "$archive"
