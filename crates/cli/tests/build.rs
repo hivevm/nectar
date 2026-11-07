@@ -610,7 +610,7 @@ fn names(dir: &Path) -> Vec<String> {
     names
 }
 
-// Verifies: ADR-draft-single-file-build
+// Verifies: G-10, ADR-draft-single-file-build
 #[test]
 fn a_markdown_file_builds_to_its_pdf_without_a_configuration() {
     let dir = tempfile::tempdir().unwrap();
@@ -660,7 +660,7 @@ fn a_markdown_file_builds_to_its_pdf_without_a_configuration() {
     assert_eq!(names(&notes.join("out")), ["manual.pdf", "readme.pdf"]);
 }
 
-// Verifies: ADR-draft-single-file-build
+// Verifies: G-10, ADR-draft-single-file-build
 #[test]
 fn a_markdown_file_ignores_a_configuration_beside_it_and_stays_in_its_directory() {
     let dir = tempfile::tempdir().unwrap();
