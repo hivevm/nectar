@@ -62,10 +62,10 @@ Only a normalization renumbers them ([`AGENTS.md` §3](../AGENTS.md#3-adr-rules)
 4. **G-4** — When the PDF cannot show an element of the source, such as raw HTML or an image it
    cannot embed, the system shall report it as a warning with file and line instead of dropping it
    silently.
-5. **G-5** — When a fenced code block names a language with a TextMate grammar, or `railroad`, the
-   system shall highlight or draw it in every output. When the engine a block needs is missing on
-   the host, or its program is missing or fails, it shall keep the block as plain code and report a
-   warning.
+5. **G-5** — When a fenced code block names a language with a TextMate grammar, `railroad`, or
+   `rough`, the system shall highlight or draw it in every output. When the engine a block needs is
+   missing on the host, or its program is missing or fails, it shall keep the block as plain code
+   and report a warning.
 6. **G-6** — When a file below the project root changes while `nectar serve` runs, the system shall
    rebuild and reload every connected browser. Errors appear in a panel on the page, and the server
    keeps running.
@@ -84,6 +84,13 @@ Only a normalization renumbers them ([`AGENTS.md` §3](../AGENTS.md#3-adr-rules)
     output of the code engine that supports the language, as the format `-f` or the extension of
     `-o` names, to the file `-o` names or to standard output, and shall exit non-zero and write
     nothing when no engine supports the language or the output does not allow the format.
+12. **G-12** — When a code block or `nectar render` names `rough` and its text is an SVG, the
+    system shall return a sketch of it: every shape redrawn in its own colours, styled by the
+    `data-rough-*` attributes on it or an ancestor, over those of the `<use>` that draws it,
+    while a shape in a marker, in an entity of a DTD, or drawn through a `<use>` the engine cannot
+    resolve is redrawn in the defaults; its text as outlines; and the same text giving the same
+    graphic. Text that is no SVG, an unknown `data-rough-*` attribute, or a value the engine
+    cannot read shall fail as an engine does under G-5 and G-11.
 
 ## Quality Goals
 

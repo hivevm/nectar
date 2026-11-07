@@ -38,6 +38,8 @@ to invent.
   the print view, the PDF.
 - **Shell** — a thin program around the core: the command line, the server, a WebAssembly build.
   _Avoid:_ frontend, wrapper.
+- **Sketch** — a graphic the rough engine redrew from an SVG in a hand-drawn style: wobbly
+  strokes and fills of hachure lines. _Avoid:_ rough version, hand-drawing.
 - **Start document** — the Markdown file a `[[document]]` names; it and its chapters make one
   document. _Avoid:_ main file, index.
 - **Workers** — the port through which the core runs code engines side by side; the host's adapter
