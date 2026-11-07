@@ -305,6 +305,8 @@ fn render_text(
         }
     }
 
+    // `-o -` is standard output, as `-` for the file is standard input.
+    let output = output.filter(|path| path != Path::new("-"));
     let bytes = render::render(engine.as_ref(), language, &code, format, output.as_deref())?;
 
     match output {

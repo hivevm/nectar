@@ -1,7 +1,8 @@
 //! Traces each path usvg makes back to the style of the shape it came from.
 //!
 //! usvg keeps no `data-rough-*` attribute, but it keeps the `id` of a shape on its path. So every
-//! shape gets an id that is its own: one it lacks is inserted, a duplicate is renamed. usvg gives
+//! shape gets an id that is its own: one it lacks is inserted, a duplicate is renamed, and so is
+//! one a shape expanded from an entity of the DTD shares, whose text the engine cannot touch. usvg gives
 //! a path drawn through a `<use>` no id, so first every `<use>` is replaced with a group of its
 //! attributes around a copy of the content it references.
 
@@ -48,13 +49,13 @@ pub fn prepare(svg: &str) -> Result<(String, Styles), String> {
     }
     let body = body_start(&document);
     let mut counts: HashMap<&str, usize> = HashMap::new();
-    // The ids of elements expanded from an entity, whose own text the engine cannot touch: a
-    // shape of the body that shares one is renamed, so the entity's shape keeps the defaults.
+    // The ids of shapes expanded from an entity, whose own text the engine cannot touch: a shape
+    // of the body that shares one is renamed, so the entity's shape keeps the defaults.
     let mut from_entity: HashSet<&str> = HashSet::new();
     for node in document.descendants() {
         if let Some(id) = node.attribute("id") {
             *counts.entry(id).or_default() += 1;
-            if node.range().start < body {
+            if node.range().start < body && is_svg(node, SHAPES) {
                 from_entity.insert(id);
             }
         }

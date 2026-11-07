@@ -281,7 +281,8 @@ a warning.
 ## On the command line
 
 `nectar render` runs the engine of one language on one text, without a document. It reads the
-file it is given, or standard input, and writes to the file `-o` names, or to standard output:
+file it is given, or standard input (also for `-`), and writes to the file `-o` names, or to
+standard output (also for `-o -`):
 
 ```sh
 echo 'rule ::= "a" | "b" ;' | nectar render railroad > rule.svg

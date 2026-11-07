@@ -655,3 +655,14 @@ fn a_shape_from_an_entity_takes_no_style_from_a_shape_that_shares_its_id() {
         "{paths:?}"
     );
 }
+
+// Verifies: G-12, ADR-0019
+#[test]
+fn a_shape_keeps_its_id_and_its_css_when_an_entity_shares_the_id_without_a_shape() {
+    let svg = r##"<!DOCTYPE svg [<!ENTITY g "<g id='a'/>">]>
+        <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+          <style>#a { fill: lime }</style>&g;
+          <rect id="a" width="40" height="40" data-rough-fill-style="solid"/></svg>"##;
+    let paths = paths(&engine().sketch(svg).unwrap());
+    assert_eq!(attribute(&paths[0], "fill"), Some("#00ff00"), "{paths:?}");
+}

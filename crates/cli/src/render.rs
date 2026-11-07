@@ -22,9 +22,13 @@ pub enum Format {
 
 impl Format {
     fn name(self) -> String {
-        self.to_possible_value()
-            .map(|value| value.get_name().to_string())
-            .unwrap_or_default()
+        match self {
+            Format::Svg => "svg",
+            Format::Png => "png",
+            Format::Html => "html",
+            Format::Ansi => "ansi",
+        }
+        .to_string()
     }
 }
 
@@ -183,12 +187,25 @@ fn ansi(code: &HighlightedCode) -> String {
     for line in &code.lines {
         for token in line {
             out.push_str(&sgr(token, code));
-            out.push_str(&token.text);
+            out.push_str(&visible(&token.text));
         }
         out.push_str(&fill);
         out.push_str("\x1b[0m\n");
     }
     out
+}
+
+/// `text` with its control characters, an escape among them, shown as their Unicode pictures, so
+/// the code cannot steer the terminal; a tab stays a tab.
+fn visible(text: &str) -> String {
+    text.chars()
+        .map(|c| match c {
+            '\t' => c,
+            '\u{0}'..='\u{1f}' => char::from_u32(0x2400 + c as u32).unwrap_or(c),
+            '\u{7f}' => '\u{2421}',
+            _ => c,
+        })
+        .collect()
 }
 
 fn sgr(token: &Token, code: &HighlightedCode) -> String {

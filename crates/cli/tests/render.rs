@@ -112,13 +112,68 @@ fn highlighted_code_is_html_by_default_and_ansi_on_request() {
     assert!(ansi.status.success(), "{}", stderr(&ansi));
     let ansi = String::from_utf8(ansi.stdout).unwrap();
     assert!(ansi.contains("\x1b[0;38;2;"), "{ansi:?}");
+    assert_eq!(plain(&ansi), code);
+}
+
+/// The ANSI output fills every line with the theme's background, a choice of the
+/// implementation, not of ADR-0018, and shows control characters instead of sending them.
+#[test]
+fn ansi_lines_are_filled_to_the_edge_and_control_characters_are_shown() {
+    let dir = tempfile::tempdir().unwrap();
+    let code = "fn main() {\n\n    let x = 1 < 2;\n}\n";
+    let ansi = nectar(dir.path(), &["render", "rust", "-f", "ansi"], code);
+    assert!(ansi.status.success(), "{}", stderr(&ansi));
+    let ansi = String::from_utf8(ansi.stdout).unwrap();
     // Every line, the empty one included, is filled to the edge before its reset.
     assert_eq!(
         ansi.matches("\x1b[K\x1b[0m\n").count(),
         code.lines().count(),
         "{ansi:?}"
     );
-    assert_eq!(plain(&ansi), code);
+
+    let hostile = "let s = \"\x1b]0;owned\x07\";\n";
+    let ansi = nectar(dir.path(), &["render", "rust", "-f", "ansi"], hostile);
+    assert!(ansi.status.success(), "{}", stderr(&ansi));
+    let ansi = String::from_utf8(ansi.stdout).unwrap();
+    assert!(!ansi.contains("\x1b]0;"), "{ansi:?}");
+    assert!(!ansi.contains('\x07'), "{ansi:?}");
+    assert!(
+        plain(&ansi).contains("\u{241b}]0;owned\u{2407}"),
+        "{ansi:?}"
+    );
+}
+
+// Verifies: G-11, ADR-0018
+#[test]
+fn a_failure_writes_nothing_to_standard_output_and_dash_output_is_standard_output() {
+    let dir = tempfile::tempdir().unwrap();
+    for args in [
+        &["render", "no-such-language"][..],
+        &["render", "railroad", "-f", "ansi"][..],
+        &["render", "railroad"][..],
+    ] {
+        let input = if args.len() == 2 && args[1] == "railroad" {
+            "not a grammar"
+        } else {
+            "rule ::= \"a\" ;\n"
+        };
+        let output = nectar(dir.path(), args, input);
+        assert!(!output.status.success(), "{args:?}");
+        assert!(output.stdout.is_empty(), "{args:?}: {:?}", output.stdout);
+    }
+
+    let output = nectar(
+        dir.path(),
+        &["render", "railroad", "-o", "-"],
+        "rule ::= \"a\" ;\n",
+    );
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert!(
+        String::from_utf8(output.stdout)
+            .unwrap()
+            .starts_with("<svg")
+    );
+    assert!(!dir.path().join("-").exists());
 }
 
 // Verifies: G-11, ADR-0018
@@ -195,7 +250,8 @@ fn an_engine_that_fails_writes_nothing() {
     assert!(!dir.path().join("x.svg").exists());
 }
 
-// Verifies: ADR-0018
+/// `-C` reads `nectar.toml` as a build does, so it has to be a complete project configuration: a
+/// consequence of reusing the configuration of a build, which ADR-0018 does not itself ask for.
 #[test]
 fn c_needs_a_complete_project_configuration() {
     let dir = tempfile::tempdir().unwrap();
