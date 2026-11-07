@@ -6,7 +6,7 @@
 > is updated in the same change as the structure it describes
 > ([ADR-0001](adr/0001-agent-governance-model.md)).
 >
-> **Last design revision:** 2026-10-26, due after 20 changes. The revision that took the count
+> **Last design revision:** 2026-11-07, due after 20 changes. The revision that took the count
 > moves the date; the number is this project's to set; a sensor counts the changes outside
 > `docs/` since the commit that set the date and says when the next is due
 > ([ADR-0006](adr/0006-feature-layer.md)).
@@ -22,10 +22,12 @@
 ```
 
 Nectar reads a project below its root and nothing outside it; the output is files on disk
-(`nectar build`) or answers from memory (`nectar serve`). Everything that crosses the boundary
-goes through an adapter the host plugs in: the project's files, images from the web, external
-programs for diagrams, and the browser of `nectar serve`; so do the threads that run the code
-engines side by side
+(`nectar build`) or answers from memory (`nectar serve`). `nectar render` takes one text from a
+file or standard input and writes one engine's output to a file or standard output; of a project
+it reads only the `[engine]` table of the `nectar.toml` that `-C` names, and nothing without
+`-C`. Everything that crosses the boundary goes through an adapter the host plugs in: the
+project's files, images from the web, external programs for diagrams, and the browser of
+`nectar serve`; so do the threads that run the code engines side by side
 ([ADR-0009](adr/0009-ports-and-adapters-technology.md)).
 
 ## Building blocks
@@ -73,3 +75,15 @@ render` builds no project: it composes the same engines, runs the one that takes
 one text, and serializes its output in the command line (`crates/cli/src/render.rs`). `nectar
 serve` keeps the project and its engine cache between builds, rebuilds on every change below the
 root and swaps the build the server answers from. Details are in [`docs/DESIGN.md`](DESIGN.md).
+
+## Delivery
+
+A tag `nectar-vX.Y.Z` starts `.github/workflows/nectar-release.yml`, which runs
+`scripts/release.sh`: it builds the command line per target, Linux on `ubuntu-22.04` against
+glibc 2.35, packs each archive with `LICENSE` and the crates' `NOTICE` files, writes `SHA256SUMS`,
+attests every archive and publishes the release. `release/install-nectar.sh` fetches one
+version's archive for the host and installs it only when it matches the checksums its caller
+carries; `scripts/check-all.sh` runs `scripts/release.sh` without a command to test the packing
+and the installer before a tag is pushed
+([ADR-0016](adr/0016-release-glibc-floor.md)). The user guide in `docs/guide/` is the project the
+checks build ([ADR-0014](adr/0014-guide-as-reference-project.md)).

@@ -86,9 +86,10 @@ Only a normalization renumbers them ([`AGENTS.md` §3](../AGENTS.md#3-adr-rules)
     nothing when no engine supports the language or the output does not allow the format.
 12. **G-12** — When a code block or `nectar render` names `rough` and its text is an SVG, the
     system shall return a sketch of it: every shape redrawn in its own colours, styled by the
-    `data-rough-*` attributes on it or an ancestor, over those of the `<use>` that draws it,
-    while a shape in a marker, in an entity of a DTD, or drawn through a `<use>` the engine cannot
-    resolve is redrawn in the defaults; its text as outlines; and the same text giving the same
+    `data-rough-*` attributes on it or an ancestor, over those of the `<use>` that draws it, over
+    the defaults of `[engine.rough]` in the project's `nectar.toml`, while a shape in a marker, in
+    an entity of a DTD, or drawn through a `<use>` the engine cannot resolve is redrawn in those
+    defaults; its text as outlines; and the same text giving the same
     graphic. Text that is no SVG, an unknown `data-rough-*` attribute, or a value the engine
     cannot read shall fail as an engine does under G-5 and G-11.
 

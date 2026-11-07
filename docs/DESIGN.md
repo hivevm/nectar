@@ -163,6 +163,7 @@ The core defines the port and knows no engine. Engines are adapters in crates of
 |---|---|---|
 | `nectar-textmate` | every language with a bundled TextMate grammar | TextMate grammars and themes in-process |
 | `nectar-railroad` | `railroad` | (E)BNF parser and SVG layout in-process |
+| `nectar-rough` | `rough` | an SVG redrawn as a sketch in-process, with `usvg` and `roughr` |
 | `nectar-process` | as configured, such as `dot`, `uml`, `ebnf`, `regex`, `jsongraph` | a local command (`dot`, `plantuml`) |
 
 The railroad engine stacks the drawings of a block's rules into one SVG. Text boxes are sized

@@ -21,7 +21,7 @@ use usvg::tiny_skia_path::{self, PathSegment};
 use usvg::{Node, Transform, fontdb};
 
 use crate::prepare::{SVG_NS, Styles, prepare};
-use crate::style::Style;
+pub use crate::style::Style;
 
 pub const LANGUAGE: &str = "rough";
 
@@ -39,6 +39,7 @@ getrandom::register_custom_getrandom!(no_entropy);
 /// The rough engine. It draws text with the fonts it is given and no others.
 pub struct Rough {
     fonts: Arc<fontdb::Database>,
+    defaults: Style,
 }
 
 impl Rough {
@@ -60,12 +61,19 @@ impl Rough {
         }
         Rough {
             fonts: Arc::new(database),
+            defaults: Style::default(),
         }
+    }
+
+    /// This engine with `defaults` below every `data-rough-*` attribute, as `[engine.rough]` of
+    /// `nectar.toml` gives them (ADR-0021).
+    pub fn with_defaults(self, defaults: Style) -> Self {
+        Rough { defaults, ..self }
     }
 
     /// The sketch of `svg`, as an SVG document.
     pub fn sketch(&self, svg: &str) -> Result<String, String> {
-        let (svg, styles) = prepare(svg)?;
+        let (svg, styles) = prepare(svg, &self.defaults)?;
         let options = usvg::Options {
             image_href_resolver: usvg::ImageHrefResolver {
                 resolve_data: Box::new(|_, _, _| None),
@@ -86,6 +94,7 @@ impl Rough {
         );
         let mut context = Context {
             styles: &styles,
+            defaults: &self.defaults,
             transform: Transform::identity(),
             opacity: 1.0,
             plain: false,
@@ -171,6 +180,7 @@ fn first_stop(stops: &[usvg::Stop]) -> Option<(usvg::Color, f32)> {
 #[derive(Clone)]
 struct Context<'a> {
     styles: &'a Styles,
+    defaults: &'a Style,
     transform: Transform,
     opacity: f32,
     plain: bool,
@@ -178,7 +188,7 @@ struct Context<'a> {
 
 impl Context<'_> {
     fn style_of(&self, path: &usvg::Path) -> Style {
-        self.styles.get(path.id()).cloned().unwrap_or_default()
+        self.styles.get(path.id()).unwrap_or(self.defaults).clone()
     }
 }
 

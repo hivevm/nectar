@@ -105,6 +105,7 @@ is the table a session reads.
 | [0018](0018-render-command.md) | `nectar render` runs one code engine on one text, from a file or standard input, and writes its output as SVG, PNG, HTML or ANSI | the command line in `crates/cli/`, its `render` command and its arguments, and the tests in `crates/cli/tests/render.rs` | 🟢 accepted |
 | [0019](0019-rough-engine.md) | A code engine `rough` redraws an SVG in a hand-drawn style | the code engine for the language `rough` in `crates/rough/`, the input it accepts and its `data-rough-*` attributes, the shell that composes it in `crates/cli/`, and the tests that verify it | 🟢 accepted |
 | [0020](0020-roughr-usvg.md) | The rough engine sketches with `roughr` and reads SVG with `usvg` | the dependencies of `crates/rough/Cargo.toml`, the `PORTABLE` list of `crates/cli/tests/structure.rs`, the WebAssembly step of `scripts/check-build.sh`, and the fonts the rough engine draws text with | 🟢 accepted |
+| [0021](0021-rough-defaults.md) | `[engine.rough]` in `nectar.toml` sets the defaults of the rough engine | the keys of `[engine.rough]` in `nectar.toml`, how the command line hands them to the rough engine in `crates/cli/` and `crates/rough/`, and the tests that verify them | 🟢 accepted |
 
 ### Superseded and rejected
 

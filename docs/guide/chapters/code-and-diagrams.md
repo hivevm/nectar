@@ -134,6 +134,18 @@ cannot read, stops the block like an engine that fails. The colours and stroke w
 shape's own; a shape without `fill` is filled black, as SVG has it, so write `fill="none"` for
 an outline.
 
+Defaults for a whole project go under `[engine.rough]` in `nectar.toml`, each attribute's name
+without `data-rough-` and in snake case. They style every sketch, also an SVG without attributes,
+such as a railroad diagram piped through `nectar -C . render rough`; an attribute in the SVG still
+wins. A key or a value the engine does not know is an error of the configuration.
+
+```toml
+[engine.rough]
+fill_style = "cross-hatch"
+roughness  = 1.5
+seed       = 7
+```
+
 ## Graphviz and PlantUML
 
 With the [engines](#engines) configured, `dot` blocks go to Graphviz and `uml`, `ebnf`,
@@ -257,7 +269,8 @@ dark_theme = "github-dark"        # for a dark colour scheme; "" turns it off
 enabled = true                    # on by default
 
 [engine.rough]
-enabled = true                    # on by default
+enabled    = true                 # on by default
+fill_style = "hachure"            # and every option of the data-rough-* attributes, snake case
 
 [engine.process.dot]
 command   = "dot"

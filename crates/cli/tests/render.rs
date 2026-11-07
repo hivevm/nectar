@@ -341,3 +341,56 @@ fn an_svg_becomes_a_sketch_as_svg_and_as_png() {
     assert!(!output.status.success());
     assert!(output.stdout.is_empty());
 }
+
+// Verifies: G-12, ADR-0021
+#[test]
+fn engine_rough_in_the_nectar_toml_of_c_sets_the_defaults_of_the_rough_engine() {
+    let dir = tempfile::tempdir().unwrap();
+    let svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"60\" height=\"60\">\
+               <rect x=\"5\" y=\"5\" width=\"50\" height=\"50\" fill=\"red\"/></svg>";
+    let configure = |rough: &str| {
+        fs::write(
+            dir.path().join("nectar.toml"),
+            format!("[[document]]\nsource = \"index.md\"\n\n[engine.rough]\n{rough}"),
+        )
+        .unwrap();
+        fs::write(dir.path().join("index.md"), "# Index\n").unwrap();
+    };
+
+    configure("fill_style = \"solid\"\nroughness = 1.5\nseed = 7\n");
+    let output = nectar(dir.path(), &["-C", ".", "render", "rough"], svg);
+    assert!(output.status.success(), "{}", stderr(&output));
+    let sketch = String::from_utf8(output.stdout).unwrap();
+    assert!(
+        sketch.contains("fill=\"#ff0000\""),
+        "solid by default: {sketch}"
+    );
+
+    // Without -C no nectar.toml is read, and Rough.js's hachure stays.
+    let output = nectar(dir.path(), &["render", "rough"], svg);
+    assert!(output.status.success(), "{}", stderr(&output));
+    let sketch = String::from_utf8(output.stdout).unwrap();
+    assert!(sketch.contains("stroke=\"#ff0000\""), "{sketch}");
+    assert!(!sketch.contains("fill=\"#ff0000\""), "{sketch}");
+
+    for (rough, named) in [
+        ("colour = \"red\"\n", "colour"),
+        ("enabled = false\nfill_stlye = \"dots\"\n", "fill_stlye"),
+        ("fill_style = \"plaid\"\n", "fill_style"),
+        ("roughness = [1]\n", "roughness"),
+    ] {
+        configure(rough);
+        let output = nectar(
+            dir.path(),
+            &["-C", ".", "render", "rough", "-o", "out.svg"],
+            svg,
+        );
+        assert!(!output.status.success(), "{rough}");
+        assert!(
+            stderr(&output).contains(named),
+            "{rough}: {}",
+            stderr(&output)
+        );
+        assert!(!dir.path().join("out.svg").exists());
+    }
+}
