@@ -80,7 +80,7 @@ enum Command {
         /// The file to read; standard input when it is missing or -
         file: Option<PathBuf>,
 
-        /// The file to write; standard output when it is missing
+        /// The file to write; standard output when it is missing or -
         #[arg(long, short)]
         output: Option<PathBuf>,
 

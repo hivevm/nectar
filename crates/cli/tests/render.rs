@@ -131,37 +131,40 @@ fn ansi_lines_are_filled_to_the_edge_and_control_characters_are_shown() {
         "{ansi:?}"
     );
 
-    let hostile = "let s = \"\x1b]0;owned\x07\";\n";
+    let hostile = "let s = \"\x1b]0;owned\x07\u{9b}2J\tend\";\n";
     let ansi = nectar(dir.path(), &["render", "rust", "-f", "ansi"], hostile);
     assert!(ansi.status.success(), "{}", stderr(&ansi));
     let ansi = String::from_utf8(ansi.stdout).unwrap();
     assert!(!ansi.contains("\x1b]0;"), "{ansi:?}");
     assert!(!ansi.contains('\x07'), "{ansi:?}");
     assert!(
-        plain(&ansi).contains("\u{241b}]0;owned\u{2407}"),
-        "{ansi:?}"
+        plain(&ansi).contains("\u{241b}]0;owned\u{2407}\u{fffd}2J\tend"),
+        "C0 as pictures, C1 replaced, the tab kept: {ansi:?}"
     );
+    assert!(!ansi.contains('\u{9b}'), "{ansi:?}");
 }
 
 // Verifies: G-11, ADR-0018
 #[test]
-fn a_failure_writes_nothing_to_standard_output_and_dash_output_is_standard_output() {
+fn a_failure_writes_nothing_to_standard_output() {
     let dir = tempfile::tempdir().unwrap();
-    for args in [
-        &["render", "no-such-language"][..],
-        &["render", "railroad", "-f", "ansi"][..],
-        &["render", "railroad"][..],
+    let grammar = "rule ::= \"a\" ;\n";
+    for (args, input) in [
+        (&["render", "no-such-language"][..], grammar),
+        (&["render", "railroad", "-f", "ansi"][..], grammar),
+        (&["render", "railroad"][..], "not a grammar"),
     ] {
-        let input = if args.len() == 2 && args[1] == "railroad" {
-            "not a grammar"
-        } else {
-            "rule ::= \"a\" ;\n"
-        };
         let output = nectar(dir.path(), args, input);
         assert!(!output.status.success(), "{args:?}");
         assert!(output.stdout.is_empty(), "{args:?}: {:?}", output.stdout);
     }
+}
 
+/// `-o -` is standard output, as `-` for the file is standard input: a convention ADR-0018 is
+/// silent on.
+#[test]
+fn dash_as_output_is_standard_output() {
+    let dir = tempfile::tempdir().unwrap();
     let output = nectar(
         dir.path(),
         &["render", "railroad", "-o", "-"],

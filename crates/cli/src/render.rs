@@ -195,14 +195,16 @@ fn ansi(code: &HighlightedCode) -> String {
     out
 }
 
-/// `text` with its control characters, an escape among them, shown as their Unicode pictures, so
-/// the code cannot steer the terminal; a tab stays a tab.
+/// `text` with its control characters shown instead of sent, so the code cannot steer the
+/// terminal: C0 and DEL as their Unicode pictures, C1, such as the escape starter U+009B, as the
+/// replacement character; a tab stays a tab.
 fn visible(text: &str) -> String {
     text.chars()
         .map(|c| match c {
             '\t' => c,
             '\u{0}'..='\u{1f}' => char::from_u32(0x2400 + c as u32).unwrap_or(c),
             '\u{7f}' => '\u{2421}',
+            '\u{80}'..='\u{9f}' => '\u{fffd}',
             _ => c,
         })
         .collect()

@@ -1,10 +1,10 @@
 //! Traces each path usvg makes back to the style of the shape it came from.
 //!
 //! usvg keeps no `data-rough-*` attribute, but it keeps the `id` of a shape on its path. So every
-//! shape gets an id that is its own: one it lacks is inserted, a duplicate is renamed, and so is
-//! one a shape expanded from an entity of the DTD shares, whose text the engine cannot touch. usvg gives
-//! a path drawn through a `<use>` no id, so first every `<use>` is replaced with a group of its
-//! attributes around a copy of the content it references.
+//! shape gets an id that is its own: one it lacks is inserted, and a duplicate is renamed, as is an
+//! id the body shares with a shape from an entity of the DTD, whose text the engine cannot touch.
+//! usvg gives a path drawn through a `<use>` no id, so first every `<use>` is replaced with a
+//! group of its attributes around a copy of the content it references.
 
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
