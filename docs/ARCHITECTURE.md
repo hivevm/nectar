@@ -40,7 +40,8 @@ The crates under `crates/`, every dependency pointing toward the core
   `Fetcher`. Knows no adapter, no output format, no file system, no threads and no environment
   variables but those the shell hands over. `MemoryFiles` holds a project's files in memory,
   for a host without a file system and for the tests of every crate.
-- **`nectar-html`** — the renderer for the website and the print view, with the built-in theme.
+- **`nectar-html`** — the renderer for the website and the print view, with the built-in theme,
+  and the writer of highlighted code as standalone HTML for `nectar render`.
 - **`nectar-pdf`** — the renderer for the PDF, typeset with Typst in memory.
 - **`nectar-textmate`**, **`nectar-railroad`**, **`nectar-rough`** — code engines that need
   nothing of the host. The rough engine redraws an SVG as a sketch with `roughr`, reading it with
@@ -72,7 +73,8 @@ engines) and hands the enriched documents to each renderer. The build is a map o
 memory, which the command line writes. `nectar build <file>` opens a project of that file's
 directory with `Project::new` and a configuration made in memory, and writes only its PDF. `nectar
 render` builds no project: it composes the same engines, runs the one that takes the language on
-one text, and serializes its output in the command line (`crates/cli/src/render.rs`). `nectar
+one text, and serializes its output in the command line (`crates/cli/src/render.rs`), except
+highlighted code as HTML, which `nectar-html` writes with the token writer of the site. `nectar
 serve` keeps the project and its engine cache between builds, rebuilds on every change below the
 root and swaps the build the server answers from. Details are in [`docs/DESIGN.md`](DESIGN.md).
 

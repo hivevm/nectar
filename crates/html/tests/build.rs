@@ -385,6 +385,17 @@ impl CodeEngine for Colours {
                     dark: Some(style(None)),
                 },
                 Token {
+                    text: " 'b'".into(),
+                    style: TokenStyle {
+                        bold: true,
+                        italic: true,
+                        underline: true,
+                        strikethrough: true,
+                        ..TokenStyle::default()
+                    },
+                    dark: None,
+                },
+                Token {
                     text: " plain".into(),
                     style: style(None),
                     dark: Some(style(None)),
@@ -411,6 +422,17 @@ fn highlighted_code_carries_light_and_dark_colours() {
     // A colour of either theme brings both; the dark one falls back to the dark foreground.
     assert!(
         index.contains("<span style=\"--c:#aa0000;--dc:#eeeeee;\">key</span>"),
+        "{index}"
+    );
+    // The frame of a block, and the weight, slant and decoration of a token in every theme.
+    assert!(
+        index.contains("<pre class=\"code highlighted\" style=\"--fg:#111111;--bg:#ffffff;--dfg:#eeeeee;--dbg:#000000;\"><code class=\"language-x\">"),
+        "{index}"
+    );
+    assert!(
+        index.contains(
+            "<span style=\"font-weight:bold;font-style:italic;text-decoration:underline line-through;\"> &#39;b&#39;</span>"
+        ),
         "{index}"
     );
     assert!(
