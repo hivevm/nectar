@@ -1,6 +1,6 @@
 # ADR-0018: `nectar render` runs one code engine on one text
 
-- **Status:** 🟡 proposed
+- **Status:** 🟢 accepted
 - **Date:** 2026-11-07
 - **Deciders:** Markus Brigl
 - **Applies to:** the command line in `crates/cli/`, its `render` command and its arguments, and the tests in `crates/cli/tests/render.rs`

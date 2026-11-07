@@ -1,6 +1,6 @@
 # ADR-0017: A graphic becomes a PNG through resvg, with the bundled fonts only
 
-- **Status:** 🟡 proposed
+- **Status:** 🟢 accepted
 - **Date:** 2026-11-07
 - **Deciders:** Markus Brigl
 - **Applies to:** the `png` format of `nectar render` in `crates/cli/`, the dependency on `resvg` in `crates/cli/Cargo.toml`, and the fonts it renders text with
