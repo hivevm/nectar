@@ -72,6 +72,10 @@ ___
 Start of the next part.
 ```
 
+This guide breaks the page here, so in print the next section starts on a page of its own:
+
+___
+
 ## Blockquotes
 
 A line that starts with `>` and an optional space is a block quote. Block quotes nest and may

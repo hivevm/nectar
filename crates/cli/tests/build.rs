@@ -178,7 +178,8 @@ fn two_builds_of_the_guide_are_byte_identical() {
 
 /// What a build may touch outside its project on Linux besides the root's own parents: the
 /// dynamic loader and the libraries it finds, under `/lib` or, where `/lib` is merged into it,
-/// `/usr/lib`; and what the standard library reads to count the cores.
+/// `/usr/lib`; what the standard library reads to count the cores; and what glibc's allocator
+/// reads to count them when it sizes its arenas (get_nprocs, called from free in glibc 2.41).
 const SYSTEM: &[&str] = &[
     "/etc/ld.so.cache",
     "/etc/ld.so.preload",
@@ -187,6 +188,7 @@ const SYSTEM: &[&str] = &[
     "/proc/self/cgroup",
     "/proc/self/maps",
     "/proc/self/mountinfo",
+    "/sys/devices/system/cpu/online",
     "/sys/fs/cgroup/",
 ];
 
@@ -433,6 +435,12 @@ fn every_block_of_the_guide_website_is_in_the_pdf_or_reported() {
     let reported = |message: &str| stderr.lines().filter(|l| l.contains(message)).count();
     let images_left_out = reported("not embedded in the PDF");
     let html_left_out = reported("raw HTML is left out of the PDF");
+    // A cover image is a figure of the PDF that no web page has.
+    let cover = usize::from(
+        fs::read_to_string(guide.join("nectar.toml"))
+            .unwrap()
+            .contains("cover_image"),
+    );
 
     // The content of every web page, without menu, header and footer.
     let mut web = String::new();
@@ -468,7 +476,10 @@ fn every_block_of_the_guide_website_is_in_the_pdf_or_reported() {
         ("code", &["<pre", "<code>"], &["/S/Code"], 0),
     ];
     for (kind, in_web, in_pdf, left_out) in exact {
-        let (mut on_web, in_pdf) = (count(&web, in_web), count(&pdf, in_pdf));
+        let (mut on_web, mut in_pdf) = (count(&web, in_web), count(&pdf, in_pdf));
+        if kind == "pictures" {
+            in_pdf -= cover;
+        }
         if kind == "code" {
             // A block without a language is `<pre class="code"><code>`: one block, not two.
             on_web -= count(&web, &["<pre class=\"code\"><code>"]);
@@ -489,10 +500,10 @@ fn every_block_of_the_guide_website_is_in_the_pdf_or_reported() {
 }
 
 /// The lines of every Markdown file below `dir` that Nectar reads as Markdown, with inline code
-/// cut out, and the info strings of the fenced code blocks among them: what a guide uses itself
-/// rather than shows as a sample.
-fn live_markdown(dir: &Path) -> (Vec<String>, Vec<String>) {
-    let (mut lines, mut fences) = (Vec::new(), Vec::new());
+/// cut out, the info strings of the fenced code blocks among them, and the lines of the front
+/// matter that opens a file: what a guide uses itself rather than shows as a sample.
+fn live_markdown(dir: &Path) -> (Vec<String>, Vec<String>, Vec<String>) {
+    let (mut lines, mut fences, mut front) = (Vec::new(), Vec::new(), Vec::new());
     let mut paths: Vec<_> = files(dir)
         .into_keys()
         .filter(|p| p.extension().is_some_and(|e| e == "md"))
@@ -500,8 +511,17 @@ fn live_markdown(dir: &Path) -> (Vec<String>, Vec<String>) {
     paths.sort();
     for path in paths {
         let text = fs::read_to_string(dir.join(&path)).unwrap();
+        let mut body = text.lines();
+        if text.starts_with("+++\n") {
+            body.next();
+            front.extend(
+                body.by_ref()
+                    .take_while(|l| *l != "+++")
+                    .map(str::to_string),
+            );
+        }
         let mut open: Option<(char, usize)> = None;
-        for line in text.lines() {
+        for line in body {
             let trimmed = line.trim_start();
             let mark = trimmed.chars().next().filter(|c| *c == '`' || *c == '~');
             let run = mark.map_or(0, |m| trimmed.chars().take_while(|c| *c == m).count());
@@ -525,14 +545,15 @@ fn live_markdown(dir: &Path) -> (Vec<String>, Vec<String>) {
             }
         }
     }
-    (lines, fences)
+    (lines, fences, front)
 }
 
-// Verifies: ADR-draft-guide-as-reference-project
+// Verifies: ADR-0014
 #[test]
 fn the_guide_uses_every_feature_it_explains() {
     let guide = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/guide");
-    let (lines, fences) = live_markdown(&guide);
+    let (lines, fences, front) = live_markdown(&guide);
+    let config = fs::read_to_string(guide.join("nectar.toml")).unwrap();
     let any = |test: &dyn Fn(&str) -> bool| lines.iter().any(|l| test(l));
     let image = |l: &str, ends: &[&str]| {
         l.starts_with("![")
@@ -547,12 +568,35 @@ fn the_guide_uses_every_feature_it_explains() {
             .any(|s| !s.is_empty() && s.chars().all(|c| c.is_ascii_lowercase() || c == '_'))
             && l.matches('@').count() >= 2
     };
-    let features: [(&str, bool); 12] = [
+    let features: [(&str, bool); 17] = [
         (
             "an included chapter",
             any(&|l| l.starts_with('[') && l.contains("](") && l.ends_with(".md)")),
         ),
-        ("front matter", lines.iter().any(|l| l == "+++")),
+        (
+            "a slug in front matter",
+            front.iter().any(|l| l.starts_with("slug ")),
+        ),
+        (
+            "a title in front matter",
+            front.iter().any(|l| l.starts_with("title ")),
+        ),
+        (
+            "variables in front matter",
+            front.iter().any(|l| l == "[vars]"),
+        ),
+        (
+            "a page break",
+            any(&|l| ["---", "___", "***"].contains(&l.trim_end())),
+        ),
+        (
+            "an alert in GitHub's notation",
+            any(&|l| l.starts_with("> [!")),
+        ),
+        (
+            "print settings with a cover image",
+            config.contains("[document.print]") && config.contains("cover_image"),
+        ),
         ("an embedded source file", any(&|l| image(l, &[".java)"]))),
         (
             "an embedded grammar file",

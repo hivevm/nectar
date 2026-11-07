@@ -58,6 +58,8 @@ scripts/lib/          # what the scripts share: the ADR header, git, the ticket 
 scripts/*.sh          # run by hand, steps 7 and 8 of the integration branches: number-adrs.sh,
                       # ready-for-main.sh, drop-merged-branch.sh
 scripts/release.sh    # builds and publishes the release archives; checks without a command
+release/install-nectar.sh
+                      # installs one release, verified against its checksums
 .githooks/            # git hooks: nothing lands on main locally; checks before a merge and a push
 .github/workflows/    # checks.yml runs the checks; review-binding.yml reads each pull request's hand-off;
                       # nectar-release.yml builds the release archives of a nectar-v* tag
@@ -74,7 +76,7 @@ scripts/release.sh    # builds and publishes the release archives; checks withou
 .claude/settings.json # Claude Code permissions: deny reading .env files (see SECURITY.md)
 Cargo.toml            # Cargo workspace of Nectar
 Cargo.lock            # the versions of every crate Nectar builds with, kept for --locked
-deny.toml             # cargo-deny: the licences and the crates allowed (ADR-0008)
+deny.toml             # cargo-deny: the licences and the crates allowed (ADR-0014)
 crates/core/          # Nectar: Markdown dialect, document model and transform passes
 crates/html/          # Nectar: website, print view and the built-in theme
 crates/pdf/           # Nectar: PDF typeset with Typst, with its fonts

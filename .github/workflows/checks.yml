@@ -12,7 +12,7 @@ name: Checks
 # binding sensor runs in review-binding.yml, the repository settings sensor on a human's
 # instruction (ADR-0002); this workflow runs the self-test of each.
 #
-# The build, test, and lint job runs scripts/check-build.sh on Linux, macOS and Windows (ADR-0008);
+# The build, test, and lint job runs scripts/check-build.sh on Linux, macOS and Windows (ADR-0014);
 # it is the one job of this workflow that installs something: the stable Rust toolchain and
 # cargo-deny.
 #
