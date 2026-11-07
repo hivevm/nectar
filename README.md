@@ -102,7 +102,7 @@ the print view, themes and every key of `nectar.toml` are described in the
 
 ## Template
 
-- **Template release:** v0.7.0 — the release of [NUC](https://github.com/hivevm/nuc) this
+- **Template release:** v0.8.1 — the release of [NUC](https://github.com/hivevm/nuc) this
   repository carries; a project moves the line when it takes up a later one
   ([ADR-0005](docs/adr/0005-template-releases.md)).
 
