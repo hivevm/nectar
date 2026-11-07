@@ -1,4 +1,4 @@
-# ADR-draft-single-file-build: `nectar build` given a Markdown file writes its PDF next to it, without a `nectar.toml`
+# ADR-0015: `nectar build` given a Markdown file writes its PDF next to it, without a `nectar.toml`
 
 - **Status:** 🟢 accepted
 - **Date:** 2026-11-07
