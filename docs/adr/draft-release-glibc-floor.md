@@ -62,9 +62,9 @@ for the host and installs its binary only when it matches the checksums its call
   at most and run on Debian 12 and 13 and Ubuntu 22.04 and later. `scripts/release.sh package`
   fails for a Linux target whose binary needs a newer glibc, so such an archive is never published.
 
-**Out of scope:** the moment GitHub retires the Ubuntu 22.04 runners, which calls for a new
-floor and a decision of its own; static `musl` builds for Alpine, which a decision of its own can add as further
-targets; signing beyond the attestation, such as Sigstore bundles beside the archives;
+**Out of scope:** the moment GitHub retires the Ubuntu 22.04 runners, which calls for a new floor
+and a decision of its own; static `musl` builds for Alpine, which a decision of its own can add as
+further targets; signing beyond the attestation, such as Sigstore bundles beside the archives;
 `hivevm/features` itself, its Feature, its tests and the workflow that takes a release.
 
 ## Alternatives considered
