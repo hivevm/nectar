@@ -43,24 +43,12 @@ pub struct Rough {
 }
 
 impl Rough {
-    /// An engine that draws text with `fonts`, each the data of a font file. A family the fonts
-    /// lack falls back to the family of the first one.
-    pub fn new(fonts: &[&'static [u8]]) -> Self {
-        let mut database = fontdb::Database::new();
-        for data in fonts {
-            database.load_font_source(fontdb::Source::Binary(Arc::new(*data)));
-        }
-        // usvg tries `serif` after every family the SVG names.
-        let fallback = database
-            .faces()
-            .next()
-            .and_then(|face| face.families.first())
-            .map(|(family, _)| family.clone());
-        if let Some(family) = fallback {
-            database.set_serif_family(family);
-        }
+    /// An engine that draws text with the faces of `fonts`. The caller's database decides the
+    /// family a family it lacks falls back to: usvg tries `serif` after every family the SVG
+    /// names.
+    pub fn new(fonts: Arc<fontdb::Database>) -> Self {
         Rough {
-            fonts: Arc::new(database),
+            fonts,
             defaults: Style::default(),
         }
     }

@@ -444,7 +444,7 @@ fn engines(config: &toml::Table) -> Result<Vec<Box<dyn CodeEngine>>> {
     let rough = rough_defaults(config)?;
     if enabled("rough") {
         engines.push(Box::new(
-            Rough::new(nectar_pdf::FONT_FILES).with_defaults(rough),
+            Rough::new(render::bundled_fonts()).with_defaults(rough),
         ));
     }
 

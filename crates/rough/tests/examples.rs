@@ -1,12 +1,21 @@
 //! The examples of hivevm/rough (`RoughTest`, `HachureTest`, `BezierTest`, `ParserTest`), drawn
 //! as SVG through the rough engine, and the rules of its input.
 
+use std::sync::Arc;
+
 use nectar_core::{CodeEngine, EngineOutput};
 use nectar_rough::Rough;
 use usvg::roxmltree;
 
+/// The engine with the bundled fonts, a family they lack falling back to Ubuntu Sans, as the
+/// command line hands them in.
 fn engine() -> Rough {
-    Rough::new(nectar_pdf::FONT_FILES)
+    let mut fonts = usvg::fontdb::Database::new();
+    for data in nectar_pdf::FONT_FILES {
+        fonts.load_font_source(usvg::fontdb::Source::Binary(Arc::new(*data)));
+    }
+    fonts.set_serif_family("Ubuntu Sans");
+    Rough::new(Arc::new(fonts))
 }
 
 fn svg(body: &str) -> String {
