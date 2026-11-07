@@ -1,7 +1,11 @@
-title = "Nectar Demo"
+title = "Nectar"
 
 [[document]]
-source = "content/manual.md"
+source = "./GUIDE.md"
+
+[document.print]
+subtitle    = "The user guide"
+cover_image = "img/logo.png"
 
 [vars]
 version = "0.1.0"

@@ -158,6 +158,46 @@
     button.hidden = false;
   })();
 
+  // Gives each code block its language in the corner and a copy button. Without scripts, or
+  // without a clipboard (a page opened from a file), the block stays as it is.
+  (() => {
+    const clipboard = navigator.clipboard && window.isSecureContext;
+    for (const pre of document.querySelectorAll(".markdown pre.code")) {
+      const code = pre.querySelector("code");
+      const wrapper = document.createElement("div");
+      wrapper.className = "code-block";
+      pre.replaceWith(wrapper);
+      wrapper.append(pre);
+      const language = [...(code?.classList ?? [])].find((c) => c.startsWith("language-"));
+      if (clipboard) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "code-copy";
+        button.title = "Copy code";
+        button.setAttribute("aria-label", "Copy code");
+        button.innerHTML = '<span class="symbol">content_copy</span>';
+        let timer;
+        button.addEventListener("click", async () => {
+          try { await navigator.clipboard.writeText((code ?? pre).innerText); } catch (e) { return; }
+          button.classList.add("copied");
+          button.innerHTML = 'Copied <span class="symbol">check</span>';
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            button.classList.remove("copied");
+            button.innerHTML = '<span class="symbol">content_copy</span>';
+          }, 2000);
+        });
+        wrapper.append(button);
+      }
+      if (language) {
+        const label = document.createElement("span");
+        label.className = "code-lang";
+        label.textContent = language.slice("language-".length);
+        wrapper.append(label);
+      }
+    }
+  })();
+
   // Marks the heading being read in "On this page".
   (() => {
     const links = [...document.querySelectorAll(".book-toc a")];

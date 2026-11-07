@@ -79,6 +79,34 @@ const DEFAULT_STATIC: &[(&str, &[u8])] = &[
         include_bytes!("../theme/static/fonts/VictorMono-BoldItalic.woff2"),
     ),
     (
+        "fonts/Inter-Variable.woff2",
+        include_bytes!("../theme/static/fonts/Inter-Variable.woff2"),
+    ),
+    (
+        "fonts/Inter-VariableItalic.woff2",
+        include_bytes!("../theme/static/fonts/Inter-VariableItalic.woff2"),
+    ),
+    (
+        "fonts/IBMPlexMono-Regular.woff2",
+        include_bytes!("../theme/static/fonts/IBMPlexMono-Regular.woff2"),
+    ),
+    (
+        "fonts/IBMPlexMono-Italic.woff2",
+        include_bytes!("../theme/static/fonts/IBMPlexMono-Italic.woff2"),
+    ),
+    (
+        "fonts/IBMPlexMono-SemiBold.woff2",
+        include_bytes!("../theme/static/fonts/IBMPlexMono-SemiBold.woff2"),
+    ),
+    (
+        "fonts/LICENSE-Inter.txt",
+        include_bytes!("../theme/static/fonts/LICENSE-Inter.txt"),
+    ),
+    (
+        "fonts/LICENSE-IBMPlexMono.txt",
+        include_bytes!("../theme/static/fonts/LICENSE-IBMPlexMono.txt"),
+    ),
+    (
         "fonts/LICENCE-UbuntuSans.txt",
         include_bytes!("../theme/static/fonts/LICENCE-UbuntuSans.txt"),
     ),

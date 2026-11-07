@@ -215,20 +215,24 @@ fn next_rebuild(lines: &mpsc::Receiver<String>) -> u128 {
 
 // Verifies: Q-4
 #[test]
-fn a_one_line_edit_of_the_demo_rebuilds_in_under_200_ms() {
-    let demo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/demo");
+fn a_one_line_edit_of_the_guide_rebuilds_in_under_200_ms() {
+    let guide = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/guide");
     let dir = tempfile::tempdir().unwrap();
-    copy(&demo, dir.path());
-    let manual = dir.path().join("content/manual.md");
-    let text = fs::read_to_string(&manual).unwrap();
+    copy(&guide, dir.path());
+    let chapter = dir.path().join("chapters/install.md");
+    let text = fs::read_to_string(&chapter).unwrap();
     let (_server, _, lines) = start(dir.path());
 
     // The first change warms what the first build left cold; the engine cache is warm already.
     let mut timings = Vec::new();
     for edit in ["first", "second"] {
-        let edited = text.replacen("This demo shows", &format!("This {edit} demo shows"), 1);
-        assert_ne!(edited, text, "the demo changed: find another line to edit");
-        fs::write(&manual, edited).unwrap();
+        let edited = text.replacen(
+            "Download the archive",
+            &format!("Download the {edit} archive"),
+            1,
+        );
+        assert_ne!(edited, text, "the guide changed: find another line to edit");
+        fs::write(&chapter, edited).unwrap();
         timings.push(next_rebuild(&lines));
     }
     assert!(timings[1] < 200, "the rebuild took {} ms", timings[1]);
@@ -236,17 +240,17 @@ fn a_one_line_edit_of_the_demo_rebuilds_in_under_200_ms() {
 
 #[test]
 fn serve_answers_with_the_files_that_build_writes() {
-    let demo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/demo");
+    let guide = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/guide");
     let out = tempfile::tempdir().unwrap();
     let built = Command::new(env!("CARGO_BIN_EXE_nectar"))
         .arg("-C")
-        .arg(&demo)
+        .arg(&guide)
         .args(["--offline", "build", "--output"])
         .arg(out.path())
         .status()
         .unwrap();
     assert!(built.success());
-    let (_server, port, _) = start(&demo);
+    let (_server, port, _) = start(&guide);
 
     let written = files(out.path());
     assert!(written.len() > 10);

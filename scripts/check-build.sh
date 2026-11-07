@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Builds, tests and lints Nectar (ADR-0008).
+# Builds, tests and lints Nectar (ADR-0014).
 #
 # The one script behind the Build, Test & Run section of README.md: scripts/check-all.sh runs it
 # before a push, and the build job of .github/workflows/checks.yml runs it on Linux, macOS and
@@ -9,8 +9,8 @@
 #
 # - rustfmt and Clippy, with every warning denied, rustc's dead_code lint among them;
 # - the tests of the workspace;
-# - a build of examples/demo, which has to succeed where Graphviz and PlantUML are missing: their
-#   blocks stay code and are reported as warnings;
+# - a build of the user guide in docs/guide, which has to succeed where Graphviz and PlantUML
+#   are missing: their blocks stay code and are reported as warnings;
 # - a check of the core, the renderers and the railroad engine for wasm32-unknown-unknown
 #   (Verifies: G-8, ADR-0012), so nothing that cannot run in a browser creeps in, nectar-textmate
 #   included, which runs on native hosts only; the target comes with the toolchain set-up;
@@ -45,7 +45,7 @@ step() {
 step "Formatting" cargo fmt --all --check
 step "Clippy" cargo clippy --workspace --all-targets -- -D warnings
 step "Tests" cargo test --workspace
-step "Demo build" cargo run --quiet -p nectar -- -C examples/demo build --output "$ROOT/target/demo"
+step "Guide build" cargo run --quiet -p nectar -- -C docs/guide build --output "$ROOT/target/guide"
 step "WebAssembly" cargo check --quiet --target wasm32-unknown-unknown \
   -p nectar-core -p nectar-html -p nectar-pdf -p nectar-railroad
 step "Dependencies" cargo deny --all-features check licenses bans sources

@@ -45,7 +45,7 @@ docs/SPECIFICATION.md # the specification: problem, goals, success criteria
 docs/GLOSSARY.md      # the vocabulary everyone uses, kept current inline
 docs/CONVENTIONS.md   # how this project writes what no check decides, kept current inline
 docs/ARCHITECTURE.md  # the system as it currently stands
-docs/GUIDE.md         # Nectar's user guide: dialect, configuration, print view
+docs/guide/           # Nectar's user guide, a Nectar project built in CI
 docs/DESIGN.md        # Nectar's design: pipeline, document model, ports, renderers
 docs/adr/             # Architecture Decision Records (+ template)
 docs/plan/            # open work: feature specs and their tickets, deleted as they land
@@ -76,7 +76,7 @@ release/install-nectar.sh
 .claude/settings.json # Claude Code permissions: deny reading .env files (see SECURITY.md)
 Cargo.toml            # Cargo workspace of Nectar
 Cargo.lock            # the versions of every crate Nectar builds with, kept for --locked
-deny.toml             # cargo-deny: the licences and the crates allowed (ADR-0008)
+deny.toml             # cargo-deny: the licences and the crates allowed (ADR-0014)
 crates/core/          # Nectar: Markdown dialect, document model and transform passes
 crates/html/          # Nectar: website, print view and the built-in theme
 crates/pdf/           # Nectar: PDF typeset with Typst, with its fonts
@@ -86,7 +86,6 @@ crates/process/       # Nectar: code engines that run a local command, such as G
 crates/fetch/         # Nectar: fetcher that downloads images from the web
 crates/server/        # Nectar: local server that rebuilds and reloads the browser
 crates/cli/           # Nectar: the nectar command line
-examples/demo/        # a complete Nectar project, built in CI
 ```
 
 ## Dev Container

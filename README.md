@@ -16,9 +16,9 @@ stay explicit and reviewable.
 Nectar is the command line `nectar`, written in Rust under [`crates/`](crates/). It turns a
 project of Markdown files into a website with a print view and a PDF, highlights code with
 TextMate grammars and draws railroad, Graphviz and PlantUML diagrams. The
-[Nectar guide](docs/GUIDE.md) describes it in full, its design is
-[`docs/DESIGN.md`](docs/DESIGN.md), and [`examples/demo/`](examples/demo/) is a
-complete project to start from.
+[Nectar guide](docs/guide/GUIDE.md) describes it in full, its design is
+[`docs/DESIGN.md`](docs/DESIGN.md), and the guide's own project,
+[`docs/guide/`](docs/guide/), is a complete project to start from.
 
 The full problem statement and goals live in [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md), the
 vocabulary in [`docs/GLOSSARY.md`](docs/GLOSSARY.md).
@@ -50,10 +50,10 @@ The Dev Container brings Rust with the `wasm32-unknown-unknown` target, cargo-de
 PlantUML, with Java 21 as PlantUML's runtime, and strace, under which a test traces a build on
 Linux. The commands run from the repository root; `scripts/check-build.sh` runs build, test and
 lint in one go, as the pre-push hook and the `build` job of CI do
-([ADR-0008](docs/adr/0008-toolchain-cargo-clippy-deny.md)):
+([ADR-0014](docs/adr/0014-guide-as-reference-project.md)):
 
 - **Build:** `cargo build --workspace`
-- **Test:** `cargo test --workspace`, then `cargo run -p nectar -- -C examples/demo build`,
+- **Test:** `cargo test --workspace`, then `cargo run -p nectar -- -C docs/guide build`,
   which has to succeed even where Graphviz and PlantUML are missing, and
   `cargo check --target wasm32-unknown-unknown -p nectar-core -p nectar-html -p nectar-pdf
   -p nectar-railroad`
@@ -61,7 +61,7 @@ lint in one go, as the pre-push hook and the `build` job of CI do
   `cargo clippy --workspace --all-targets -- -D warnings` and
   `cargo deny --all-features check licenses bans sources`; the repository checks with
   `scripts/check-all.sh`
-- **Run:** `cargo run -p nectar -- -C examples/demo serve`, then open http://127.0.0.1:1313/
+- **Run:** `cargo run -p nectar -- -C docs/guide serve`, then open http://127.0.0.1:1313/
 
 The `build` job of [CI](.github/workflows/checks.yml) runs `scripts/check-build.sh` on Linux,
 macOS and Windows. A release of Nectar is a tag `nectar-vX.Y.Z`: the
@@ -95,7 +95,7 @@ nectar build            # writes the site, the print view and the PDF to public/
 
 The options of the command line, chapters, front matter, the Markdown dialect, code engines,
 the print view, themes and every key of `nectar.toml` are described in the
-[Nectar guide](docs/GUIDE.md).
+[Nectar guide](docs/guide/GUIDE.md).
 
 ## Template
 
