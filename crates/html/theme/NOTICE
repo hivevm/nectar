@@ -1,8 +1,7 @@
-The built-in theme bundles these fonts.
+The built-in theme bundles these fonts, scripts and images.
 
-Material Icons, Copyright Google LLC
-Licensed under the Apache License, Version 2.0
-https://www.apache.org/licenses/LICENSE-2.0
+Material Icons (static/fonts/MaterialIcons-Regular.ttf), Copyright Google LLC
+Licensed under the Apache License, Version 2.0; see LICENSE-Apache-2.0.txt
 
 Ubuntu Sans (static/fonts/UbuntuSans-*.woff2), Copyright 2011, 2022, 2023 Canonical Ltd.
 Licensed under the Ubuntu Font Licence 1.0; see static/fonts/LICENCE-UbuntuSans.txt
@@ -20,3 +19,6 @@ Licensed under the SIL Open Font License 1.1; see static/fonts/LICENSE-VictorMon
 
 Paged.js 0.4.3 (static/print/paged.polyfill.min.js), Copyright (c) 2018 Adam Hyde
 Licensed under the MIT License; see static/print/LICENSE-pagedjs.md
+
+static/print/draft.png and static/print/confidential.png come from the HiveVM Java document
+generator, the former Gradle plugin of this repository.

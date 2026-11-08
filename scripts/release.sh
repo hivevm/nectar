@@ -15,10 +15,13 @@
 #   refuses a target SHA256SUMS does not name; the workflow builds every Linux target on
 #   ubuntu-22.04 or ubuntu-22.04-arm, never on a *-latest runner; and the glibc floor package
 #   enforces refuses a binary that needs more than glibc 2.35, in package too, which writes no
-#   archive then (Verifies: ADR-0016);
+#   archive then; and every font, script and image a crate embeds with include_bytes! or
+#   include_str! is named in the nearest NOTICE, and an archive's NOTICE carries every NOTICE of
+#   the crates, the theme's included, with the licence texts they point to (Verifies: ADR-0016);
 # - package <target> builds nectar for the Rust target in release mode with the locked versions,
 #   fails for a Linux target whose binary needs a glibc newer than 2.35, and packs the binary,
-#   LICENSE and the NOTICE files of the crates into
+#   LICENSE, the NOTICE files of the crates as one NOTICE, and the licence texts they point to
+#   under licenses/ into
 #   nectar-<version>-<target>.tar.gz, or .zip for Windows, the version taken from GITHUB_REF_NAME;
 #   the archive's name goes to GITHUB_ENV as ARCHIVE where that is set, and to stdout;
 # - publish <directory> writes SHA256SUMS of the archives in the directory and creates the GitHub
@@ -63,6 +66,7 @@ check() {
     errors=1
   fi
   check_glibc || errors=1
+  check_notices || errors=1
   check_installer || errors=1
   ((errors == 0)) || { echo "Release check FAILED." >&2; return 1; }
   echo "Release check passed."
@@ -182,13 +186,122 @@ check_installer() {
 # pack <target> <version> <binary> <directory> — packs the binary, LICENSE and the NOTICE files of
 # the crates as nectar-<version>-<target>/ into nectar-<version>-<target>.tar.gz, or .zip for
 # Windows, in the directory, and prints the archive's name.
+# notices <crates directory> — every NOTICE under it, the theme's included, in a fixed order.
+notices() {
+  find "$1" -name NOTICE -not -path '*/target/*' | LC_ALL=C sort
+}
+
+# cited <notice> — the licence texts the NOTICE points to with "see <path>", each path taken
+# relative to the NOTICE's directory.
+cited() {
+  local dir path
+  dir="$(dirname "$1")"
+  grep -oE 'see [^ ;,]+\.(txt|md)' "$1" | while read -r _ path; do
+    echo "$dir/$path"
+  done
+}
+
+# notice_with_licenses <directory> — writes the NOTICE of an archive into the directory, every
+# NOTICE of the crates in turn with each "see <path>" pointing into licenses/, and copies the
+# licence texts there. Two texts of one name must be the same text.
+notice_with_licenses() {
+  local out="$1" notice text base
+  mkdir -p "$out/licenses"
+  : > "$out/NOTICE"
+  while read -r notice; do
+    if [[ -s "$out/NOTICE" ]]; then echo >> "$out/NOTICE"; fi
+    sed -E 's#see ([^ ;,]+/)?([^/ ;,]+\.(txt|md))#see licenses/\2#g' "$notice" >> "$out/NOTICE"
+    while read -r text; do
+      [[ -f "$text" ]] || { echo "$notice points to $text, which is missing" >&2; return 1; }
+      base="$(basename "$text")"
+      if [[ -e "$out/licenses/$base" ]] && ! cmp -s "$text" "$out/licenses/$base"; then
+        echo "two licence texts named $base differ; $text is one" >&2
+        return 1
+      fi
+      cp "$text" "$out/licenses/$base"
+    done < <(cited "$notice")
+  done < <(notices crates)
+}
+
+# unnamed_bundles <crates directory> — every font, script or image a crate's source embeds with
+# include_bytes! or include_str! that the nearest NOTICE above it does not name, by a path or a
+# glob relative to that NOTICE, one per line.
+unnamed_bundles() {
+  local crates source include file dir rel pattern named
+  crates="$(realpath "$1")"
+  while IFS= read -r source; do
+    include="${source#*:}"
+    source="${source%%:*}"
+    include="${include#*\"}"
+    include="${include%\"*}"
+    file="$(realpath -m "$(dirname "$source")/$include")"
+    dir="$(dirname "$file")"
+    while [[ "$dir" == "$crates"/* && ! -f "$dir/NOTICE" ]]; do dir="$(dirname "$dir")"; done
+    named=0
+    if [[ -f "$dir/NOTICE" ]]; then
+      rel="${file#"$dir"/}"
+      while read -r pattern; do
+        # shellcheck disable=SC2053 # the pattern is a glob
+        if [[ "$rel" == $pattern ]]; then named=1; fi
+      done < <(grep -oE '[A-Za-z0-9_.*/-]+\.(ttf|otf|woff2?|js|png|jpe?g|gif|svg)' "$dir/NOTICE")
+    fi
+    ((named)) || echo "${file#"$crates"/}"
+  done < <(grep -roE --include='*.rs' \
+    'include_(bytes|str)!\("[^"]+\.(ttf|otf|woff2?|js|png|jpe?g|gif|svg)"\)' "$crates"/*/src \
+    | LC_ALL=C sort -u)
+}
+
+# check_notices — every font, script and image the crates embed is named in a NOTICE, and an
+# archive's NOTICE carries every NOTICE of the crates with the licence texts they point to.
+check_notices() {
+  local errors=0 unnamed work notice first outside file
+  unnamed="$(unnamed_bundles crates)"
+  if [[ -n "$unnamed" ]]; then
+    echo "a crate embeds files no NOTICE names:" >&2
+    while read -r file; do echo "  $file" >&2; done <<< "$unnamed"
+    errors=1
+  fi
+  work="$(mktemp -d)"
+  # shellcheck disable=SC2064 # the directory is fixed now
+  trap "rm -rf '$work'" RETURN
+  if notice_with_licenses "$work/archive"; then
+    while read -r notice; do
+      first="$(head -n 1 "$notice")"
+      grep -qxF "$first" "$work/archive/NOTICE" \
+        || { echo "the archive's NOTICE lacks $notice" >&2; errors=1; }
+    done < <(notices crates)
+    while read -r text; do
+      [[ -f "$work/archive/licenses/$text" ]] \
+        || { echo "the archive's NOTICE points to licenses/$text, which it lacks" >&2; errors=1; }
+    done < <(grep -oE 'see licenses/[^ ;,]+' "$work/archive/NOTICE" | sed 's#^see licenses/##')
+    outside="$(grep -oE 'see [^ ;,]+\.(txt|md)' "$work/archive/NOTICE" \
+      | grep -vE '^see licenses/' || true)"
+    if [[ -n "$outside" ]]; then
+      echo "the archive's NOTICE points to a licence text outside licenses/: $outside" >&2
+      errors=1
+    fi
+  else
+    errors=1
+  fi
+  # A font a crate embeds without a NOTICE line is named; with one, it is not.
+  mkdir -p "$work/crates/x/src" "$work/crates/x/fonts"
+  printf 'static F: &[u8] = include_bytes!("../fonts/New-Regular.ttf");\n' > "$work/crates/x/src/lib.rs"
+  printf 'Old (fonts/Old-*.ttf)\n' > "$work/crates/x/NOTICE"
+  [[ "$(unnamed_bundles "$work/crates")" == "x/fonts/New-Regular.ttf" ]] \
+    || { echo "unnamed_bundles does not name a font no NOTICE names" >&2; errors=1; }
+  printf 'New (fonts/New-*.ttf)\n' >> "$work/crates/x/NOTICE"
+  [[ -z "$(unnamed_bundles "$work/crates")" ]] \
+    || { echo "unnamed_bundles names a font its NOTICE names" >&2; errors=1; }
+  return "$errors"
+}
+
 pack() {
   local target="$1" version="$2" binary="$3" dir="$4" name archive stage
   name="nectar-$version-$target"
   stage="$(mktemp -d)"
   mkdir "$stage/$name"
   cp LICENSE "$stage/$name/"
-  cat crates/*/NOTICE > "$stage/$name/NOTICE"
+  notice_with_licenses "$stage/$name"
   if [[ "$target" == *windows* ]]; then
     cp "$binary" "$stage/$name/nectar.exe"
     archive="$name.zip"
