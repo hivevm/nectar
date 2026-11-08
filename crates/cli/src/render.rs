@@ -1,14 +1,16 @@
 //! `nectar render`: one code engine on one text, its output written as SVG, PNG, HTML or ANSI
-//! (ADR-0018). A PNG is the SVG rasterized with the bundled fonts only
-//! (ADR-0017).
+//! (ADR-0018). A PNG is the SVG rasterized with the bundled fonts only (ADR-0017); the same
+//! database of them is the one the command line hands to the rough engine (ADR-0020).
 
 use std::path::Path;
+use std::sync::{Arc, LazyLock};
 
 use anyhow::{Context, Result, anyhow, bail};
 use clap::ValueEnum;
 use nectar_core::model::{HighlightedCode, Token};
 use nectar_core::{CodeEngine, EngineOutput};
 use nectar_html::standalone_highlighted;
+use resvg::usvg::fontdb;
 use resvg::{tiny_skia, usvg};
 
 /// An output format of `nectar render`.
@@ -81,24 +83,37 @@ pub fn render(
     })
 }
 
-/// Rasterizes `svg` at its own size, with the fonts `nectar-pdf` bundles and no system fonts,
-/// and resolves no image but one embedded as a data URL, so nothing outside is read.
+/// The fonts `nectar-pdf` bundles, and no system fonts, as one database for every graphic the
+/// command line draws text in: the PNG and the rough engine (ADR-0017, ADR-0020).
+pub fn bundled_fonts() -> Arc<fontdb::Database> {
+    static FONTS: LazyLock<Arc<fontdb::Database>> =
+        LazyLock::new(|| Arc::new(font_database(nectar_pdf::FONT_FILES)));
+    FONTS.clone()
+}
+
+/// A database of `files`. usvg tries `serif` after every family the SVG names, so a family the
+/// fonts lack falls back to Ubuntu Sans, whatever the order of the files.
+fn font_database(files: &[&'static [u8]]) -> fontdb::Database {
+    let mut fonts = fontdb::Database::new();
+    for data in files {
+        fonts.load_font_source(fontdb::Source::Binary(Arc::new(*data)));
+    }
+    fonts.set_serif_family("Ubuntu Sans");
+    fonts.set_monospace_family("Victor Mono");
+    fonts
+}
+
+/// Rasterizes `svg` at its own size, with the bundled fonts only, and resolves no image but one
+/// embedded as a data URL, so nothing outside is read.
 fn png(svg: &str) -> Result<Vec<u8>> {
-    let mut options = usvg::Options {
+    let options = usvg::Options {
         image_href_resolver: usvg::ImageHrefResolver {
             resolve_data: usvg::ImageHrefResolver::default_data_resolver(),
             resolve_string: Box::new(|_, _| None),
         },
+        fontdb: bundled_fonts(),
         ..usvg::Options::default()
     };
-    let fonts = options.fontdb_mut();
-    for data in nectar_pdf::FONT_FILES {
-        fonts.load_font_data(data.to_vec());
-    }
-    // usvg tries `serif` after every family the SVG names, so a family the bundled fonts lack
-    // ends at Ubuntu Sans.
-    fonts.set_serif_family("Ubuntu Sans");
-    fonts.set_monospace_family("Victor Mono");
 
     let tree = usvg::Tree::from_str(svg, &options).context("the engine's SVG cannot be read")?;
     let size = tree.size().to_int_size();
@@ -175,4 +190,49 @@ fn rgb(color: &str) -> Option<(u8, u8, u8)> {
     }
     let channel = |at: usize| u8::from_str_radix(hex.get(at..at + 2)?, 16).ok();
     Some((channel(0)?, channel(2)?, channel(4)?))
+}
+
+#[cfg(test)]
+mod tests {
+    use nectar_rough::Rough;
+
+    use super::*;
+
+    /// One line of text in `family`.
+    fn text(family: &str) -> String {
+        format!(
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"120\" height=\"40\">\
+             <text x=\"4\" y=\"28\" font-size=\"20\" font-family=\"{family}\">Ag 1</text></svg>"
+        )
+    }
+
+    // Verifies: ADR-0017, ADR-0020
+    #[test]
+    fn a_family_the_fonts_lack_falls_back_to_the_same_family_in_a_png_and_a_sketch() {
+        let png = |family: &str| png(&text(family)).unwrap();
+        assert_eq!(png("Nope"), png("Ubuntu Sans"));
+        assert_ne!(png("Nope"), png("Victor Mono"), "the PNG shows its font");
+
+        let rough = Rough::new(bundled_fonts());
+        let sketch = |family: &str| rough.sketch(&text(family)).unwrap();
+        assert_eq!(sketch("Nope"), sketch("Ubuntu Sans"));
+        assert_ne!(
+            sketch("Nope"),
+            sketch("Victor Mono"),
+            "the sketch shows its font"
+        );
+    }
+
+    // Verifies: ADR-0020
+    #[test]
+    fn the_order_of_the_font_files_changes_no_sketch() {
+        let mut reversed = nectar_pdf::FONT_FILES.to_vec();
+        reversed.reverse();
+        let sketch = |files: &[&'static [u8]]| {
+            Rough::new(Arc::new(font_database(files)))
+                .sketch(&text("Nope"))
+                .unwrap()
+        };
+        assert_eq!(sketch(&reversed), sketch(nectar_pdf::FONT_FILES));
+    }
 }
