@@ -1,0 +1,20 @@
+[package]
+name = "nectar-wasm-link"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+# Nothing to test: the WebAssembly step builds it, and a native test binary would be empty.
+test = false
+
+[dependencies]
+nectar-core = { version = "0.1.0", path = "../core" }
+nectar-html = { version = "0.1.0", path = "../html" }
+nectar-pdf = { version = "0.1.0", path = "../pdf" }
+nectar-railroad = { version = "0.1.0", path = "../railroad" }
+nectar-rough = { version = "0.1.0", path = "../rough" }
+usvg = { version = "0.47.0", default-features = false, features = ["text"] }

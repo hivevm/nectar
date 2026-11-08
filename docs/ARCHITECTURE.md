@@ -48,6 +48,9 @@ The crates under `crates/`, every dependency pointing toward the core
   `usvg` and drawing text with the fonts the shell hands it. The railroad and rough engines build
   for WebAssembly; the TextMate engine does not, since `giallo` needs the C libraries Oniguruma
   and zstd.
+- **`nectar-wasm-link`** — no product: a WebAssembly module of the core, the renderers and the
+  railroad and rough engines, which the build check links for WebAssembly, so that a link error
+  fails it.
 - **`nectar-process`** — the code engine that runs a program named in `nectar.toml`, such as
   Graphviz or PlantUML.
 - **`nectar-fetch`** — the fetcher that downloads images from the web over HTTP, within limits
