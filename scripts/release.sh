@@ -159,6 +159,15 @@ check_installer() {
   if out="$(try_install aarch64-apple-darwin "$work/other")" || [[ "$out" != *"names no"* ]]; then
     echo "install-nectar.sh did not refuse a target SHA256SUMS does not name: $out" >&2; errors=1
   fi
+  # A VERSION that is not X.Y.Z: a leading zero, a part missing, a suffix, empty.
+  local bad
+  for bad in 09.9.9 9.9 9.9.9x ''; do
+    printf '%s\n' "$bad" > "$work/VERSION"
+    if out="$(try_install "$target" "$work/bad")" || [[ "$out" != *"not X.Y.Z"* ]]; then
+      echo "install-nectar.sh did not refuse VERSION '$bad': $out" >&2; errors=1
+    fi
+  done
+  echo "$version" > "$work/VERSION"
   # A valid archive with another binary, under the checksum of the first.
   printf '#!/bin/sh\necho "replaced"\n' > "$work/nectar"
   rm "$work/base/nectar-v$version/$archive"

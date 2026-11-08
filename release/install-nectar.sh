@@ -23,7 +23,7 @@ if [ ! -f "$sums" ] || [ ! -f "$version_file" ]; then
   fail "$sums or $version_file is missing — no release of nectar is named"
 fi
 version="$(tr -d '[:space:]' < "$version_file")"
-printf '%s\n' "$version" | grep -Eqx '(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)' \
+[ "$(printf '%s\n' "$version" | grep -Ecx '(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)')" = 1 ] \
   || fail "VERSION holds '$version', not X.Y.Z"
 
 target="${NECTAR_TARGET:-}"
