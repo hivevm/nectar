@@ -288,7 +288,7 @@ The options of both commands are listed in the [guide](guide/chapters/quick-star
 and exits non-zero when any is an error.
 
 **`nectar build <file>`** builds one Markdown file without a `nectar.toml`
-([ADR-0015](adr/0015-single-file-build.md)). The command line gives the core
+([ADR-0016](adr/0016-single-file-build.md)). The command line gives the core
 the file's directory as the project root and the default configuration with the file as its one
 document, runs only the PDF renderer and writes its PDF next to the file, or to `-o`.
 

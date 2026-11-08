@@ -54,7 +54,7 @@ impl Rough {
     }
 
     /// This engine with `defaults` below every `data-rough-*` attribute, as `[engine.rough]` of
-    /// `nectar.toml` gives them (ADR-0021).
+    /// `nectar.toml` gives them (ADR-0015).
     pub fn with_defaults(self, defaults: Style) -> Self {
         Rough { defaults, ..self }
     }

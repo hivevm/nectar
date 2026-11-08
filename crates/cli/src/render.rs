@@ -1,6 +1,6 @@
 //! `nectar render`: one code engine on one text, its output written as SVG, PNG, HTML or ANSI
-//! (ADR-0018). A PNG is the SVG rasterized with the bundled fonts only (ADR-0017); the same
-//! database of them is the one the command line hands to the rough engine (ADR-0020).
+//! (ADR-0017). A PNG is the SVG rasterized with the bundled fonts only (ADR-0018); the same
+//! database of them is the one the command line hands to the rough engine (ADR-0014).
 
 use std::path::Path;
 use std::sync::{Arc, LazyLock};
@@ -84,7 +84,7 @@ pub fn render(
 }
 
 /// The fonts `nectar-pdf` bundles, and no system fonts, as one database for every graphic the
-/// command line draws text in: the PNG and the rough engine (ADR-0017, ADR-0020).
+/// command line draws text in: the PNG and the rough engine (ADR-0018, ADR-0014).
 pub fn bundled_fonts() -> Arc<fontdb::Database> {
     static FONTS: LazyLock<Arc<fontdb::Database>> =
         LazyLock::new(|| Arc::new(font_database(nectar_pdf::FONT_FILES)));
@@ -206,7 +206,7 @@ mod tests {
         )
     }
 
-    // Verifies: ADR-0017, ADR-0020
+    // Verifies: ADR-0018, ADR-0014
     #[test]
     fn a_family_the_fonts_lack_falls_back_to_the_same_family_in_a_png_and_a_sketch() {
         let png = |family: &str| png(&text(family)).unwrap();
@@ -223,7 +223,7 @@ mod tests {
         );
     }
 
-    // Verifies: ADR-0020
+    // Verifies: ADR-0014
     #[test]
     fn the_order_of_the_font_files_changes_no_sketch() {
         let mut reversed = nectar_pdf::FONT_FILES.to_vec();

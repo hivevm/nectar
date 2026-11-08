@@ -1,4 +1,4 @@
-# ADR-0015: `nectar build` given a Markdown file writes its PDF next to it, without a `nectar.toml`
+# ADR-0016: `nectar build` given a Markdown file writes its PDF next to it, without a `nectar.toml`
 
 - **Status:** 🟢 accepted
 - **Date:** 2026-11-07
@@ -36,8 +36,8 @@ to the file's name with `.pdf` next to it, or to the file `-o` names.
 - Without a file, `nectar build` builds the project as before; `serve` is unchanged.
 - A `nectar.toml` beside the file is ignored, so the result does not depend on the directory.
 - `-C` and a file together are an error; the file is resolved against the current directory.
-- Code engines are the built-in ones, railroad and TextMate, on with their defaults; a block for
-  an engine nothing configures stays plain code and is reported (G-5).
+- Code engines are the built-in ones, as [ADR-0017](0017-render-command.md) names them, on with
+  their defaults; a block for an engine nothing configures stays plain code and is reported (G-5).
 - Includes, images and embedded files outside the file's directory are refused and reported
   (G-7), and the build touches nothing else outside it (Q-5) but the PDF it writes.
 - `--offline` and `--drafts` mean what they mean for a project.
@@ -79,8 +79,7 @@ options from anywhere but the file's own front matter.
 - Negative / trade-offs: `build` has two modes, and `-o` names a directory for a project but a
   file for a single file. A file that relies on Graphviz or PlantUML gets plain code until it
   becomes a project. Diagrams from the built-in engines and highlighting work as in a project.
-- Follow-ups: the specification gains G-10; the guide's quick start describes the call; `serve`
-  for a single file, if it is wanted, is a decision of its own.
+- Follow-ups: `serve` for a single file, if it is wanted, is a decision of its own.
 
 ## Enforcement
 
