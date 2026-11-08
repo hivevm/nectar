@@ -43,8 +43,8 @@ The crates under `crates/`, every dependency pointing toward the core
 - **`nectar-html`** — the renderers for the website, the print view and the EPUB, with the built-in
   theme, and the writer of highlighted code as standalone HTML for `nectar render`. The EPUB
   renderer packs its container with a small ZIP writer of its own
-  ([ADR-draft-epub-renderer](adr/draft-epub-renderer.md),
-  [ADR-draft-epub-zip-writer](adr/draft-epub-zip-writer.md)).
+  ([ADR-0020](adr/0020-epub-renderer.md),
+  [ADR-0021](adr/0021-epub-zip-writer.md)).
 - **`nectar-pdf`** — the renderer for the PDF, typeset with Typst in memory.
 - **`nectar-textmate`**, **`nectar-railroad`**, **`nectar-rough`** — code engines that need
   nothing of the host. The rough engine redraws an SVG as a sketch with `roughr`, reading it with

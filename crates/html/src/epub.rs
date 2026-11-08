@@ -1,6 +1,6 @@
 //! EPUB renderer: one EPUB 3.3 publication per document that enables it under `[document.epub]`.
 //! Each top-level chapter is one XHTML content document, written by the block writer of the
-//! website in its mode for XML (ADR-draft-epub-renderer).
+//! website in its mode for XML (ADR-0020).
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::Write as _;

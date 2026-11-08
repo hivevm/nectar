@@ -4,7 +4,7 @@
 # them; any error or warning fails the check. The fixture holds every case a finding of EPUBCheck
 # has shown so far, each of which must build and give a valid publication.
 #
-# Verifies: G-13, ADR-draft-epub-renderer, ADR-draft-epub-zip-writer
+# Verifies: G-13, ADR-0020, ADR-0021
 #
 # Needs cargo, curl, java 8 or later, sha256sum and unzip on PATH. EPUBCheck is pinned by version
 # and checksum; its archive stays under target/, so a later run needs no network.

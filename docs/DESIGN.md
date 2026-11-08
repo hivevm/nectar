@@ -239,8 +239,8 @@ refers to anything outside itself stays out. A link keeps only its text unless i
 `http`, `https` or `mailto`, a heading or a chapter. The container is packed
 by a small ZIP writer of its own, on `miniz_oxide` and `crc32fast`, with fixed times and sorted
 entries, so the same document gives the same bytes. The shell hands over the time of modification,
-from `SOURCE_DATE_EPOCH`, or a fixed one ([ADR-draft-epub-renderer](adr/draft-epub-renderer.md),
-[ADR-draft-epub-zip-writer](adr/draft-epub-zip-writer.md)).
+from `SOURCE_DATE_EPOCH`, or a fixed one ([ADR-0020](adr/0020-epub-renderer.md),
+[ADR-0021](adr/0021-epub-zip-writer.md)).
 
 ### PDF renderer
 

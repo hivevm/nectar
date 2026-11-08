@@ -128,7 +128,7 @@ fn put32(bytes: &mut Vec<u8>, value: u32) {
 mod tests {
     use super::*;
 
-    /// Verifies: ADR-draft-epub-zip-writer
+    /// Verifies: ADR-0021
     #[test]
     fn a_count_a_reader_takes_for_zip64_is_refused() {
         let entries = |count: usize| -> BTreeMap<String, Vec<u8>> {

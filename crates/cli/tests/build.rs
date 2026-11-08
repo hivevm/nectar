@@ -1006,7 +1006,7 @@ fn every_block_of_the_guide_website_is_in_the_epub_or_reported() {
     }
 }
 
-// Verifies: ADR-draft-epub-renderer
+// Verifies: ADR-0020
 #[test]
 fn source_date_epoch_sets_the_time_of_an_epub() {
     let dir = tempfile::tempdir().unwrap();
@@ -1065,7 +1065,7 @@ fn source_date_epoch_sets_the_time_of_an_epub() {
     );
 }
 
-// Verifies: G-10, ADR-draft-epub-renderer
+// Verifies: G-10, ADR-0020
 #[test]
 fn a_markdown_file_gives_no_epub_and_ignores_source_date_epoch() {
     let dir = tempfile::tempdir().unwrap();
