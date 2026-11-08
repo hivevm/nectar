@@ -243,7 +243,7 @@ fn an_unknown_language_fails_and_writes_nothing() {
     assert!(!dir.path().join("x.svg").exists());
 }
 
-// Verifies: ADR-0018
+// Verifies: G-11, ADR-0018
 #[test]
 fn an_engine_that_fails_writes_nothing() {
     let dir = tempfile::tempdir().unwrap();
