@@ -414,3 +414,25 @@ fn highlighted_code_with_crlf_line_ends_has_the_lines_of_its_text() {
         assert_eq!(render(crlf.trim_end()), expected, "{format}");
     }
 }
+
+// Verifies: ADR-0020
+#[test]
+fn the_rough_engine_of_the_command_line_draws_a_family_the_fonts_lack_in_ubuntu_sans() {
+    let dir = tempfile::tempdir().unwrap();
+    let sketch = |family: &str| {
+        let input = format!(
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"120\" height=\"40\">\
+             <text x=\"4\" y=\"28\" font-size=\"20\" font-family=\"{family}\">Ag 1</text></svg>"
+        );
+        let output = nectar(dir.path(), &["render", "rough"], &input);
+        assert!(output.status.success(), "{}", stderr(&output));
+        output.stdout
+    };
+    assert_eq!(sketch("Nope"), sketch("Ubuntu Sans"));
+    assert_ne!(
+        sketch("Nope"),
+        sketch("Victor Mono"),
+        "the sketch shows its font"
+    );
+    assert_eq!(sketch("monospace"), sketch("Victor Mono"));
+}
