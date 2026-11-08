@@ -83,7 +83,8 @@ Only a normalization renumbers them ([`AGENTS.md` §3](../AGENTS.md#3-adr-rules)
 11. **G-11** — When `nectar render` is given a language and a text, the system shall write the
     output of the code engine that supports the language, as the format `-f` or the extension of
     `-o` names, to the file `-o` names or to standard output, and shall exit non-zero and write
-    nothing when no engine supports the language or the output does not allow the format.
+    nothing when no engine supports the language, the output does not allow the format, or the
+    engine fails.
 12. **G-12** — When a code block or `nectar render` names `rough` and its text is an SVG, the
     system shall return a sketch of it: every shape redrawn in its own colours, styled by the
     `data-rough-*` attributes on it or an ancestor, over those of the `<use>` that draws it, over
