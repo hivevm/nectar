@@ -50,13 +50,13 @@ The Dev Container brings Rust with the `wasm32-unknown-unknown` target, cargo-de
 PlantUML, with Java 21 as PlantUML's runtime, and strace, under which a test traces a build on
 Linux. The commands run from the repository root; `scripts/check-build.sh` runs build, test and
 lint in one go, as the pre-push hook and the `build` job of CI do
-([ADR-0014](docs/adr/0014-guide-as-reference-project.md)):
+([ADR-0008](docs/adr/0008-toolchain-cargo-clippy-deny.md)):
 
 - **Build:** `cargo build --workspace`
 - **Test:** `cargo test --workspace`, then `cargo run -p nectar -- -C docs/guide build`,
   which has to succeed even where Graphviz and PlantUML are missing, and
-  `cargo check --target wasm32-unknown-unknown -p nectar-core -p nectar-html -p nectar-pdf
-  -p nectar-railroad`
+  `cargo build --profile wasm-link --target wasm32-unknown-unknown -p nectar-wasm-link`, which
+  links the core, the renderers and the railroad and rough engines for WebAssembly
 - **Lint:** `cargo fmt --all --check`,
   `cargo clippy --workspace --all-targets -- -D warnings` and
   `cargo deny --all-features check licenses bans sources`; the repository checks with
@@ -102,7 +102,7 @@ the print view, themes and every key of `nectar.toml` are described in the
 
 ## Template
 
-- **Template release:** v0.7.0 — the release of [NUC](https://github.com/hivevm/nuc) this
+- **Template release:** v0.8.1 — the release of [NUC](https://github.com/hivevm/nuc) this
   repository carries; a project moves the line when it takes up a later one
   ([ADR-0005](docs/adr/0005-template-releases.md)).
 

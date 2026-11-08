@@ -40,13 +40,17 @@ The crates under `crates/`, every dependency pointing toward the core
   `Fetcher`. Knows no adapter, no output format, no file system, no threads and no environment
   variables but those the shell hands over. `MemoryFiles` holds a project's files in memory,
   for a host without a file system and for the tests of every crate.
-- **`nectar-html`** — the renderer for the website and the print view, with the built-in theme.
+- **`nectar-html`** — the renderer for the website and the print view, with the built-in theme,
+  and the writer of highlighted code as standalone HTML for `nectar render`.
 - **`nectar-pdf`** — the renderer for the PDF, typeset with Typst in memory.
 - **`nectar-textmate`**, **`nectar-railroad`**, **`nectar-rough`** — code engines that need
   nothing of the host. The rough engine redraws an SVG as a sketch with `roughr`, reading it with
   `usvg` and drawing text with the fonts the shell hands it. The railroad and rough engines build
   for WebAssembly; the TextMate engine does not, since `giallo` needs the C libraries Oniguruma
   and zstd.
+- **`nectar-wasm-link`** — no product: a WebAssembly module of the core, the renderers and the
+  railroad and rough engines, which the build check links for WebAssembly, so that a link error
+  fails it.
 - **`nectar-process`** — the code engine that runs a program named in `nectar.toml`, such as
   Graphviz or PlantUML.
 - **`nectar-fetch`** — the fetcher that downloads images from the web over HTTP, within limits
@@ -72,7 +76,8 @@ engines) and hands the enriched documents to each renderer. The build is a map o
 memory, which the command line writes. `nectar build <file>` opens a project of that file's
 directory with `Project::new` and a configuration made in memory, and writes only its PDF. `nectar
 render` builds no project: it composes the same engines, runs the one that takes the language on
-one text, and serializes its output in the command line (`crates/cli/src/render.rs`). `nectar
+one text, and serializes its output in the command line (`crates/cli/src/render.rs`), except
+highlighted code as HTML, which `nectar-html` writes with the token writer of the site. `nectar
 serve` keeps the project and its engine cache between builds, rebuilds on every change below the
 root and swaps the build the server answers from. Details are in [`docs/DESIGN.md`](DESIGN.md).
 
@@ -85,5 +90,5 @@ attests every archive and publishes the release. `release/install-nectar.sh` fet
 version's archive for the host and installs it only when it matches the checksums its caller
 carries; `scripts/check-all.sh` runs `scripts/release.sh` without a command to test the packing
 and the installer before a tag is pushed
-([ADR-0016](adr/0016-release-glibc-floor.md)). The user guide in `docs/guide/` is the project the
-checks build ([ADR-0014](adr/0014-guide-as-reference-project.md)).
+([ADR-0019](adr/0019-release-interface.md)). The user guide in `docs/guide/` is the project the
+checks build ([ADR-0008](adr/0008-toolchain-cargo-clippy-deny.md)).

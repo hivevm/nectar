@@ -3,7 +3,7 @@
 - **Status:** 🟢 accepted
 - **Date:** 2026-09-05
 - **Deciders:** NUC maintainer, Markus Brigl
-- **Applies to:** every document that carries rules for humans or agents, `AGENTS.md` among them, the architecture overview, the glossary, the conventions, `scripts/check-docs.sh`, `scripts/sensor-binding-adrs.sh`, and the map script of the `normalize` skill, `.agents/skills/normalize/remap.sh`
+- **Applies to:** every document that carries rules for humans or agents, `AGENTS.md` among them, the architecture overview, the glossary, the conventions, `scripts/check-docs.sh`, `scripts/sensor-binding-adrs.sh`, `scripts/sensor-plain-rules.sh`, and the map script of the `normalize` skill, `.agents/skills/normalize/remap.sh`
 
 ## Context
 
@@ -167,6 +167,10 @@ that the ADR record and its index agree, that links between the documents resolv
 references point at the section they name — which is why a document cites a rule as a link to
 its section anchor and never restates it: a renumbering breaks the link, and the check catches
 it, where a restated rule would drift unseen.
+[`scripts/sensor-plain-rules.sh`](../../scripts/sensor-plain-rules.sh) (job `sensors`) holds the
+glossary's _Avoid:_ lists. It reports a listed word on a line a change adds to `AGENTS.md`, or to
+the *Decision* or *Enforcement* of an ADR. It names the term to use instead. It does not read a
+word in a code span or in italics, where a rule names the word. It fails nothing.
 [`scripts/sensor-binding-adrs.sh`](../../scripts/sensor-binding-adrs.sh) (job `sensors`) lists
 the ADRs in force whose *Applies to* names a path a change touches, or a path a session names
 before its first change, so that the session and its reviewer start from the same list; with
@@ -178,8 +182,14 @@ The self-test of the `normalize` skill's map script
 ([`scripts/test-normalize-remap.sh`](../../scripts/test-normalize-remap.sh), job `docs`) cites
 this ADR too: it decides that a map moves every reference once, a swap included, and leaves the
 record it describes to the normalization. One gate routes a specification change to a human
-without judging it: [`.github/CODEOWNERS`](../../.github/CODEOWNERS) requires the owner's review
+without judging it. [`.github/CODEOWNERS`](../../.github/CODEOWNERS) requires the owner's review
 once the repository enables it, as **Repository settings** in
-[`CONTRIBUTING.md`](../../CONTRIBUTING.md) says. That no other document holds a rule, that the
-overview matches the system, that the glossary's terms are the ones in use, that no convention
-stands where a check could, and that a normalization changed no decision, is review only.
+[`CONTRIBUTING.md`](../../CONTRIBUTING.md) says.
+
+The review alone decides the following:
+
+- that no other document holds a rule;
+- that the overview matches the system;
+- that the glossary's terms are the ones in use, beyond what the sensor reports;
+- that no convention stands where a check can decide it;
+- that a normalization changed no decision.

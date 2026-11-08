@@ -1,11 +1,19 @@
-# ADR-0013: A Nectar release is archives, their checksums and a provenance attestation for each, and the repository carries the installer that verifies them
+# ADR-0019: A Nectar release is archives built against glibc 2.35, their checksums and a provenance attestation for each, and the repository carries the installer that verifies them
 
-- **Status:** ⚪ superseded by ADR-0016
+- **Status:** 🟢 accepted
 - **Date:** 2026-11-07
 - **Deciders:** Markus Brigl
 - **Applies to:** `.github/workflows/nectar-release.yml`, `scripts/release.sh`, `release/install-nectar.sh` and the check that tests it, and every installer outside this repository that takes a Nectar release, such as the Dev Container Feature of `hivevm/features`
 
 ## Context
+
+The first release, `nectar-v0.1.0`, built the Linux x86_64 archive on `ubuntu-latest`, which
+GitHub moved to Ubuntu 26.04 from 19 October 2026. A binary needs at least the glibc of the host
+that built it, and that one needs `GLIBC_2.43`: it fails to start on Debian 13 (glibc 2.41),
+Ubuntu 24.04 (2.39) and every older base, that is on the usual Dev Container images. The arm64
+archive, built on the pinned `ubuntu-24.04-arm`, needs 2.39 and fails on Debian 12 (2.36) and
+Ubuntu 22.04 (2.35). The interface named the targets then, but no glibc they need, so nothing
+caught it before the release.
 
 The maintainer wants Nectar installable as a Dev Container Feature,
 `ghcr.io/hivevm/features/nectar`,
@@ -16,9 +24,9 @@ and checks it against the checksums it carries. It never builds a tool itself.
 
 A tag `nectar-v*` runs `nectar-release.yml`, which builds the command line for five targets with
 `scripts/release.sh`, packs each into `nectar-<version>-<target>.tar.gz`, or `.zip` for Windows,
-with `LICENSE` and the crates' `NOTICE` files, and publishes them with `SHA256SUMS`. It attests
-nothing. Linux builds are `*-unknown-linux-gnu`, so they run on glibc images such as Debian and
-Ubuntu, the usual bases of a Dev Container, and not on Alpine.
+with `LICENSE` and a `NOTICE` that carries the crates' notices and the licence texts they cite,
+and publishes them with `SHA256SUMS`. Linux builds are `*-unknown-linux-gnu`, so they run on
+glibc images such as Debian and Ubuntu, the usual bases of a Dev Container, and not on Alpine.
 
 The forces:
 
@@ -48,21 +56,38 @@ for the host and installs its binary only when it matches the checksums its call
   `tar` or `unzip`, so that it runs in a container without bash. It reads the target from
   `uname`, fails on a host no archive serves, and deletes an archive whose checksum differs.
   `hivevm/features` copies it, as it copies `install-nuc.sh` from `hivevm/nuc-tools`.
-- Linux archives stay `*-unknown-linux-gnu`; a host without glibc gets no archive.
+- Linux archives stay `*-unknown-linux-gnu`; a host without glibc gets no archive. They are built
+  on `ubuntu-22.04` and `ubuntu-22.04-arm`, never on a `*-latest` runner, so they need glibc 2.35
+  at most and run on Debian 12 and 13 and Ubuntu 22.04 and later. `scripts/release.sh package`
+  fails for a Linux target whose binary needs a newer glibc, so such an archive is never published.
 
-**Out of scope:** static `musl` builds for Alpine, which a decision of its own can add as further
-targets; signing beyond the attestation, such as Sigstore bundles beside the archives;
+**Out of scope:** the moment GitHub retires the Ubuntu 22.04 runners, which calls for a new floor
+and a decision of its own; static `musl` builds for Alpine, which a decision of its own can add as
+further targets; signing beyond the attestation, such as Sigstore bundles beside the archives;
 `hivevm/features` itself, its Feature, its tests and the workflow that takes a release.
 
 ## Alternatives considered
 
+- **The interface without a glibc floor** — the first form of this decision: the same archives,
+  checksums, attestations and installer, the Linux targets named but not the glibc they need, and
+  `ubuntu-latest` among the runners. It did not stand: `nectar-v0.1.0` needed glibc 2.43 on
+  x86_64 and 2.39 on arm64, and started on none of the usual Dev Container images.
+- **Ubuntu 24.04 runners, glibc 2.39** — runners GitHub keeps longer. Not chosen: Debian 12 and
+  Ubuntu 22.04, still common Dev Container bases, could not run the archive.
+- **A fixed old glibc through `cargo-zigbuild`** — such as 2.28, whatever the runner. Not chosen:
+  one more tool in the release chain for bases older than any the Feature serves.
+- **Moving the tag `nectar-v0.1.0`** — rebuilding the same version. Not chosen: it is published
+  and attested; the fix ships as `nectar-v0.1.1`.
 - **Bare binaries, as `nuc` ships** — `nectar-<target>` next to the archives, attested instead of
   them. Not chosen: the licence texts would not travel with the binary that needs them.
+- **The licence texts in a `licenses/` directory of the archive** — one file per text. Not
+  chosen: a fourth entry the interface does not list; the texts end the `NOTICE` instead.
 - **Static `musl` builds as well** — the Feature on Alpine too. Not chosen now: `onig_sys` and
   `ring` build C code and need a cross toolchain, and the usual Dev Container images have glibc.
 - **The installer only in `hivevm/features`** — fewer files here. Not chosen: a change to the
   archive layout would break the Feature, and no test here would notice.
-- **Checksums without attestations** — what the release does today. Not chosen: `hivevm/features`
+- **Checksums without attestations** — what the release workflow did before this interface. Not
+  chosen: `hivevm/features`
   refuses a release it cannot trace to the workflow that built it, and a checksum file replaced
   together with the archives proves nothing.
 - **The tag `vX.Y.Z`, as `nuc` uses** — one form for both tools. Not chosen: the tag `nectar-v*`
@@ -75,6 +100,8 @@ targets; signing beyond the attestation, such as Sigstore bundles beside the arc
   <https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations>:
   `actions/attest-build-provenance` and `gh attestation verify --signer-workflow`.
 - SLSA, *Build provenance* — <https://slsa.dev/spec/v1.0/provenance>.
+- GitHub, *runner images* — <https://github.com/actions/runner-images>: what `ubuntu-latest`
+  points to, and the migration to Ubuntu 26 from 19 October 2026 (issue 14748).
 - Development Containers, *Features* — <https://containers.dev/implementors/features/>: a Feature's
   `install.sh` runs as root at build time in the base image.
 - `hivevm/features` and `hivevm/nuc-tools` — <https://github.com/hivevm/features>: the taking
@@ -87,9 +114,10 @@ targets; signing beyond the attestation, such as Sigstore bundles beside the arc
   under one test.
 - Negative / trade-offs: the release job holds two more permissions; the archive names and layout
   are an interface now, and changing them is a major release; Alpine and other hosts without glibc
-  get no Feature.
-- Follow-ups: `hivevm/features` gains the Feature `nectar`, a test, and the taking of Nectar
-  releases; the first release under this interface is `nectar-v0.1.0`.
+  get no Feature; the Linux runners are pinned and age, and their retirement forces a new
+  floor.
+- Follow-ups: none. The first release under this interface is `nectar-v0.1.1`; `nectar-v0.1.0`
+  stays published and is not for `hivevm/features` to take.
 
 ## Enforcement
 
@@ -98,4 +126,6 @@ A check under `scripts/`, run by `scripts/check-all.sh`, packs an archive for th
 against it from a `file://` base: the binary is installed and runs; with an archive altered after
 the checksum it fails and installs nothing; with a host target no line names it fails. The check
 also fails when `nectar-release.yml` does not attest the archives with
-`actions/attest-build-provenance` by a commit SHA. Both cite this ADR with a `Verifies:` marker.
+`actions/attest-build-provenance` by a commit SHA, or builds a Linux target on a runner other
+than `ubuntu-22.04` or `ubuntu-22.04-arm`. `scripts/release.sh package` fails for a Linux target
+whose binary needs a glibc newer than 2.35. All cite this ADR with a `Verifies:` marker.

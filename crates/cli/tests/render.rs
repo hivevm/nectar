@@ -60,7 +60,7 @@ fn project_with_process_engine(dir: &Path) {
     fs::write(dir.join("index.md"), "# Index\n").unwrap();
 }
 
-// Verifies: G-11, ADR-0018
+// Verifies: G-11, ADR-0017
 #[test]
 fn a_graphic_from_standard_input_goes_to_standard_output_as_svg() {
     let dir = tempfile::tempdir().unwrap();
@@ -75,7 +75,7 @@ fn a_graphic_from_standard_input_goes_to_standard_output_as_svg() {
     assert!(fs::read_dir(dir.path()).unwrap().next().is_none());
 }
 
-// Verifies: G-11, ADR-0018
+// Verifies: G-11, ADR-0017
 #[test]
 fn a_file_is_read_and_the_extension_of_output_chooses_the_format() {
     let dir = tempfile::tempdir().unwrap();
@@ -91,7 +91,7 @@ fn a_file_is_read_and_the_extension_of_output_chooses_the_format() {
     assert!(png.starts_with(PNG_SIGNATURE));
 }
 
-// Verifies: G-11, ADR-0018
+// Verifies: G-11, ADR-0017
 #[test]
 fn highlighted_code_is_html_by_default_and_ansi_on_request() {
     let dir = tempfile::tempdir().unwrap();
@@ -116,7 +116,7 @@ fn highlighted_code_is_html_by_default_and_ansi_on_request() {
 }
 
 /// The ANSI output fills every line with the theme's background, a choice of the
-/// implementation, not of ADR-0018, and shows control characters instead of sending them.
+/// implementation, not of ADR-0017, and shows control characters instead of sending them.
 #[test]
 fn ansi_lines_are_filled_to_the_edge_and_control_characters_are_shown() {
     let dir = tempfile::tempdir().unwrap();
@@ -144,7 +144,7 @@ fn ansi_lines_are_filled_to_the_edge_and_control_characters_are_shown() {
     assert!(!ansi.contains('\u{9b}'), "{ansi:?}");
 }
 
-// Verifies: G-11, ADR-0018
+// Verifies: G-11, ADR-0017
 #[test]
 fn a_failure_writes_nothing_to_standard_output() {
     let dir = tempfile::tempdir().unwrap();
@@ -160,7 +160,7 @@ fn a_failure_writes_nothing_to_standard_output() {
     }
 }
 
-/// `-o -` is standard output, as `-` for the file is standard input: a convention ADR-0018 is
+/// `-o -` is standard output, as `-` for the file is standard input: a convention ADR-0017 is
 /// silent on.
 #[test]
 fn dash_as_output_is_standard_output() {
@@ -179,7 +179,7 @@ fn dash_as_output_is_standard_output() {
     assert!(!dir.path().join("-").exists());
 }
 
-// Verifies: G-11, ADR-0018
+// Verifies: G-11, ADR-0017
 #[test]
 fn an_extension_that_names_no_format_gives_the_default() {
     let dir = tempfile::tempdir().unwrap();
@@ -193,7 +193,7 @@ fn an_extension_that_names_no_format_gives_the_default() {
     assert!(written.starts_with("<pre"), "{written}");
 }
 
-// Verifies: G-11, ADR-0018
+// Verifies: G-11, ADR-0017
 #[test]
 fn an_extension_the_output_does_not_allow_fails_and_writes_nothing() {
     let dir = tempfile::tempdir().unwrap();
@@ -211,7 +211,7 @@ fn an_extension_the_output_does_not_allow_fails_and_writes_nothing() {
     assert!(!dir.path().join("x.png").exists());
 }
 
-// Verifies: G-11, ADR-0018
+// Verifies: G-11, ADR-0017
 #[test]
 fn a_format_the_output_does_not_allow_fails_and_writes_nothing() {
     let dir = tempfile::tempdir().unwrap();
@@ -229,7 +229,7 @@ fn a_format_the_output_does_not_allow_fails_and_writes_nothing() {
     assert!(!dir.path().join("x.png").exists());
 }
 
-// Verifies: G-11, ADR-0018
+// Verifies: G-11, ADR-0017
 #[test]
 fn an_unknown_language_fails_and_writes_nothing() {
     let dir = tempfile::tempdir().unwrap();
@@ -243,7 +243,7 @@ fn an_unknown_language_fails_and_writes_nothing() {
     assert!(!dir.path().join("x.svg").exists());
 }
 
-// Verifies: ADR-0018
+// Verifies: G-11, ADR-0017
 #[test]
 fn an_engine_that_fails_writes_nothing() {
     let dir = tempfile::tempdir().unwrap();
@@ -254,7 +254,7 @@ fn an_engine_that_fails_writes_nothing() {
 }
 
 /// `-C` reads `nectar.toml` as a build does, so it has to be a complete project configuration: a
-/// consequence of reusing the configuration of a build, which ADR-0018 does not itself ask for.
+/// consequence of reusing the configuration of a build, which ADR-0017 does not itself ask for.
 #[test]
 fn c_needs_a_complete_project_configuration() {
     let dir = tempfile::tempdir().unwrap();
@@ -276,7 +276,7 @@ fn c_needs_a_complete_project_configuration() {
     );
 }
 
-// Verifies: G-11, ADR-0018
+// Verifies: G-11, ADR-0017
 #[test]
 fn process_engines_come_only_from_the_nectar_toml_that_c_names() {
     let dir = tempfile::tempdir().unwrap();
@@ -292,7 +292,7 @@ fn process_engines_come_only_from_the_nectar_toml_that_c_names() {
     assert!(String::from_utf8(with.stdout).unwrap().starts_with("<svg"));
 }
 
-// Verifies: ADR-0017
+// Verifies: ADR-0018
 #[test]
 fn a_png_is_the_same_every_time_and_draws_its_text() {
     let dir = tempfile::tempdir().unwrap();
@@ -309,7 +309,7 @@ fn a_png_is_the_same_every_time_and_draws_its_text() {
     assert_ne!(first, render("rule ::= \"ba\" ;\n"));
 }
 
-// Verifies: G-12, ADR-0019
+// Verifies: G-12, ADR-0013
 #[test]
 fn an_svg_becomes_a_sketch_as_svg_and_as_png() {
     let dir = tempfile::tempdir().unwrap();
@@ -342,7 +342,7 @@ fn an_svg_becomes_a_sketch_as_svg_and_as_png() {
     assert!(output.stdout.is_empty());
 }
 
-// Verifies: G-12, ADR-0021
+// Verifies: G-12, ADR-0015
 #[test]
 fn engine_rough_in_the_nectar_toml_of_c_sets_the_defaults_of_the_rough_engine() {
     let dir = tempfile::tempdir().unwrap();
@@ -395,7 +395,7 @@ fn engine_rough_in_the_nectar_toml_of_c_sets_the_defaults_of_the_rough_engine() 
     }
 }
 
-// Verifies: G-11, ADR-0018
+// Verifies: G-11, ADR-0017
 #[test]
 fn highlighted_code_with_crlf_line_ends_has_the_lines_of_its_text() {
     let dir = tempfile::tempdir().unwrap();
@@ -413,4 +413,26 @@ fn highlighted_code_with_crlf_line_ends_has_the_lines_of_its_text() {
         assert_eq!(render(lf.trim_end()), expected, "{format}");
         assert_eq!(render(crlf.trim_end()), expected, "{format}");
     }
+}
+
+// Verifies: ADR-0014
+#[test]
+fn the_rough_engine_of_the_command_line_draws_a_family_the_fonts_lack_in_ubuntu_sans() {
+    let dir = tempfile::tempdir().unwrap();
+    let sketch = |family: &str| {
+        let input = format!(
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"120\" height=\"40\">\
+             <text x=\"4\" y=\"28\" font-size=\"20\" font-family=\"{family}\">Ag 1</text></svg>"
+        );
+        let output = nectar(dir.path(), &["render", "rough"], &input);
+        assert!(output.status.success(), "{}", stderr(&output));
+        output.stdout
+    };
+    assert_eq!(sketch("Nope"), sketch("Ubuntu Sans"));
+    assert_ne!(
+        sketch("Nope"),
+        sketch("Victor Mono"),
+        "the sketch shows its font"
+    );
+    assert_eq!(sketch("monospace"), sketch("Victor Mono"));
 }

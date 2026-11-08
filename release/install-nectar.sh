@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Installs the nectar of one release, verified against the checksums the caller carries
-# (ADR-0016). The Dev Container Feature of hivevm/features runs a copy of it
+# (ADR-0019). The Dev Container Feature of hivevm/features runs a copy of it
 # with the SHA256SUMS and the VERSION its release commit holds; an archive whose checksum differs
 # is deleted and the installation fails.
 #
@@ -23,7 +23,7 @@ if [ ! -f "$sums" ] || [ ! -f "$version_file" ]; then
   fail "$sums or $version_file is missing — no release of nectar is named"
 fi
 version="$(tr -d '[:space:]' < "$version_file")"
-printf '%s\n' "$version" | grep -Eqx '(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)' \
+[ "$(printf '%s\n' "$version" | grep -Ecx '(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)')" = 1 ] \
   || fail "VERSION holds '$version', not X.Y.Z"
 
 target="${NECTAR_TARGET:-}"

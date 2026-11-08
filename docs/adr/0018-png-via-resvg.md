@@ -1,4 +1,4 @@
-# ADR-0017: A graphic becomes a PNG through resvg, with the bundled fonts only
+# ADR-0018: A graphic becomes a PNG through resvg, with the bundled fonts only
 
 - **Status:** 🟢 accepted
 - **Date:** 2026-11-07
@@ -7,7 +7,7 @@
 
 ## Context
 
-[ADR-0018](0018-render-command.md) lets `nectar render` write a graphic as `svg`
+[ADR-0017](0017-render-command.md) lets `nectar render` write a graphic as `svg`
 or `png`. Every code engine returns its graphic as SVG, so a PNG is SVG rasterized. Nothing in
 Nectar rasterizes today.
 
@@ -68,7 +68,7 @@ website; rasterizing in the WebAssembly build; other raster formats.
 
 ## Enforcement
 
-A test in `crates/cli/tests/render.rs` cites this ADR (`Verifies: ADR-0017`): it
+A test in `crates/cli/tests/render.rs` cites this ADR (`Verifies: ADR-0018`): it
 renders the same railroad text to PNG twice and checks a PNG signature and identical bytes.
 **Not mechanically decidable:** that no system font is loaded on every host; the test checks
 determinism on the host it runs on, and the review checks that the font database is built from

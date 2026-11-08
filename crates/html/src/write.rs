@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 use nectar_core::model::{
     AlertKind, Align, Block, BlockKind, Footnote, Graphic, HighlightedCode, Image, Inline, Table,
-    Target, Token,
+    Target, Token, TokenStyle,
 };
 
 use crate::relative_url;
@@ -204,29 +204,12 @@ impl PageWriter<'_> {
                 let _ = write!(style, "{name}:{value};");
             }
         }
-        let _ = write!(
-            self.out,
-            "<pre class=\"code highlighted\" style=\"{style}\"><code class=\"language-{}\">",
-            escape(&code.language)
+        code_block(
+            &mut self.out,
+            &format!("class=\"code highlighted\" style=\"{style}\""),
+            code,
+            |token| token_style(token, code),
         );
-        for (index, line) in code.lines.iter().enumerate() {
-            if index > 0 {
-                self.out.push('\n');
-            }
-            for token in line {
-                let style = token_style(token, code);
-                if style.is_empty() {
-                    self.out.push_str(&escape(&token.text));
-                } else {
-                    let _ = write!(
-                        self.out,
-                        "<span style=\"{style}\">{}</span>",
-                        escape(&token.text)
-                    );
-                }
-            }
-        }
-        self.out.push_str("</code></pre>\n");
     }
 
     /// Writes the picture to a file of its own, named by its content.
@@ -430,6 +413,69 @@ fn token_style(token: &Token, code: &HighlightedCode) -> String {
             }
         }
     }
+    font_style(&mut css, style);
+    css
+}
+
+/// Highlighted code as a standalone `<pre>` with inline styles in the colours of the light
+/// theme, for a page without the site's stylesheet (ADR-0017).
+pub fn standalone_highlighted(code: &HighlightedCode) -> String {
+    let mut style = String::new();
+    if let Some(color) = &code.foreground {
+        let _ = write!(style, "color:{color};");
+    }
+    if let Some(background) = &code.background {
+        let _ = write!(style, "background:{background};");
+    }
+    let mut out = String::new();
+    code_block(&mut out, &format!("style=\"{style}\""), code, |token| {
+        let mut css = String::new();
+        if let Some(color) = &token.style.color {
+            let _ = write!(css, "color:{color};");
+        }
+        if let Some(background) = &token.style.background {
+            let _ = write!(css, "background:{background};");
+        }
+        font_style(&mut css, &token.style);
+        css
+    });
+    out
+}
+
+/// Writes `code` as `<pre ATTRIBUTES><code>`, a span around each token `style_of` gives a style.
+fn code_block(
+    out: &mut String,
+    attributes: &str,
+    code: &HighlightedCode,
+    style_of: impl Fn(&Token) -> String,
+) {
+    let _ = write!(
+        out,
+        "<pre {attributes}><code class=\"language-{}\">",
+        escape(&code.language)
+    );
+    for (index, line) in code.lines.iter().enumerate() {
+        if index > 0 {
+            out.push('\n');
+        }
+        for token in line {
+            let style = style_of(token);
+            if style.is_empty() {
+                out.push_str(&escape(&token.text));
+            } else {
+                let _ = write!(
+                    out,
+                    "<span style=\"{style}\">{}</span>",
+                    escape(&token.text)
+                );
+            }
+        }
+    }
+    out.push_str("</code></pre>\n");
+}
+
+/// The weight, slant and decoration of a token, the same in every theme.
+fn font_style(css: &mut String, style: &TokenStyle) {
     if style.bold {
         css.push_str("font-weight:bold;");
     }
@@ -442,7 +488,6 @@ fn token_style(token: &Token, code: &HighlightedCode) -> String {
         (false, true) => css.push_str("text-decoration:line-through;"),
         (false, false) => {}
     }
-    css
 }
 
 pub(crate) fn escape(text: &str) -> String {

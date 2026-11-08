@@ -615,7 +615,7 @@ fn live_markdown(dir: &Path) -> (Vec<String>, Vec<String>, Vec<String>) {
     (lines, fences, front)
 }
 
-// Verifies: ADR-0014
+// Verifies: ADR-0008
 #[test]
 fn the_guide_uses_every_feature_it_explains() {
     let guide = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/guide");
@@ -635,7 +635,7 @@ fn the_guide_uses_every_feature_it_explains() {
             .any(|s| !s.is_empty() && s.chars().all(|c| c.is_ascii_lowercase() || c == '_'))
             && l.matches('@').count() >= 2
     };
-    let features: [(&str, bool); 17] = [
+    let features: [(&str, bool); 18] = [
         (
             "an included chapter",
             any(&|l| l.starts_with('[') && l.contains("](") && l.ends_with(".md)")),
@@ -676,6 +676,7 @@ fn the_guide_uses_every_feature_it_explains() {
         ("a railroad diagram", fences.iter().any(|f| f == "railroad")),
         ("a Graphviz diagram", fences.iter().any(|f| f == "dot")),
         ("a PlantUML diagram", fences.iter().any(|f| f == "uml")),
+        ("a rough sketch", fences.iter().any(|f| f == "rough")),
         (
             "an alert",
             any(&|l| {
@@ -721,7 +722,7 @@ fn names(dir: &Path) -> Vec<String> {
     names
 }
 
-// Verifies: G-10, ADR-0015
+// Verifies: G-10, ADR-0016
 #[test]
 fn a_markdown_file_builds_to_its_pdf_without_a_configuration() {
     let dir = tempfile::tempdir().unwrap();
@@ -771,7 +772,7 @@ fn a_markdown_file_builds_to_its_pdf_without_a_configuration() {
     assert_eq!(names(&notes.join("out")), ["manual.pdf", "readme.pdf"]);
 }
 
-// Verifies: G-10, ADR-0015
+// Verifies: G-10, ADR-0016
 #[test]
 fn a_markdown_file_ignores_a_configuration_beside_it_and_stays_in_its_directory() {
     let dir = tempfile::tempdir().unwrap();

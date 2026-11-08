@@ -64,16 +64,17 @@ Only a normalization renumbers them ([`AGENTS.md` §3](../AGENTS.md#3-adr-rules)
    silently.
 5. **G-5** — When a fenced code block names a language with a TextMate grammar, `railroad`, or
    `rough`, the system shall highlight or draw it in every output. When the engine a block needs is
-   missing on the host, or its program is missing or fails, it shall keep the block as plain code
-   and report a warning.
+   missing on the host, or fails, such as a program that is missing or a text the engine cannot
+   read, it shall keep the block as plain code and report a warning.
 6. **G-6** — When a file below the project root changes while `nectar serve` runs, the system shall
    rebuild and reload every connected browser. Errors appear in a panel on the page, and the server
    keeps running.
 7. **G-7** — When a link, include or image points outside the project root, the system shall not
    follow it and shall report it with file and line.
-8. **G-8** — When `nectar-core` and the renderers are compiled for `wasm32-unknown-unknown`, the
-   build shall succeed, and a project given as files in memory shall produce the same website as
-   the command line with the same code engines.
+8. **G-8** — When `nectar-core`, the renderers and the portable code engines, railroad and rough,
+   are compiled for `wasm32-unknown-unknown`, they shall build and link into one module, and a
+   project given as files in memory shall produce the same website as the command line with the
+   same code engines.
 9. **G-9** — When a source contains raw HTML and `nectar.toml` does not set `html = true`, the
    system shall show it as text and report a warning with file and line; with `html = true` it
    shall pass it to the website, while the PDF still reports it (G-4).
@@ -83,7 +84,8 @@ Only a normalization renumbers them ([`AGENTS.md` §3](../AGENTS.md#3-adr-rules)
 11. **G-11** — When `nectar render` is given a language and a text, the system shall write the
     output of the code engine that supports the language, as the format `-f` or the extension of
     `-o` names, to the file `-o` names or to standard output, and shall exit non-zero and write
-    nothing when no engine supports the language or the output does not allow the format.
+    nothing when no engine supports the language, the output does not allow the format, or the
+    engine fails.
 12. **G-12** — When a code block or `nectar render` names `rough` and its text is an SVG, the
     system shall return a sketch of it: every shape redrawn in its own colours, styled by the
     `data-rough-*` attributes on it or an ancestor, over those of the `<use>` that draws it, over

@@ -76,12 +76,13 @@ release/install-nectar.sh
 .claude/settings.json # Claude Code permissions: deny reading .env files (see SECURITY.md)
 Cargo.toml            # Cargo workspace of Nectar
 Cargo.lock            # the versions of every crate Nectar builds with, kept for --locked
-deny.toml             # cargo-deny: the licences and the crates allowed (ADR-0014)
+deny.toml             # cargo-deny: the licences and the crates allowed (ADR-0008)
 crates/core/          # Nectar: Markdown dialect, document model and transform passes
 crates/html/          # Nectar: website, print view and the built-in theme
 crates/pdf/           # Nectar: PDF typeset with Typst, with its fonts
 crates/textmate/      # Nectar: code highlighting with TextMate grammars and themes
 crates/railroad/      # Nectar: railroad diagrams from (E)BNF
+crates/wasm-link/     # Nectar: the WebAssembly module the build check links, no product
 crates/process/       # Nectar: code engines that run a local command, such as Graphviz
 crates/fetch/         # Nectar: fetcher that downloads images from the web
 crates/server/        # Nectar: local server that rebuilds and reloads the browser

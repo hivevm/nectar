@@ -37,8 +37,8 @@ PlantUML.
 
 - `nectar-textmate` stays free of host technology under
   [ADR-0009](0009-ports-and-adapters-technology.md) and stays among the crates the structural
-  test reads; the WebAssembly step of `scripts/check-build.sh` checks the core, the renderers and
-  the railroad engine.
+  test reads; the WebAssembly step of `scripts/check-build.sh` links the core, the renderers and
+  the railroad and rough engines.
 - In a WebAssembly host without a highlighting engine, code blocks stay plain code, as G-5 has
   them for a missing engine.
 
@@ -78,7 +78,7 @@ highlighter that builds for `wasm32-unknown-unknown`, which a superseding ADR ta
 
 ## Enforcement
 
-The WebAssembly step of `scripts/check-build.sh` cites this ADR beside G-8: it checks the core,
-the renderers and the railroad engine for `wasm32-unknown-unknown`, and fails when one of them
-comes to depend on `nectar-textmate`. `crates/cli/tests/structure.rs`, citing
-ADR-0009 and Q-1, keeps `nectar-textmate` free of host technology.
+The WebAssembly step of `scripts/check-build.sh` cites this ADR beside G-8: it links the core,
+the renderers and the railroad and rough engines for `wasm32-unknown-unknown` into one module,
+and fails when one of them comes to depend on `nectar-textmate`. `crates/cli/tests/structure.rs`,
+citing ADR-0009 and Q-1, keeps `nectar-textmate` free of host technology.

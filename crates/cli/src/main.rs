@@ -379,7 +379,7 @@ fn write(build: &Build, dir: &Path) -> io::Result<()> {
 }
 
 /// The defaults of the rough engine from `[engine.rough]`, every key but `enabled` an option of
-/// its `data-rough-*` attributes in snake case (ADR-0021).
+/// its `data-rough-*` attributes in snake case (ADR-0015).
 fn rough_defaults(config: &toml::Table) -> Result<RoughStyle> {
     let mut defaults = RoughStyle::default();
     let Some(table) = config.get("rough") else {
@@ -444,7 +444,7 @@ fn engines(config: &toml::Table) -> Result<Vec<Box<dyn CodeEngine>>> {
     let rough = rough_defaults(config)?;
     if enabled("rough") {
         engines.push(Box::new(
-            Rough::new(nectar_pdf::FONT_FILES).with_defaults(rough),
+            Rough::new(render::bundled_fonts()).with_defaults(rough),
         ));
     }
 
