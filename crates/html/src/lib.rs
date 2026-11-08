@@ -20,6 +20,7 @@ use nectar_core::{
 use serde::Serialize;
 
 pub use crate::print::PrintRenderer;
+pub use crate::write::standalone_highlighted;
 use crate::write::{PageWriter, escape};
 
 const DEFAULT_LAYOUT: &str = include_str!("../theme/layouts/page.html");

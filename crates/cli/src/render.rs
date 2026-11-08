@@ -2,13 +2,13 @@
 //! (ADR-0018). A PNG is the SVG rasterized with the bundled fonts only
 //! (ADR-0017).
 
-use std::fmt::Write as _;
 use std::path::Path;
 
 use anyhow::{Context, Result, anyhow, bail};
 use clap::ValueEnum;
-use nectar_core::model::{HighlightedCode, Token, TokenStyle};
+use nectar_core::model::{HighlightedCode, Token};
 use nectar_core::{CodeEngine, EngineOutput};
+use nectar_html::standalone_highlighted;
 use resvg::{tiny_skia, usvg};
 
 /// An output format of `nectar render`.
@@ -77,7 +77,7 @@ pub fn render(
             svg.into_bytes()
         }
         (EngineOutput::Highlighted(code), Format::Ansi) => ansi(&code).into_bytes(),
-        (EngineOutput::Highlighted(code), _) => html(&code).into_bytes(),
+        (EngineOutput::Highlighted(code), _) => standalone_highlighted(&code).into_bytes(),
     })
 }
 
@@ -106,73 +106,6 @@ fn png(svg: &str) -> Result<Vec<u8>> {
         tiny_skia::Pixmap::new(size.width(), size.height()).context("the graphic has no area")?;
     resvg::render(&tree, tiny_skia::Transform::default(), &mut pixmap.as_mut());
     pixmap.encode_png().context("cannot encode the PNG")
-}
-
-/// A standalone `<pre>` with inline styles, in the colours of the light theme.
-fn html(code: &HighlightedCode) -> String {
-    let mut style = String::new();
-    if let Some(color) = &code.foreground {
-        let _ = write!(style, "color:{color};");
-    }
-    if let Some(background) = &code.background {
-        let _ = write!(style, "background:{background};");
-    }
-    let mut out = format!(
-        "<pre style=\"{style}\"><code class=\"language-{}\">",
-        escape(&code.language)
-    );
-    for (index, line) in code.lines.iter().enumerate() {
-        if index > 0 {
-            out.push('\n');
-        }
-        for token in line {
-            let css = css(&token.style);
-            if css.is_empty() {
-                out.push_str(&escape(&token.text));
-            } else {
-                let _ = write!(out, "<span style=\"{css}\">{}</span>", escape(&token.text));
-            }
-        }
-    }
-    out.push_str("</code></pre>\n");
-    out
-}
-
-fn css(style: &TokenStyle) -> String {
-    let mut css = String::new();
-    if let Some(color) = &style.color {
-        let _ = write!(css, "color:{color};");
-    }
-    if let Some(background) = &style.background {
-        let _ = write!(css, "background:{background};");
-    }
-    if style.bold {
-        css.push_str("font-weight:bold;");
-    }
-    if style.italic {
-        css.push_str("font-style:italic;");
-    }
-    match (style.underline, style.strikethrough) {
-        (true, true) => css.push_str("text-decoration:underline line-through;"),
-        (true, false) => css.push_str("text-decoration:underline;"),
-        (false, true) => css.push_str("text-decoration:line-through;"),
-        (false, false) => {}
-    }
-    css
-}
-
-fn escape(text: &str) -> String {
-    let mut escaped = String::with_capacity(text.len());
-    for c in text.chars() {
-        match c {
-            '&' => escaped.push_str("&amp;"),
-            '<' => escaped.push_str("&lt;"),
-            '>' => escaped.push_str("&gt;"),
-            '"' => escaped.push_str("&quot;"),
-            _ => escaped.push(c),
-        }
-    }
-    escaped
 }
 
 /// 24-bit colour escape sequences in the colours of the light theme. Every line is filled with
