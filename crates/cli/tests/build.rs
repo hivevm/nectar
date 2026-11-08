@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use nectar_core::{MemoryFiles, Project};
-use nectar_html::{HtmlRenderer, PrintRenderer};
+use nectar_html::{EpubRenderer, HtmlRenderer, PrintRenderer};
 use nectar_pdf::PdfRenderer;
 use nectar_railroad::Railroad;
 use nectar_textmate::{DEFAULT_DARK_THEME, DEFAULT_THEME, TextMate};
@@ -229,6 +229,10 @@ fn two_builds_of_the_guide_are_byte_identical() {
                 output.status.success(),
                 "{}",
                 String::from_utf8_lossy(&output.stderr)
+            );
+            assert!(
+                dir.join("epub/GUIDE.epub").is_file(),
+                "the guide enables its EPUB"
             );
             files(&dir)
         })
@@ -850,8 +854,9 @@ fn files_in_memory_build_the_same_website_as_the_command_line() {
     let web = HtmlRenderer {
         print_view: true,
         pdf: true,
+        epub: true,
     };
-    let build = project.build(&[&web, &PrintRenderer, &PdfRenderer]);
+    let build = project.build(&[&web, &PrintRenderer, &PdfRenderer, &EpubRenderer::default()]);
     assert!(build.diagnostics.is_empty(), "{:?}", build.diagnostics);
 
     assert_eq!(
@@ -883,4 +888,204 @@ fn the_command_line_hands_nectar_variables_to_the_project() {
     assert!(output.status.success());
     let page = fs::read_to_string(root.join("public/index.html")).unwrap();
     assert!(page.contains("Version 2.0."), "{page}");
+}
+
+/// The entries of an EPUB by their names, inflated. Its central directory holds where each is.
+fn epub_entries(bytes: &[u8]) -> BTreeMap<String, Vec<u8>> {
+    let u16_at = |at: usize| usize::from(u16::from_le_bytes([bytes[at], bytes[at + 1]]));
+    let u32_at = |at: usize| {
+        u32::from_le_bytes([bytes[at], bytes[at + 1], bytes[at + 2], bytes[at + 3]]) as usize
+    };
+    let end = bytes.len() - 22;
+    let mut at = u32_at(end + 16);
+    let mut entries = BTreeMap::new();
+    for _ in 0..u16_at(end + 10) {
+        let name_length = u16_at(at + 28);
+        let name = String::from_utf8(bytes[at + 46..at + 46 + name_length].to_vec()).unwrap();
+        let local = u32_at(at + 42);
+        let start = local + 30 + u16_at(local + 26);
+        let packed = &bytes[start..start + u32_at(at + 20)];
+        let data = if u16_at(at + 10) == 8 {
+            miniz_oxide::inflate::decompress_to_vec(packed).unwrap()
+        } else {
+            packed.to_vec()
+        };
+        entries.insert(name, data);
+        at += 46 + name_length;
+    }
+    entries
+}
+
+// Verifies: Q-2, G-13
+#[test]
+fn every_block_of_the_guide_website_is_in_the_epub_or_reported() {
+    let guide = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/guide");
+    let out = tempfile::tempdir().unwrap();
+    let output = nectar(&guide, &["build", "--output", out.path().to_str().unwrap()]);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(output.status.success(), "{stderr}");
+    let images_left_out = stderr
+        .lines()
+        .filter(|l| l.contains("is not embedded in the EPUB"))
+        .count();
+
+    let mut web = String::new();
+    for (path, bytes) in files(out.path()) {
+        if path.starts_with("print") || path.extension().is_none_or(|e| e != "html") {
+            continue;
+        }
+        let page = String::from_utf8(bytes).unwrap();
+        let start = page.find("<main class=\"markdown\">").expect("content");
+        let end = page[start..].find("</main>").unwrap() + start;
+        web.push_str(&page[start..end]);
+    }
+    // The chapters, without the cover and the navigation document.
+    let epub = fs::read(out.path().join("epub/GUIDE.epub")).unwrap();
+    let mut book = String::new();
+    for (name, bytes) in epub_entries(&epub) {
+        if name.starts_with("OEBPS/text/c") && name.ends_with(".xhtml") && !name.contains("cover") {
+            book.push_str(&String::from_utf8(bytes).unwrap());
+        }
+    }
+
+    let count = |text: &str, patterns: &[&str]| -> usize {
+        patterns.iter().map(|p| text.matches(p).count()).sum()
+    };
+    // The website titles its contents in its layout; the EPUB has them in the navigation document.
+    let web = web.replace("<h2 class=\"contents-title\">", "");
+    let kinds: [(&str, &[&str], usize); 4] = [
+        ("headings", &["<h1", "<h2", "<h3", "<h4", "<h5", "<h6"], 0),
+        ("tables", &["<table"], 0),
+        ("pictures", &["<img"], images_left_out),
+        ("code blocks", &["<pre"], 0),
+    ];
+    for (kind, patterns, left_out) in kinds {
+        let (on_web, in_book) = (count(&web, patterns), count(&book, patterns));
+        assert!(on_web > 0, "the guide has no {kind}");
+        assert_eq!(
+            in_book + left_out,
+            on_web,
+            "{kind}: {left_out} reported as left out"
+        );
+    }
+    // The text of every paragraph, without its markup and the symbols the EPUB reports as left out.
+    let paragraphs = |html: &str| -> Vec<String> {
+        let mut found: Vec<String> = html
+            .split("<p>")
+            .skip(1)
+            .filter_map(|part| part.split_once("</p>"))
+            .map(|(paragraph, _)| {
+                let mut text = String::new();
+                let mut in_tag = false;
+                for c in paragraph
+                    .replace("<span class=\"symbol\"", "\0<span")
+                    .chars()
+                {
+                    match c {
+                        '<' => in_tag = true,
+                        '>' => in_tag = false,
+                        c if !in_tag => text.push(c),
+                        _ => {}
+                    }
+                }
+                text.split('\0')
+                    .next()
+                    .unwrap_or_default()
+                    .trim()
+                    .to_string()
+            })
+            .collect();
+        found.sort();
+        found
+    };
+    let (on_web, in_book) = (paragraphs(&web), paragraphs(&book));
+    assert!(!on_web.is_empty());
+    assert_eq!(on_web.len(), in_book.len());
+    for (on_web, in_book) in on_web.iter().zip(&in_book) {
+        assert_eq!(on_web, in_book);
+    }
+}
+
+// Verifies: ADR-draft-epub-renderer
+#[test]
+fn source_date_epoch_sets_the_time_of_an_epub() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(
+        root,
+        "nectar.toml",
+        "[[document]]\nsource = \"book.md\"\n\n[document.epub]\nenabled = true\nlanguage = \"en\"\n",
+    );
+    write(root, "book.md", "# Book\n");
+    let build = |epoch: Option<&str>, out: &str| {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_nectar"));
+        command
+            .current_dir(root)
+            .args(["-C", ".", "--offline", "build", "--output", out])
+            .env_remove("SOURCE_DATE_EPOCH");
+        if let Some(epoch) = epoch {
+            command.env("SOURCE_DATE_EPOCH", epoch);
+        }
+        command.output().unwrap()
+    };
+    let package = |out: &str| {
+        let epub = fs::read(root.join(out).join("epub/book.epub")).unwrap();
+        String::from_utf8(epub_entries(&epub).remove("OEBPS/content.opf").unwrap()).unwrap()
+    };
+    let modified = |time: &str| format!("<meta property=\"dcterms:modified\">{time}</meta>");
+
+    assert!(build(None, "fixed").status.success());
+    assert!(package("fixed").contains(&modified("1980-01-01T00:00:00Z")));
+
+    // The last second a date of four digits can hold.
+    assert!(build(Some("253402300799"), "last").status.success());
+    assert!(package("last").contains(&modified("9999-12-31T23:59:59Z")));
+
+    // 2000-02-29 is a leap day, and a whole number of days and 01:02:03 past the epoch.
+    assert!(build(Some("951786123"), "set").status.success());
+    assert!(
+        package("set").contains(&modified("2000-02-29T01:02:03Z")),
+        "{}",
+        package("set")
+    );
+
+    for malformed in ["", "soon", "-1", "+5", "1.5", "253402300800"] {
+        let output = build(Some(malformed), "malformed");
+        assert!(!output.status.success(), "{malformed:?} exits zero");
+        assert!(String::from_utf8_lossy(&output.stderr).contains("SOURCE_DATE_EPOCH"));
+    }
+
+    // A project that enables no EPUB builds as if the variable were not set.
+    write(root, "nectar.toml", "[[document]]\nsource = \"book.md\"\n");
+    let output = build(Some("soon"), "without");
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+// Verifies: G-10, ADR-draft-epub-renderer
+#[test]
+fn a_markdown_file_gives_no_epub_and_ignores_source_date_epoch() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(root, "note.md", "# Note\n");
+    let output = Command::new(env!("CARGO_BIN_EXE_nectar"))
+        .current_dir(root)
+        .args(["--offline", "build", "note.md"])
+        .env("SOURCE_DATE_EPOCH", "soon")
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let names: Vec<_> = files(root).into_keys().collect();
+    assert_eq!(
+        names,
+        [PathBuf::from("note.md"), PathBuf::from("note.pdf")],
+        "only the PDF is written"
+    );
 }

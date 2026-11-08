@@ -19,6 +19,8 @@ pub struct Document {
     pub contents: bool,
     /// Settings of the print renderer from `[document.print]`, read by that renderer.
     pub print: toml::Table,
+    /// Settings of the EPUB renderer from `[document.epub]`, read by that renderer.
+    pub epub: toml::Table,
     pub root: Chapter,
     /// Footnotes of the whole document, ordered by number.
     pub footnotes: Vec<Footnote>,

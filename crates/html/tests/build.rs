@@ -224,6 +224,7 @@ fn print_view_is_one_paged_file_per_document() {
     let web = HtmlRenderer {
         print_view: true,
         pdf: false,
+        epub: false,
     };
     let build = Project::load(Box::new(root.clone()))
         .unwrap()
@@ -301,6 +302,7 @@ fn print_view_can_be_turned_off_and_reports_bad_settings() {
     let web = HtmlRenderer {
         print_view: true,
         pdf: false,
+        epub: false,
     };
     let build = Project::load(Box::new(root.clone()))
         .unwrap()

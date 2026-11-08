@@ -25,6 +25,8 @@ to invent.
   makes the request. _Avoid:_ downloader, HTTP client.
 - **Files** — the port through which the core reads the project's files, by paths relative to the
   project root; the host's adapter keeps every access inside it. _Avoid:_ file system, VFS.
+- **EPUB** — a publication for reading systems such as e-readers: one ZIP container of XHTML content
+  documents, images, graphics and a navigation document. A document enables it.
 - **Host** — what a shell runs on, which decides the adapters available: a machine, a browser,
   another program.
 - **Pass** — one step that enriches the document model, such as section numbers, footnotes or code
@@ -35,7 +37,7 @@ to invent.
   that file; its root bounds everything a build reads. `nectar render` reads only the file it is
   given and, with `-C`, the project's `nectar.toml`.
 - **Renderer** — the port that turns the enriched document model into output files: the website,
-  the print view, the PDF.
+  the print view, the PDF, the EPUB.
 - **Shell** — a thin program around the core: the command line, the server, a WebAssembly build.
   _Avoid:_ frontend, wrapper.
 - **Sketch** — a graphic the rough engine redrew from an SVG in a hand-drawn style: wobbly

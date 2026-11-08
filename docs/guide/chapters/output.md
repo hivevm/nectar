@@ -11,6 +11,7 @@ public/
   <document>/<asset path>    local images and files, relative to the start document
   <document>/_remote/        images from the web
   <document>/print/          print view and PDF
+  <document>/epub/           the EPUB, when the document enables it
   _graphics/<hash>.svg       diagrams, named by their content
   _theme/                    the theme's static files
 ```

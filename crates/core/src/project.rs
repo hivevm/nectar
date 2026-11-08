@@ -120,6 +120,7 @@ impl Project {
                 numbered: document.numbered,
                 contents: document.contents,
                 print: document.print.clone(),
+                epub: document.epub.clone(),
                 root,
                 footnotes: Vec::new(),
                 assets: BTreeMap::new(),

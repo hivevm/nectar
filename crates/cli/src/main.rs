@@ -14,7 +14,7 @@ use anyhow::{Context, Result, anyhow, bail};
 use clap::{Parser, Subcommand};
 use nectar_core::{Build, CodeEngine, Config, Diagnostic, Project, Renderer, Severity};
 use nectar_fetch::Http;
-use nectar_html::{HtmlRenderer, PrintRenderer};
+use nectar_html::{DEFAULT_MODIFIED, EpubRenderer, HtmlRenderer, PrintRenderer};
 use nectar_native::{Directory, Threads};
 use nectar_pdf::PdfRenderer;
 use nectar_process::Process;
@@ -329,17 +329,75 @@ fn render_text(
     Ok(ExitCode::SUCCESS)
 }
 
-/// The renderers of every build: the website with its print view and PDF links, the print view
-/// and the PDF. `build` and `serve` share them, so both write the same site.
+/// The renderers of every build: the website with its links to the other outputs, the print view,
+/// the PDF and the EPUB. `build` and `serve` share them, so both write the same site.
 fn renderers() -> Renderers {
     Arc::new(vec![
         Box::new(HtmlRenderer {
             print_view: true,
             pdf: true,
+            epub: true,
         }),
         Box::new(PrintRenderer),
         Box::new(PdfRenderer),
+        Box::new(EpubRenderer {
+            modified: modified(),
+        }),
     ])
+}
+
+/// `dcterms:modified` of the EPUBs: `SOURCE_DATE_EPOCH` when the host sets it, or a fixed time, so
+/// that a build stays reproducible (Q-3). A malformed value concerns only a document that enables
+/// an EPUB, so the renderer reports it.
+fn modified() -> Result<String, String> {
+    match std::env::var("SOURCE_DATE_EPOCH") {
+        Ok(value) => {
+            utc_time(&value).map_err(|e| format!("SOURCE_DATE_EPOCH is malformed: {value}: {e:#}"))
+        }
+        Err(std::env::VarError::NotPresent) => Ok(DEFAULT_MODIFIED.to_string()),
+        Err(e) => Err(format!("SOURCE_DATE_EPOCH is malformed: {e}")),
+    }
+}
+
+/// Seconds since the epoch as `YYYY-MM-DDThh:mm:ssZ`, for the years up to 9999.
+fn utc_time(seconds: &str) -> Result<String> {
+    const SECONDS_PER_DAY: u64 = 86_400;
+    const END_OF_YEAR_9999: u64 = 253_402_300_800;
+    if seconds.is_empty() || !seconds.bytes().all(|b| b.is_ascii_digit()) {
+        bail!("no whole number of seconds");
+    }
+    let seconds: u64 = seconds.parse().context("too large")?;
+    if seconds >= END_OF_YEAR_9999 {
+        bail!("past the year 9999");
+    }
+    let (year, month, day) = civil_date(seconds / SECONDS_PER_DAY);
+    let time = seconds % SECONDS_PER_DAY;
+    Ok(format!(
+        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}Z",
+        time / 3600,
+        time % 3600 / 60,
+        time % 60
+    ))
+}
+
+/// The date of a day since the epoch in the proleptic Gregorian calendar, after Howard Hinnant,
+/// `civil_from_days`: years count from March, so that a leap day ends its year.
+fn civil_date(days: u64) -> (u64, u64, u64) {
+    let shifted = days + 719_468;
+    let era = shifted / 146_097;
+    let day_of_era = shifted % 146_097;
+    let year_of_era =
+        (day_of_era - day_of_era / 1460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
+    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
+    let shifted_month = (5 * day_of_year + 2) / 153;
+    let day = day_of_year - (153 * shifted_month + 2) / 5 + 1;
+    let month = if shifted_month < 10 {
+        shifted_month + 3
+    } else {
+        shifted_month - 9
+    };
+    let year = year_of_era + era * 400 + u64::from(month <= 2);
+    (year, month, day)
 }
 
 fn open(root: &Path, drafts: bool, offline: bool) -> Result<Project> {

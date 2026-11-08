@@ -4,8 +4,10 @@
 //! through the theme's `layouts/page.html`, a minijinja template; files in the theme's `static/`
 //! directory are copied to `_theme/` in the output.
 
+mod epub;
 mod print;
 mod write;
+mod zip;
 
 use std::collections::{BTreeSet, HashMap};
 use std::fmt::Write as _;
@@ -19,6 +21,7 @@ use nectar_core::{
 };
 use serde::Serialize;
 
+pub use crate::epub::{DEFAULT_MODIFIED, EpubRenderer};
 pub use crate::print::PrintRenderer;
 pub use crate::write::standalone_highlighted;
 use crate::write::{PageWriter, escape};
@@ -125,6 +128,8 @@ pub struct HtmlRenderer {
     pub print_view: bool,
     /// Link every page to the PDF file of its document, written by a PDF renderer.
     pub pdf: bool,
+    /// Link every page to the EPUB of its document, written by [`EpubRenderer`].
+    pub epub: bool,
 }
 
 struct Page<'d> {
@@ -139,6 +144,7 @@ struct Page<'d> {
 struct PrintLinks {
     view: bool,
     pdf: bool,
+    epub: bool,
 }
 
 /// An entry of the menu tree in the sidebar.
@@ -196,6 +202,7 @@ impl Renderer for HtmlRenderer {
             let links = PrintLinks {
                 view: self.print_view && settings.as_ref().is_some_and(|s| s.enabled),
                 pdf: self.pdf && settings.as_ref().is_some_and(|s| s.pdf),
+                epub: self.epub && epub::EpubSettings::of(document).is_ok_and(|s| s.enabled),
             };
             render_document(
                 document,
@@ -241,6 +248,7 @@ fn render_document(
             footnotes: BTreeSet::new(),
             inline_notes: None,
             heading_anchors: true,
+            epub: None,
         };
         writer.blocks(&page.chapter.blocks, false);
         writer.footnotes(&document.footnotes);
@@ -278,6 +286,7 @@ fn render_document(
             breadcrumb => Value::from(Serde(&breadcrumb)),
             print => links.view.then(|| relative_url(&page.file, &print::print_file(document))),
             pdf => links.pdf.then(|| relative_url(&page.file, &pdf_file(document))),
+            epub => links.epub.then(|| relative_url(&page.file, &epub::epub_file(document))),
             toc => Value::from(Serde(&toc(page.chapter, nested))),
             contents => Value::from(Serde(&page_contents)),
             prev => Value::from(Serde(&prev)),

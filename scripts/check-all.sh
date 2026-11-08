@@ -207,6 +207,7 @@ run "Git hooks self-test" scripts/test-git-hooks.sh
 run "Shell lint self-test" scripts/test-check-shell.sh
 run "Shell lint" scripts/check-shell.sh
 run "Build, test, lint" scripts/check-build.sh
+run "EPUB conformance" scripts/check-epub.sh
 # Not a gate: .github/workflows/nectar-release.yml
 run "Release" scripts/release.sh
 
