@@ -82,6 +82,7 @@ crates/html/          # Nectar: website, print view and the built-in theme
 crates/pdf/           # Nectar: PDF typeset with Typst, with its fonts
 crates/textmate/      # Nectar: code highlighting with TextMate grammars and themes
 crates/railroad/      # Nectar: railroad diagrams from (E)BNF
+crates/wasm-link/     # Nectar: the WebAssembly module the build check links, no product
 crates/process/       # Nectar: code engines that run a local command, such as Graphviz
 crates/fetch/         # Nectar: fetcher that downloads images from the web
 crates/server/        # Nectar: local server that rebuilds and reloads the browser

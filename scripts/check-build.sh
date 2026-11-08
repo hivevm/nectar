@@ -11,9 +11,11 @@
 # - the tests of the workspace;
 # - a build of the user guide in docs/guide, which has to succeed where Graphviz and PlantUML
 #   are missing: their blocks stay code and are reported as warnings;
-# - a check of the core, the renderers and the railroad and rough engines for wasm32-unknown-unknown
-#   (Verifies: G-8, ADR-0012), so nothing that cannot run in a browser creeps in, nectar-textmate
-#   included, which runs on native hosts only; the target comes with the toolchain set-up;
+# - a build of nectar-wasm-link for wasm32-unknown-unknown, which links the core, the renderers
+#   and the railroad and rough engines into one module (Verifies: G-8, ADR-0012), so nothing that
+#   cannot run in a browser creeps in, nectar-textmate included, which runs on native hosts only,
+#   and a link error, such as a second getrandom backend, fails it; the target comes with the
+#   toolchain set-up, and the profile wasm-link keeps the build short;
 # - cargo-deny against deny.toml: licences compatible with BSD-3-Clause only, the exception the
 #   specification names aside; the sources of every crate; and none of the technology crates
 #   ADR-0009 keeps out of the core and the renderers. Advisories
@@ -46,8 +48,8 @@ step "Formatting" cargo fmt --all --check
 step "Clippy" cargo clippy --workspace --all-targets -- -D warnings
 step "Tests" cargo test --workspace
 step "Guide build" cargo run --quiet -p nectar -- -C docs/guide build --output "$ROOT/target/guide"
-step "WebAssembly" cargo check --quiet --target wasm32-unknown-unknown \
-  -p nectar-core -p nectar-html -p nectar-pdf -p nectar-railroad -p nectar-rough
+step "WebAssembly" cargo build --quiet --profile wasm-link --target wasm32-unknown-unknown \
+  -p nectar-wasm-link
 step "Dependencies" cargo deny --all-features check licenses bans sources
 
 printf '\n'
