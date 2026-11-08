@@ -635,7 +635,7 @@ fn the_guide_uses_every_feature_it_explains() {
             .any(|s| !s.is_empty() && s.chars().all(|c| c.is_ascii_lowercase() || c == '_'))
             && l.matches('@').count() >= 2
     };
-    let features: [(&str, bool); 17] = [
+    let features: [(&str, bool); 18] = [
         (
             "an included chapter",
             any(&|l| l.starts_with('[') && l.contains("](") && l.ends_with(".md)")),
@@ -676,6 +676,7 @@ fn the_guide_uses_every_feature_it_explains() {
         ("a railroad diagram", fences.iter().any(|f| f == "railroad")),
         ("a Graphviz diagram", fences.iter().any(|f| f == "dot")),
         ("a PlantUML diagram", fences.iter().any(|f| f == "uml")),
+        ("a rough sketch", fences.iter().any(|f| f == "rough")),
         (
             "an alert",
             any(&|l| {
