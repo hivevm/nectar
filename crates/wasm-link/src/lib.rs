@@ -11,10 +11,9 @@ use nectar_pdf::PdfRenderer;
 use nectar_railroad::Railroad;
 use nectar_rough::Rough;
 
-/// Builds a project with a railroad diagram and a sketch into the website and the PDF, and
-/// returns the number of files written, or 0 when the project cannot be read.
+/// Builds a project with a railroad diagram and a sketch into the website and the PDF.
 #[unsafe(no_mangle)]
-pub extern "C" fn build() -> usize {
+pub extern "C" fn build() {
     let files = MemoryFiles::new();
     files.insert("nectar.toml", "[[document]]\nsource = \"main.md\"\n");
     files.insert(
@@ -23,15 +22,10 @@ pub extern "C" fn build() -> usize {
          <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\">\
          <rect width=\"5\" height=\"5\"/></svg>\n```\n",
     );
-    let Ok(mut project) = Project::load(Box::new(files)) else {
-        return 0;
-    };
+    let mut project = Project::load(Box::new(files)).expect("the project is valid");
     project.add_engine(Box::new(Railroad));
     project.add_engine(Box::new(Rough::new(
         Arc::new(usvg::fontdb::Database::new()),
     )));
-    project
-        .build(&[&HtmlRenderer::default(), &PdfRenderer])
-        .files
-        .len()
+    project.build(&[&HtmlRenderer::default(), &PdfRenderer]);
 }

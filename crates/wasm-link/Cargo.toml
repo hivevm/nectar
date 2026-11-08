@@ -8,6 +8,8 @@ publish = false
 
 [lib]
 crate-type = ["cdylib"]
+# Nothing to test: the WebAssembly step builds it, and a native test binary would be empty.
+test = false
 
 [dependencies]
 nectar-core = { version = "0.1.0", path = "../core" }
