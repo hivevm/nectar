@@ -1,4 +1,4 @@
-# ADR-0019: A code engine `rough` redraws an SVG in a hand-drawn style
+# ADR-0013: A code engine `rough` redraws an SVG in a hand-drawn style
 
 - **Status:** 🟢 accepted
 - **Date:** 2026-11-07
@@ -9,18 +9,17 @@
 
 The writer wants to turn an SVG into another SVG, or a PNG, drawn as if sketched by hand, in the
 style of Rough.js: wobbly double strokes and fills of hachure lines instead of solid colour. The
-first use is `nectar render` ([ADR-0018](0018-render-command.md)): `nectar render rough in.svg -o
+first use is `nectar render` ([ADR-0017](0017-render-command.md)): `nectar render rough in.svg -o
 out.png`.
 
 Forces:
 
-- [ADR-0018](0018-render-command.md) runs one code engine on one text and converts the engine's
+- [ADR-0017](0017-render-command.md) runs one code engine on one text and converts the engine's
   `Graphic` to `svg` or `png` itself. A code engine whose text is an SVG gets both formats, and the
   port `CodeEngine` stays as it is.
-- An engine is the same set in `render`, `build` and `serve` (ADR-0018). A `rough` engine is also
-  a fenced code block ```` ```rough ```` in a document. G-5 names the languages that are drawn
-  today; a criterion for `rough` is drafted with this ADR and lands as a specification change by
-  the human ([`AGENTS.md` §3](../../AGENTS.md#3-adr-rules), rule 7).
+- An engine is the same set in `render`, `build` and `serve` (ADR-0017). A `rough` engine is also
+  a fenced code block ```` ```rough ```` in a document. G-5 names `rough` among the languages
+  that are drawn, and G-12 says what a sketch is.
 - Rough.js takes its style per shape: `fillStyle`, `hachureAngle`, `hachureGap`, `fillWeight`,
   `roughness` and more. An SVG has no place for them but attributes; the colours it already has,
   `stroke`, `fill` and `stroke-width`.
@@ -57,7 +56,7 @@ style of each shape taken from `data-rough-*` attributes on it or an ancestor.
 - **Paint.** A gradient fills or strokes with its first stop; a pattern does not paint.
 - **Seed.** Without `data-rough-seed`, a fixed seed, so the same text gives the same graphic.
 - **Errors.** Text that is no SVG is an `EngineError`, as a failing engine is under G-5 and
-  ADR-0018.
+  ADR-0017.
 
 **Out of scope:** settings for the whole engine under `[engine.rough]` in `nectar.toml` beyond
 the `enabled` every built-in engine has; a sketch
@@ -72,7 +71,7 @@ technology the engine draws and parses with, which a separate ADR decides.
   `svg`.** Not chosen by the writer: it would sketch railroad and process output directly, but
   only on the command line, and a document could not ask for it.
 - **Style options on the command line, such as `--fill-style zigzag`.** Not chosen: one style
-  for the whole graphic, and ADR-0018 leaves engine options on the command line out of scope.
+  for the whole graphic, and ADR-0017 leaves engine options on the command line out of scope.
 - **Style from `[engine.rough]` in `nectar.toml` only.** Not chosen: one style per project, while
   Rough.js styles shapes one by one, as the examples of hivevm/rough do; a later ADR may add it as
   the defaults the attributes override.
@@ -102,12 +101,11 @@ technology the engine draws and parses with, which a separate ADR decides.
   format. Text is no longer text in the output, so it cannot be selected or searched.
 - Negative / trade-offs: a railroad diagram is sketched only by rendering it to SVG first and
   passing that through `rough`; two calls in a pipe.
-- Follow-ups: a criterion for `rough` in G-5; defaults under `[engine.rough]`; a sketch style
-  for the graphics of other engines.
+- Follow-ups: a sketch style for the graphics of other engines.
 
 ## Enforcement
 
-Tests in `crates/rough/` cite this ADR (`Verifies: ADR-0019`). They draw the
+Tests in `crates/rough/` cite this ADR (`Verifies: ADR-0013`). They draw the
 examples of hivevm/rough as SVG through the engine and check: every shape comes back as paths in
 its own colours; each of the seven fill styles gives its pattern; an attribute on a group reaches
 its shapes and one on a shape overrides it; the same text gives the same bytes; text that is no

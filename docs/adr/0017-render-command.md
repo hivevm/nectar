@@ -1,4 +1,4 @@
-# ADR-0018: `nectar render` runs one code engine on one text
+# ADR-0017: `nectar render` runs one code engine on one text
 
 - **Status:** 🟢 accepted
 - **Date:** 2026-11-07
@@ -16,7 +16,7 @@ Nectar does not build.
 
 Forces:
 
-- The command line is a public interface ([ADR-0015](0015-single-file-build.md)): what it accepts
+- The command line is a public interface ([ADR-0016](0016-single-file-build.md)): what it accepts
   binds scripts and users.
 - A snippet should look the same from the command line as in a built document, so the engines are
   the same set, configured the same way.
@@ -24,11 +24,10 @@ Forces:
   output format is a conversion of that, not a concern of each engine.
 - Confinement (Q-5): Nectar touches nothing the writer did not point it at. A process engine runs
   a program; it may only run when the writer named the configuration that sets it up.
-- [ADR-0015](0015-single-file-build.md) rejected the result depending on the directory the
+- [ADR-0016](0016-single-file-build.md) rejected the result depending on the directory the
   command runs in. The same holds here.
 
-The specification has no goal for this yet; a criterion for it is drafted with this ADR and lands
-as a specification change by the human ([`AGENTS.md` §3](../../AGENTS.md#3-adr-rules), rule 7).
+G-11 is the criterion for `render`: what it writes, where, and when it writes nothing.
 
 ## Decision
 
@@ -37,10 +36,11 @@ text from `FILE`, or from standard input when `FILE` is missing or `-`, runs the
 supports `LANGUAGE` as a code block's info string would select it, and writes the result to the
 file `-o` names, or to standard output.
 
-- **Engines.** The same set `build` and `serve` use. Without `-C`, only the built-in engines with
-  their defaults: `railroad` and TextMate highlighting. With `-C <dir>`, the `[engine]` table of
-  that directory's `nectar.toml` configures them as for a build, process engines included. No
-  `nectar.toml` is read unless `-C` names its directory.
+- **Engines.** The same set `build` and `serve` use. The built-in engines, `railroad`, `rough` and
+  TextMate highlighting, run in every command with their defaults, each unless
+  `[engine.<name>] enabled = false`; without a `nectar.toml` they are the only ones. Without
+  `-C`, `render` reads none. With `-C <dir>`, the `[engine]` table of that directory's
+  `nectar.toml` configures them as for a build, process engines included.
 - **Formats.** `-f` chooses among the formats the engine's output allows:
 
   | Output of the engine | Formats       | Default |
@@ -72,7 +72,7 @@ graphic becomes a PNG, which a separate ADR decides.
   The name keeps both ways of selecting the same.
 - **Read `nectar.toml` of the current directory when present.** Not chosen: the same call would
   run different engines, and possibly a program, depending on where it runs, which
-  [ADR-0015](0015-single-file-build.md) rejected for the same reason.
+  [ADR-0016](0016-single-file-build.md) rejected for the same reason.
 - **`ansi` as the default for highlighted code when standard output is a terminal.** Not chosen:
   a default that changes with where the output goes is harder to predict and to test; `-f ansi`
   is three words.
@@ -106,12 +106,12 @@ Recalled, not re-checked in this session:
   the website's, which may drift from it.
 - Negative / trade-offs: without `-C`, a process engine is not available, even when the current
   directory has a `nectar.toml` that sets it up; the error message has to say so.
-- Follow-ups: a specification criterion for `render`; whether the website's serialization of
-  highlighted code and the one of `render` should share code.
+- Follow-ups: none. The website and `render` write highlighted code as HTML through one token
+  writer in `nectar-html`.
 
 ## Enforcement
 
-Tests in `crates/cli/tests/render.rs` cite this ADR (`Verifies: ADR-0018`). They
+Tests in `crates/cli/tests/render.rs` cite this ADR (`Verifies: ADR-0017`). They
 run the built binary and check: `railroad` from standard input gives SVG on standard output; `-o
 x.png` gives a PNG; `-f ansi` and `-f html` for a TextMate language; a disallowed format, by `-f`
 or by the extension of `-o`, and an unknown language fail with nothing written, and an extension

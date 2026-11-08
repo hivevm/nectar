@@ -54,7 +54,7 @@ impl Fetcher for Http {
 
 // The golden path's test pattern: an adapter tested against a real counterpart on loopback, the
 // core's side against a fake behind the same port (nectar-core, download.rs).
-// Verifies: ADR-0014
+// Verifies: ADR-0008
 #[cfg(test)]
 mod tests {
     use super::*;

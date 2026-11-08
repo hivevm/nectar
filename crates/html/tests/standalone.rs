@@ -1,5 +1,5 @@
 //! Highlighted code as a standalone `<pre>`: inline colours of the light theme, no stylesheet
-//! (ADR-0018), written by the same token writer and escape as the site's.
+//! (ADR-0017), written by the same token writer and escape as the site's.
 
 use nectar_core::model::{HighlightedCode, Token, TokenStyle};
 use nectar_html::standalone_highlighted;
@@ -15,7 +15,7 @@ fn token(text: &str, style: TokenStyle) -> Token {
     }
 }
 
-// Verifies: ADR-0018
+// Verifies: ADR-0017
 #[test]
 fn highlighted_code_is_a_pre_with_the_inline_colours_of_the_light_theme() {
     let code = HighlightedCode {
@@ -78,7 +78,7 @@ fn highlighted_code_is_a_pre_with_the_inline_colours_of_the_light_theme() {
     );
 }
 
-// Verifies: ADR-0018
+// Verifies: ADR-0017
 #[test]
 fn a_block_without_colours_has_an_empty_style() {
     let code = HighlightedCode {

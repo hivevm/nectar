@@ -17,7 +17,7 @@
 #   enforces refuses a binary that needs more than glibc 2.35, in package too, which writes no
 #   archive then; and every font, script and image a crate embeds with include_bytes! or
 #   include_str! is named in the nearest NOTICE, and an archive's NOTICE carries every NOTICE of
-#   the crates, the theme's included, with the licence texts they point to (Verifies: ADR-0016);
+#   the crates, the theme's included, with the licence texts they point to (Verifies: ADR-0019);
 # - package <target> builds nectar for the Rust target in release mode with the locked versions,
 #   fails for a Linux target whose binary needs a glibc newer than 2.35, and packs the binary,
 #   LICENSE, and the NOTICE files of the crates as one NOTICE that ends with the licence texts
