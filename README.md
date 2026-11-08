@@ -55,8 +55,8 @@ lint in one go, as the pre-push hook and the `build` job of CI do
 - **Build:** `cargo build --workspace`
 - **Test:** `cargo test --workspace`, then `cargo run -p nectar -- -C docs/guide build`,
   which has to succeed even where Graphviz and PlantUML are missing, and
-  `cargo check --target wasm32-unknown-unknown -p nectar-core -p nectar-html -p nectar-pdf
-  -p nectar-railroad`
+  `cargo build --profile wasm-link --target wasm32-unknown-unknown -p nectar-wasm-link`, which
+  links the core, the renderers and the railroad and rough engines for WebAssembly
 - **Lint:** `cargo fmt --all --check`,
   `cargo clippy --workspace --all-targets -- -D warnings` and
   `cargo deny --all-features check licenses bans sources`; the repository checks with
