@@ -30,7 +30,7 @@ fi
 mkdir -p "$TOOL_DIR"
 if [[ ! -f "$ARCHIVE" ]]; then
   # Through a second name, so that an interrupted download leaves no archive behind.
-  curl -fsSL --retry 5 --retry-all-errors -o "$ARCHIVE.part" \
+  curl -fsSL --retry 5 --retry-delay 20 --retry-all-errors -o "$ARCHIVE.part" \
     "https://github.com/w3c/epubcheck/releases/download/v$EPUBCHECK_VERSION/epubcheck-$EPUBCHECK_VERSION.zip"
   mv "$ARCHIVE.part" "$ARCHIVE"
 fi

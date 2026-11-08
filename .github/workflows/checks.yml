@@ -220,6 +220,13 @@ jobs:
       - name: Install Graphviz
         run: sudo apt-get update && sudo apt-get install -y graphviz
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      # GitHub's release downloads fail for long stretches; a job that passed once needs none. The
+      # script holds the archive to its checksum either way. After rust-cache, so that this saves
+      # before rust-cache cleans target/.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target/epubcheck-5.3.0/epubcheck.zip
+          key: epubcheck-5.3.0-6c07e68584b2e2ce
       # The runner image brings Java, which EPUBCheck needs; this step fails clearly if it stops.
       - name: Show the Java runtime
         run: java -version
