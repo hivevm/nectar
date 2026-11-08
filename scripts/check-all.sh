@@ -185,10 +185,14 @@ run "Tests-kept sensor self-test" scripts/test-sensor-tests-kept.sh
 run "Tests-kept sensor" scripts/sensor-tests-kept.sh
 run "Binding ADRs sensor self-test" scripts/test-sensor-binding-adrs.sh
 run "Binding ADRs sensor" scripts/sensor-binding-adrs.sh
+run "Plain rules sensor self-test" scripts/test-sensor-plain-rules.sh
+run "Plain rules sensor" scripts/sensor-plain-rules.sh
 run "Revision-due sensor self-test" scripts/test-sensor-revision-due.sh
 run "Revision-due sensor" scripts/sensor-revision-due.sh
 run "Plan frontier sensor self-test" scripts/test-sensor-plan-frontier.sh
 run "Plan frontier sensor" scripts/sensor-plan-frontier.sh
+run "Backlog sensor self-test" scripts/test-sensor-backlog.sh
+run "Backlog sensor" scripts/sensor-backlog.sh
 run "Action references sensor self-test" scripts/test-sensor-action-refs.sh
 # Verifies: ADR-0011 — every action by its full commit SHA, kept current by Dependabot.
 run "Action references sensor" scripts/sensor-action-refs.sh --require sha
