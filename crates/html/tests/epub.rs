@@ -207,12 +207,12 @@ fn every_link_resolves(book: &BTreeMap<String, Vec<u8>>) {
                 continue;
             }
             let (file, fragment) = href.split_once('#').unwrap_or((href, ""));
-            let dir = Path::new(name.as_str()).parent().unwrap();
+            // Paths in a container use `/` on every host.
+            let dir = name.rsplit_once('/').map_or("", |(dir, _)| dir);
             let target = if file.is_empty() {
                 (*name).clone()
             } else {
-                let joined = dir.join(file).to_string_lossy().into_owned();
-                joined.replace("text/../", "")
+                format!("{dir}/{file}").replace("text/../", "")
             };
             let known = ids
                 .get(&target)
