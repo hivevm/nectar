@@ -1,4 +1,4 @@
-# ADR-draft-epub-renderer: An `EpubRenderer` in `nectar-html` writes an EPUB 3.3 publication for every document that enables it
+# ADR-0020: An `EpubRenderer` in `nectar-html` writes an EPUB 3.3 publication for every document that enables it
 
 - **Status:** 🟡 proposed
 - **Date:** 2026-11-08

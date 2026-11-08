@@ -1,4 +1,4 @@
-# ADR-draft-epub-zip-writer: A ZIP writer of our own packs the EPUB container, on `miniz_oxide` and `crc32fast`
+# ADR-0021: A ZIP writer of our own packs the EPUB container, on `miniz_oxide` and `crc32fast`
 
 - **Status:** 🟡 proposed
 - **Date:** 2026-11-08
@@ -7,7 +7,7 @@
 
 ## Context
 
-[ADR-draft-epub-renderer](draft-epub-renderer.md) leaves open how the container is packed. An EPUB
+[ADR-0020](0020-epub-renderer.md) leaves open how the container is packed. An EPUB
 is a ZIP archive under rules of its own (EPUB 3.3, sections 4.3.2 and 4.3.3): only stored and
 Deflate entries, no encryption, no extra field, `mimetype` as the first file and not compressed,
 and a `version needed to extract` of 10, 20 or 45. ZIP64 is allowed and is to be used only where
@@ -87,5 +87,5 @@ built container and fails in these cases:
 - two builds of one project differ in any byte.
 
 `miniz_oxide` is a regular dependency of `nectar-html`, so the test inflates with it. EPUBCheck, run
-by the check of [ADR-draft-epub-renderer](draft-epub-renderer.md), judges the container from
+by the check of [ADR-0020](0020-epub-renderer.md), judges the container from
 outside.
