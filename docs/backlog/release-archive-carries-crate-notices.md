@@ -14,9 +14,9 @@ shikijs.
 
 Decided by the maintainer on 2026-11-08 (ticket revision-2026-11-07/06): the bundled works now,
 the crates later, through an ADR that chooses the tool. It changes the release interface
-(ADR-0016) and the supply chain. Candidates: cargo-about, which generates the notices from the
+(ADR-0019) and the supply chain. Candidates: cargo-about, which generates the notices from the
 licence files of the crates under a template, or a script of this repository over
 `cargo metadata` and the sources in the registry.
 
-Where: `pack` and `archive_notice` in scripts/release.sh, ADR-0016, deny.toml (the
+Where: `pack` and `archive_notice` in scripts/release.sh, ADR-0019, deny.toml (the
 licences allowed).

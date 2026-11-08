@@ -90,5 +90,5 @@ attests every archive and publishes the release. `release/install-nectar.sh` fet
 version's archive for the host and installs it only when it matches the checksums its caller
 carries; `scripts/check-all.sh` runs `scripts/release.sh` without a command to test the packing
 and the installer before a tag is pushed
-([ADR-0016](adr/0016-release-glibc-floor.md)). The user guide in `docs/guide/` is the project the
-checks build ([ADR-0014](adr/0014-guide-as-reference-project.md)).
+([ADR-0019](adr/0019-release-interface.md)). The user guide in `docs/guide/` is the project the
+checks build ([ADR-0008](adr/0008-toolchain-cargo-clippy-deny.md)).

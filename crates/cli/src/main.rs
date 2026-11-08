@@ -379,7 +379,7 @@ fn write(build: &Build, dir: &Path) -> io::Result<()> {
 }
 
 /// The defaults of the rough engine from `[engine.rough]`, every key but `enabled` an option of
-/// its `data-rough-*` attributes in snake case (ADR-0021).
+/// its `data-rough-*` attributes in snake case (ADR-0015).
 fn rough_defaults(config: &toml::Table) -> Result<RoughStyle> {
     let mut defaults = RoughStyle::default();
     let Some(table) = config.get("rough") else {
