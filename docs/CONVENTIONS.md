@@ -24,5 +24,5 @@ skimmed. The design revision drops what prevented nothing
   project and after a normalization.
 - **A font whose licence reserves its name is bundled unmodified,** as its foundry publishes it:
   the SIL Open Font License withholds a Reserved Font Name from a modified version, and a subset
-  or a conversion is one, as the Latin subset of IBM Plex Mono was. Every bundled font has its
-  licence beside it and its line in the crate's `NOTICE`.
+  or a conversion is one, as the Latin subset of IBM Plex Mono was. Its line in the nearest
+  `NOTICE` points to its licence text with `see <path>`.
