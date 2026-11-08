@@ -226,6 +226,22 @@ reading it.
 A build runs every renderer over the same documents. Renderers may write the same file, such as
 a shared theme file, only with the same content; anything else is an error.
 
+### EPUB renderer
+
+`EpubRenderer`, also in `nectar-html`, writes every document that enables it under `[document.epub]`
+to `<document>/epub/<start document>.epub`. The root chapter and each top-level chapter become one
+XHTML content document, through the block writer of the website in its mode for XML: void elements
+are closed, highlighted code carries the plain colours of the light theme, and what a content
+document cannot carry is left out and reported. Images come from the project or from the downloads
+of the document, and only those of a core media type enter the container, after a look at their
+first bytes; an SVG is read with `roxmltree`, and one that is not well-formed, holds a script or
+refers to anything outside itself stays out. A link keeps only its text unless it leads to a URL of
+`http`, `https` or `mailto`, a heading or a chapter. The container is packed
+by a small ZIP writer of its own, on `miniz_oxide` and `crc32fast`, with fixed times and sorted
+entries, so the same document gives the same bytes. The shell hands over the time of modification,
+from `SOURCE_DATE_EPOCH`, or a fixed one ([ADR-0020](adr/0020-epub-renderer.md),
+[ADR-0021](adr/0021-epub-zip-writer.md)).
+
 ### PDF renderer
 
 `PdfRenderer` in `nectar-pdf` typesets every document with Typst, used as a library, into

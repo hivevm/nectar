@@ -734,6 +734,7 @@ mod tests {
             numbered: false,
             contents: false,
             print: Default::default(),
+            epub: Default::default(),
             root: Chapter {
                 id: "manual".to_string(),
                 slug: String::new(),
@@ -776,6 +777,7 @@ mod tests {
             numbered: false,
             contents: false,
             print: Default::default(),
+            epub: Default::default(),
             root: Chapter {
                 id: String::new(),
                 slug: String::new(),

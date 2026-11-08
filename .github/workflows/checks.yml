@@ -1,7 +1,8 @@
 name: Checks
 
-# Enforces the repository's rules as CI. Pure bash + coreutils — nothing is installed (ShellCheck,
-# used by the shell job, ships preinstalled on the GitHub-hosted runner image). scripts/check-all.sh
+# Enforces the repository's rules as CI. Pure bash + coreutils, except the jobs named below
+# (ShellCheck, used by the shell job, ships preinstalled on the GitHub-hosted runner image).
+# scripts/check-all.sh
 # is the local equivalent; check 9 of scripts/check-docs.sh holds its list, the jobs of this
 # workflow, and the required checks named in CONTRIBUTING.md together. Each job runs a check after
 # its own self-test, and each script's header says what it checks and which ADR it holds.
@@ -13,8 +14,8 @@ name: Checks
 # instruction (ADR-0002); this workflow runs the self-test of each.
 #
 # The build, test, and lint job runs scripts/check-build.sh on Linux, macOS and Windows (ADR-0008);
-# it is the one job of this workflow that installs something: the stable Rust toolchain and
-# cargo-deny.
+# it installs the stable Rust toolchain and cargo-deny. The epub job installs the same toolchain and
+# Graphviz, and its script fetches EPUBCheck, pinned by version and checksum (G-13).
 #
 # Every job is bounded by a timeout — a hung step would otherwise occupy a runner until the
 # platform's own six-hour limit — and every checkout runs with 'persist-credentials: false': the
@@ -202,3 +203,32 @@ jobs:
       - name: Build, test and lint Nectar
         shell: bash
         run: bash scripts/check-build.sh
+
+  # Verifies: G-13 — EPUBCheck, a Java program pinned by the script, judges the EPUBs from outside.
+  epub:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up the Rust toolchain
+        run: rustup toolchain install stable --profile minimal && rustup default stable
+      # The EPUB holds what a program draws: Graphviz serves the `dot` blocks of the guide.
+      - name: Install Graphviz
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      # GitHub's release downloads fail for long stretches; a job that passed once needs none. The
+      # script holds the archive to its checksum either way. After rust-cache, so that this saves
+      # before rust-cache cleans target/.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target/epubcheck-5.3.0/epubcheck.zip
+          key: epubcheck-5.3.0-6c07e68584b2e2ce
+      # The runner image brings Java, which EPUBCheck needs; this step fails clearly if it stops.
+      - name: Show the Java runtime
+        run: java -version
+      - name: Check the EPUBs with EPUBCheck
+        run: bash scripts/check-epub.sh

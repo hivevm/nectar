@@ -352,6 +352,7 @@ fn content_type(path: &Path) -> &'static str {
         "woff" => "font/woff",
         "woff2" => "font/woff2",
         "pdf" => "application/pdf",
+        "epub" => "application/epub+zip",
         "txt" | "md" => "text/plain; charset=utf-8",
         _ => "application/octet-stream",
     }
@@ -493,6 +494,14 @@ fn escape(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_epub_is_served_with_its_media_type() {
+        assert_eq!(
+            content_type(Path::new("epub/guide.epub")),
+            "application/epub+zip"
+        );
+    }
 
     #[test]
     fn request_paths_map_to_output_files() {

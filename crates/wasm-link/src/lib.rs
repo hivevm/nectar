@@ -6,16 +6,19 @@
 use std::sync::Arc;
 
 use nectar_core::{MemoryFiles, Project};
-use nectar_html::HtmlRenderer;
+use nectar_html::{EpubRenderer, HtmlRenderer};
 use nectar_pdf::PdfRenderer;
 use nectar_railroad::Railroad;
 use nectar_rough::Rough;
 
-/// Builds a project with a railroad diagram and a sketch into the website and the PDF.
+/// Builds a project with a railroad diagram and a sketch into the website, the PDF and the EPUB.
 #[unsafe(no_mangle)]
 pub extern "C" fn build() {
     let files = MemoryFiles::new();
-    files.insert("nectar.toml", "[[document]]\nsource = \"main.md\"\n");
+    files.insert(
+        "nectar.toml",
+        "[[document]]\nsource = \"main.md\"\n\n[document.epub]\nenabled = true\nlanguage = \"en\"\n",
+    );
     files.insert(
         "main.md",
         "# Main\n\n```railroad\nrule ::= 'a' ;\n```\n\n```rough\n\
@@ -27,5 +30,9 @@ pub extern "C" fn build() {
     project.add_engine(Box::new(Rough::new(
         Arc::new(usvg::fontdb::Database::new()),
     )));
-    project.build(&[&HtmlRenderer::default(), &PdfRenderer]);
+    project.build(&[
+        &HtmlRenderer::default(),
+        &PdfRenderer,
+        &EpubRenderer::default(),
+    ]);
 }

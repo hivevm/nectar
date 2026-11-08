@@ -576,6 +576,7 @@ mod tests {
             numbered: true,
             contents: true,
             print: toml::Table::new(),
+            epub: toml::Table::new(),
             root,
             footnotes: Vec::new(),
             assets: std::collections::BTreeMap::new(),

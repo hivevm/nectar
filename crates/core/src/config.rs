@@ -61,6 +61,9 @@ pub struct DocumentConfig {
     /// Settings of the print renderer, `[document.print]`.
     #[serde(default)]
     pub print: toml::Table,
+    /// Settings of the EPUB renderer, `[document.epub]`.
+    #[serde(default)]
+    pub epub: toml::Table,
 }
 
 fn enabled() -> bool {

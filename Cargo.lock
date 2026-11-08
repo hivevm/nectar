@@ -1852,6 +1852,7 @@ version = "0.1.1"
 dependencies = [
  "anyhow",
  "clap",
+ "miniz_oxide 0.9.1",
  "nectar-core",
  "nectar-fetch",
  "nectar-html",
@@ -1890,8 +1891,11 @@ dependencies = [
 name = "nectar-html"
 version = "0.1.1"
 dependencies = [
+ "crc32fast",
  "minijinja",
+ "miniz_oxide 0.9.1",
  "nectar-core",
+ "roxmltree 0.21.2",
  "serde",
  "toml 1.2.1+spec-1.1.0",
 ]

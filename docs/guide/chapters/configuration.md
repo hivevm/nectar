@@ -15,3 +15,4 @@
 | `[engine.…]` | Code engines, see [Engines](code-and-diagrams.md#engines) |
 | `[serve] port`, `bind` | Address of `nectar serve`, default `127.0.0.1:1313` |
 | `[document.print]` | Print view and PDF, see [Print view and PDF](print-view-and-pdf.md) |
+| `[document.epub]` | The EPUB, see [EPUB](epub.md) |

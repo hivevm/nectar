@@ -1,0 +1,98 @@
+/* The style sheet of an EPUB. Reading systems choose fonts and colours themselves, so it sets the
+   structure of the content and little else. */
+
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.25;
+  page-break-after: avoid;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+pre {
+  font-family: monospace;
+  font-size: 0.85em;
+  line-height: 1.35;
+  padding: 0.6em;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+code {
+  font-family: monospace;
+}
+
+blockquote {
+  margin: 1em 0 1em 1em;
+  padding-left: 0.8em;
+  border-left: 0.2em solid #888;
+}
+
+table {
+  border-collapse: collapse;
+  max-width: 100%;
+}
+
+th, td {
+  border: 1px solid #888;
+  padding: 0.25em 0.5em;
+  vertical-align: top;
+}
+
+figure {
+  margin: 1em 0;
+  text-align: center;
+}
+
+figure.listing {
+  text-align: left;
+}
+
+figcaption {
+  font-size: 0.9em;
+  font-style: italic;
+}
+
+figure.cover {
+  margin: 0;
+  height: 100%;
+}
+
+.alert {
+  margin: 1em 0;
+  padding: 0.3em 0.8em;
+  border: 1px solid #888;
+  border-left-width: 0.3em;
+}
+
+.align-left {
+  float: left;
+  margin: 0 1em 0.5em 0;
+}
+
+.align-right {
+  float: right;
+  margin: 0 0 0.5em 1em;
+}
+
+.align-center {
+  display: block;
+  margin: 0 auto;
+}
+
+li.task {
+  list-style-type: none;
+}
+
+.footnotes {
+  margin-top: 2em;
+  border-top: 1px solid #888;
+  font-size: 0.9em;
+}
+
+nav ol {
+  list-style-type: none;
+  padding-left: 1em;
+}

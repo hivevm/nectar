@@ -7,6 +7,11 @@ source = "./GUIDE.md"
 subtitle    = "The user guide"
 cover_image = "img/logo.png"
 
+[document.epub]
+enabled     = true
+language    = "en"
+cover_image = "img/logo.png"
+
 [vars]
 version = "0.1.0"
 

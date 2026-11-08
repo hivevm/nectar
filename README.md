@@ -14,8 +14,8 @@ stay explicit and reviewable.
 ## Overview
 
 Nectar is the command line `nectar`, written in Rust under [`crates/`](crates/). It turns a
-project of Markdown files into a website with a print view and a PDF, highlights code with
-TextMate grammars and draws railroad, Graphviz and PlantUML diagrams. The
+project of Markdown files into a website with a print view and a PDF, and an EPUB on request,
+highlights code with TextMate grammars and draws railroad, Graphviz and PlantUML diagrams. The
 [Nectar guide](docs/guide/GUIDE.md) describes it in full, its design is
 [`docs/DESIGN.md`](docs/DESIGN.md), and the guide's own project,
 [`docs/guide/`](docs/guide/), is a complete project to start from.
@@ -47,9 +47,10 @@ vocabulary in [`docs/GLOSSARY.md`](docs/GLOSSARY.md).
      agents rely on it, and the rule file names it. -->
 
 The Dev Container brings Rust with the `wasm32-unknown-unknown` target, cargo-deny, Graphviz and
-PlantUML, with Java 21 as PlantUML's runtime, and strace, under which a test traces a build on
-Linux. The commands run from the repository root; `scripts/check-build.sh` runs build, test and
-lint in one go, as the pre-push hook and the `build` job of CI do
+PlantUML, with Java 21 as the runtime of PlantUML and of EPUBCheck, which `scripts/check-epub.sh`
+fetches, and strace, under which a test traces a build on Linux. The commands run from the
+repository root; `scripts/check-build.sh` runs build, test and lint in one go, as the pre-push hook
+and the `build` job of CI do
 ([ADR-0008](docs/adr/0008-toolchain-cargo-clippy-deny.md)):
 
 - **Build:** `cargo build --workspace`

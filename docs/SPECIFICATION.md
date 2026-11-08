@@ -19,14 +19,14 @@ through Apache FOP, a second tool chain with a Markdown dialect of its own, tied
 Gradle. The two outputs drifted apart in diagrams, highlighting and includes, and in what raw HTML
 and a page break mean. The plugin has left this repository; its PDFs have to come from somewhere.
 
-What is missing is one engine, written in Rust, that turns the same Markdown into both outputs and
-runs anywhere: as a command line, as a library, and compiled to WebAssembly. With it, the
+What is missing is one engine, written in Rust, that turns the same Markdown into all these outputs
+and runs anywhere: as a command line, as a library, and compiled to WebAssembly. With it, the
 documentation no longer has to be maintained twice.
 
 ## Mission
 
-Nectar lets a project write its documentation once in Markdown and publish it as a website and a
-PDF from the same engine, wherever that engine runs.
+Nectar lets a project write its documentation once in Markdown and publish it as a website, a
+PDF and an EPUB from the same engine, wherever that engine runs.
 
 ## Vision
 
@@ -36,11 +36,12 @@ projects pick for the same reason: one engine, one dialect, everywhere.
 ## Strategy
 
 A core in Rust that parses the sources into a document model of its own and enriches it in passes,
-with renderers for HTML and PDF behind one interface. The command line, the local server, and later
-a WebAssembly build are thin shells around it. The core owns a port for every effect that depends
-on the host, such as files, threads and requests to the web, and stays free of the technology
-behind them, so that it compiles to WebAssembly. Code engines that not every host can offer, such
-as Graphviz, PlantUML or the TextMate highlighter, sit behind a port too and are chosen per host.
+with renderers for HTML, PDF and EPUB behind one interface. The command line, the local server,
+and later a WebAssembly build are thin shells around it. The core owns a port for every effect
+that depends on the host, such as files, threads and requests to the web, and stays free of the
+technology behind them, so that it compiles to WebAssembly. Code engines that not every host can
+offer, such as Graphviz, PlantUML or the TextMate highlighter, sit behind a port too and are chosen
+per host.
 
 ## Goals / Success Criteria
 
@@ -59,9 +60,9 @@ Only a normalization renumbers them ([`AGENTS.md` §3](../AGENTS.md#3-adr-rules)
 3. **G-3** — When a document is built, the system shall also write a print view and a PDF from the
    same document model as its website, with cover, contents with page numbers, running headers and
    footnotes, and start a new page at every thematic break.
-4. **G-4** — When the PDF cannot show an element of the source, such as raw HTML or an image it
-   cannot embed, the system shall report it as a warning with file and line instead of dropping it
-   silently.
+4. **G-4** — When the PDF or the EPUB cannot show an element of the source, such as raw HTML or an
+   image it cannot embed, the system shall report it as a warning with file and line instead of
+   dropping it silently.
 5. **G-5** — When a fenced code block names a language with a TextMate grammar, `railroad`, or
    `rough`, the system shall highlight or draw it in every output. When the engine a block needs is
    missing on the host, or fails, such as a program that is missing or a text the engine cannot
@@ -77,7 +78,7 @@ Only a normalization renumbers them ([`AGENTS.md` §3](../AGENTS.md#3-adr-rules)
    same code engines.
 9. **G-9** — When a source contains raw HTML and `nectar.toml` does not set `html = true`, the
    system shall show it as text and report a warning with file and line; with `html = true` it
-   shall pass it to the website, while the PDF still reports it (G-4).
+   shall pass it to the website, while the PDF and the EPUB still report it (G-4).
 10. **G-10** — When `nectar build` is given a Markdown file, the system shall write its PDF next to
     it, or to the file `-o` names, without reading a `nectar.toml`, and shall read nothing outside
     the file's directory.
@@ -94,6 +95,13 @@ Only a normalization renumbers them ([`AGENTS.md` §3](../AGENTS.md#3-adr-rules)
     defaults; its text as outlines; and the same text giving the same
     graphic. Text that is no SVG, an unknown `data-rough-*` attribute, or a value the engine
     cannot read shall fail as an engine does under G-5 and G-11.
+13. **G-13** — When a document sets `enabled = true` under `[document.epub]`, the system shall also
+    write an EPUB 3.3 publication from the same document model as its website, with a navigation
+    document of its chapters and with its images and graphics inside the container. EPUBCheck shall
+    report no error on what the system writes itself. An image or a graphic the project supplies or
+    its programs draw shall stay out, with a warning, when its format does not fit its name, or
+    when an SVG is not well-formed, holds a script, or refers to anything outside itself; what else
+    such a file holds is the project's. A document without that setting shall give no EPUB.
 
 ## Quality Goals
 
@@ -107,10 +115,10 @@ from the threats below.
   use of a file system, process, thread or async runtime API in `nectar-core` and the renderer
   crates; only the adapters (`nectar-fetch`, `nectar-native`, `nectar-process`) and the shells
   (`nectar`, `nectar-server`) use them.
-- **Q-2** — Fidelity between outputs: a source means the same thing on the website and in the PDF,
-  so nobody maintains the documentation twice. Measured on the user guide in `docs/guide`: every
-  heading, paragraph, table, figure and code block of the website appears in the PDF, or a
-  diagnostic says it does not (G-4).
+- **Q-2** — Fidelity between outputs: a source means the same thing on the website, in the PDF and
+  in the EPUB, so nobody maintains the documentation twice. Measured on the user guide in
+  `docs/guide`: every heading, paragraph, table, figure and code block of the website appears in the
+  PDF and in the EPUB, or a diagnostic says it does not (G-4).
 - **Q-3** — Determinism: the same sources and configuration give byte-identical output, so a build
   can be diffed and cached. Measured by two builds of the user guide in a row, on the same machine
   and with images from the web offline, giving identical files.
@@ -136,7 +144,7 @@ What this project explicitly does not try to do.
 - No editor. Nectar renders and previews; writing happens in the editor of the writer's choice.
 - No hosting. `nectar build` writes files; publishing them, to GitHub Pages or elsewhere, is the
   project's business.
-- No output formats beyond the website and the PDF, such as EPUB, DOCX or man pages.
+- No output formats beyond the website, the PDF and the EPUB, such as DOCX or man pages.
 
 ## Constraints
 
@@ -151,6 +159,7 @@ rediscovered as a rejected alternative in an ADR.
 - CommonMark is the base of Nectar's Markdown dialect.
 - The PDF is typeset with Typst as a library; the print view is laid out by Paged.js in the
   browser.
+- The EPUB conforms to EPUB 3.3, as EPUBCheck judges it, within what G-13 leaves to the project.
 - Graphviz and PlantUML are always reached through the code engine port, by an adapter the host
   provides: a local process on the command line, whatever the host offers in WebAssembly. Nectar
   works without them and degrades as G-5 says.
@@ -201,6 +210,7 @@ maintained.
 - Typst stays maintained, keeps its library usable from Rust, and compiles to WebAssembly, so the
   PDF renderer can follow the core there (G-8, Q-1).
 - Paged.js stays usable for the print view, and the readers' browsers run it.
+- Reading systems in use support EPUB 3; devices that read only EPUB 2 are not served.
 - The sources are written by the project's own people and reviewed like code; raw HTML is the one
   way a source reaches the readers' browsers, and G-9 gates it.
 - Writers who come from Hugo accept Nectar's dialect, since there is no compatibility.

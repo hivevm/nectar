@@ -78,6 +78,7 @@ fn render_document(
         footnotes: BTreeSet::new(),
         inline_notes: Some(&document.footnotes),
         heading_anchors: false,
+        epub: None,
     };
     writer.blocks(&document.root.blocks, false);
     let content = writer.out;
