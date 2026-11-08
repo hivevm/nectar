@@ -1,6 +1,6 @@
 # ADR-0020: An `EpubRenderer` in `nectar-html` writes an EPUB 3.3 publication for every document that enables it
 
-- **Status:** 🟡 proposed
+- **Status:** 🟢 accepted
 - **Date:** 2026-11-08
 - **Deciders:** Markus Brigl
 - **Applies to:** `EpubRenderer` in `crates/html/`, the table `[document.epub]` of `nectar.toml`, the shell that composes the renderer in `crates/cli/`, `crates/wasm-link/`, and the tests and the check that verify G-13

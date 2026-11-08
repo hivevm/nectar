@@ -1,6 +1,6 @@
 # ADR-0021: A ZIP writer of our own packs the EPUB container, on `miniz_oxide` and `crc32fast`
 
-- **Status:** 🟡 proposed
+- **Status:** 🟢 accepted
 - **Date:** 2026-11-08
 - **Deciders:** Markus Brigl
 - **Applies to:** the ZIP writer in `crates/html/`, the dependencies on `miniz_oxide` and `crc32fast` in `crates/html/Cargo.toml`, and the tests that verify the container
