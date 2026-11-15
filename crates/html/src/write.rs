@@ -646,7 +646,7 @@ fn token_style(token: &Token, code: &HighlightedCode) -> String {
 }
 
 /// Highlighted code as a standalone `<pre>` with inline styles in the colours of the light
-/// theme, for a page without the site's stylesheet (ADR-0017).
+/// theme, for a page without the site's stylesheet (API-render-runs-one-engine).
 pub fn standalone_highlighted(code: &HighlightedCode) -> String {
     let mut out = String::new();
     code_block(

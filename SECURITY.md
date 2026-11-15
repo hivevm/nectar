@@ -19,34 +19,34 @@ These properties shape the security posture of the coding agents working here:
 - **The Dev Container has no access to the host container engine.** The agents run inside the Dev
   Container defined in [`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json). The
   host Docker or Podman socket is **not** mounted into the container
-  ([ADR-0004](docs/adr/0004-dev-container-runtime.md)), so code or agents running inside cannot
-  control the host engine. Host containers are managed from a host-side VS Code extension (see
-  [`CONTRIBUTING.md`](CONTRIBUTING.md#host-container-management)), which keeps that capability
-  outside the container's reach. The container is still not a strong security boundary, so run only
-  agents and code you trust in it.
+  ([NUC-container-hides-host-daemon §2](docs/adr/NUC-container-hides-host-daemon.md)), so code
+  or agents running inside cannot control the host engine. Host containers are managed from a
+  host-side VS Code extension (see [`CONTRIBUTING.md`](CONTRIBUTING.md#host-container-management)),
+  which keeps that capability outside the container's reach. The container is still not a strong
+  security boundary, so run only agents and code you trust in it.
 - **Nothing leaves the machine without a human.** The rule is
-  [`AGENTS.md` §6](AGENTS.md#6-project-rules). It is documentation: no file in the repository can
-  stop an agent from running `git push`, and a tool's own configuration enforces none.
-  Authentication uses the web flow of `gh`; no personal access token is stored. The token gh keeps
-  from that flow lies in plain text in the host's `~/.config/gh`, which the Dev Container mounts
-  ([Dev Container](CONTRIBUTING.md#dev-container)); with gh logged in, git uses it for every
+  [NUC-main-only-via-pr §2](docs/adr/NUC-main-only-via-pr.md). It is documentation: no file in the
+  repository can stop an agent from running `git push`, and a tool's own configuration enforces
+  none. Authentication uses the web flow of `gh`; no personal access token is stored. The token gh
+  keeps from that flow lies in plain text in the host's `~/.config/gh`, which the Dev Container
+  mounts ([Dev Container](CONTRIBUTING.md#dev-container)); with gh logged in, git uses it for every
   HTTPS push and fetch to github.com, so any process in the container can push as that account
   without a prompt, as VS Code's forwarded credentials already allowed. What the repository's
   own git hooks guarantee for every agent and every human, and what bypasses each, is under
   [Git hooks](CONTRIBUTING.md#git-hooks) in the contributing guide.
-- **The specification and the decision record change only by human decision.** A change to
-  [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md) is a decision rather than an edit, and only a
-  human changes an ADR's status ([`AGENTS.md` §3](AGENTS.md#3-adr-rules), rules 4 and 7). With
-  one maintainer, who cannot approve their own pull request, the Code-Owner review listed under
+- **The specification and the decision record change only by human decision**
+  ([NUC-decisions-are-proposed-then-accepted §5](docs/adr/NUC-decisions-are-proposed-then-accepted.md)
+  and [NUC-documents-are-fixed §2](docs/adr/NUC-documents-are-fixed.md)). With one maintainer, who
+  cannot approve their own pull request, the Code-Owner review listed under
   [**Repository settings**](CONTRIBUTING.md#repository-settings) stays off:
   [`.github/CODEOWNERS`](.github/CODEOWNERS) names the owner, and the rule is guarded by that
   maintainer reviewing every change
-  ([ADR-0007](docs/adr/0007-harness-one-agent-human-review.md)), not by GitHub. A second
+  ([DEV-one-agent-human-reviews](docs/adr/DEV-one-agent-human-reviews.md)), not by GitHub. A second
   maintainer turns the requirement on. Two limits are worth knowing.
   [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) is deliberately not gated, because
   [§5](AGENTS.md#5-quality-bar--definition-of-done) requires it to be updated in the same change as
   the structure it describes. And a code owner GitHub does not know matches nobody, so the file
-  enforces nothing unless it carries a real handle.
+  enforces nothing until it carries a real handle.
 
 ## Secrets
 

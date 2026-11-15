@@ -30,7 +30,7 @@ vocabulary in [`docs/GLOSSARY.md`](docs/GLOSSARY.md).
   extension, or any DevContainer-compatible IDE
 - Docker / Podman (rootless) available on the host
 - Outside the Dev Container: bash 4.4 or later for the checks, 3.2 for the git hooks
-  ([ADR-0002](docs/adr/0002-decisions-verified-by-tests.md)); macOS ships 3.2
+  ([NUC-checks-are-bash §1](docs/adr/NUC-checks-are-bash.md)); macOS ships 3.2
 
 ## Getting Started
 
@@ -51,7 +51,7 @@ PlantUML, with Java 21 as the runtime of PlantUML and of EPUBCheck, which `scrip
 fetches, and strace, under which a test traces a build on Linux. The commands run from the
 repository root; `scripts/check-build.sh` runs build, test and lint in one go, as the pre-push hook
 and the `build` job of CI do
-([ADR-0008](docs/adr/0008-toolchain-cargo-clippy-deny.md)):
+([OPS-cargo-clippy-deny-toolchain](docs/adr/OPS-cargo-clippy-deny-toolchain.md)):
 
 - **Build:** `cargo build --workspace`
 - **Test:** `cargo test --workspace`, then `cargo run -p nectar -- -C docs/guide build`,
@@ -103,9 +103,9 @@ the print view, themes and every key of `nectar.toml` are described in the
 
 ## Template
 
-- **Template release:** v0.8.1 — the release of [NUC](https://github.com/hivevm/nuc) this
+- **Template release:** v0.11.0 — the release of [NUC](https://github.com/hivevm/nuc) this
   repository carries; a project moves the line when it takes up a later one
-  ([ADR-0005](docs/adr/0005-template-releases.md)).
+  ([NUC-releases-are-semver-tags §5](docs/adr/NUC-releases-are-semver-tags.md)).
 
 ## Contributing
 

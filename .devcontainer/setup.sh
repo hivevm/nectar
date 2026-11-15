@@ -36,8 +36,8 @@ exec java -Djava.awt.headless=true -jar ${PLANTUML_JAR} "\$@"
 EOF
 sudo chmod 755 /usr/local/bin/plantuml
 
-# cargo-deny checks the licences and the crates of the workspace (ADR-0008); the release archive
-# for the container's architecture, pinned by checksum.
+# cargo-deny checks the licences and the crates of the workspace (OPS-cargo-clippy-deny-toolchain);
+# the release archive for the container's architecture, pinned by checksum.
 CARGO_DENY_VERSION=0.20.2
 case "$(uname -m)" in
   x86_64) CARGO_DENY_ARCH=x86_64 CARGO_DENY_SHA256=9f12ed4c49936e09b48bf862b595cde2fe64fcbd9d74dfacac6131ca824c8d5f ;;

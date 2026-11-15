@@ -1,6 +1,6 @@
 //! Builds projects from files in memory into EPUBs and reads the container's bytes.
 //!
-//! Verifies: G-13, G-4, G-9, ADR-0020, ADR-0021
+//! Verifies: G-13, G-4, G-9, OUT-epub-renderer, OUT-own-zip-writer
 
 use std::collections::BTreeMap;
 use std::path::Path;

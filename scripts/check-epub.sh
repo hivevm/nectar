@@ -4,7 +4,7 @@
 # them; any error or warning fails the check. The fixture holds every case a finding of EPUBCheck
 # has shown so far, each of which must build and give a valid publication.
 #
-# Verifies: G-13, ADR-0020, ADR-0021
+# Verifies: G-13, OUT-epub-renderer, OUT-own-zip-writer
 #
 # Needs cargo, curl, java 8 or later, sha256sum and unzip on PATH. EPUBCheck is pinned by version
 # and checksum; its archive stays under target/, so a later run needs no network.
@@ -13,8 +13,15 @@
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$ROOT"
+# shellcheck source-path=SCRIPTDIR source=lib/bash.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/bash.sh"
+
+# shellcheck source-path=SCRIPTDIR source=lib/root.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/root.sh"
+usage="scripts/check-epub.sh [--root <dir>]"
+enter_root "${BASH_SOURCE[0]}" "$usage" "$@"
+set -- "${ARGS[@]}"
+rest_args "${BASH_SOURCE[0]}" "$usage" 0 "$@"
 
 EPUBCHECK_VERSION=5.3.0
 EPUBCHECK_SHA256=6c07e68584b2e2ce2f89fe06e1246dfead3eb36b46b340e7d93524f29dcff6c5

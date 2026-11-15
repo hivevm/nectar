@@ -6,54 +6,52 @@ root). ADRs derive from the specification in [`docs/SPECIFICATION.md`](../SPECIF
 
 ## Mechanics
 
-The rules live in [`AGENTS.md` §3](../../AGENTS.md#3-adr-rules): when an ADR is written, how it
-is developed, who flips its status, that an accepted one is immutable and changed only by
-supersession. This section carries only the mechanics of the record;
+The rules live in three `NUC-` ADRs.
+[NUC-decisions-are-proposed-then-accepted](NUC-decisions-are-proposed-then-accepted.md) decides
+when an ADR is written, how it is developed, who flips its status, and that an accepted one is
+immutable. [NUC-adrs-are-named-by-category](NUC-adrs-are-named-by-category.md) decides how it is
+named, cited, superseded, and indexed. [NUC-base-is-fixed](NUC-base-is-fixed.md) decides the fixed
+base. This section carries only the mechanics of the record;
 [`scripts/check-docs.sh`](../../scripts/check-docs.sh) names in its header which of them it
 verifies.
 
-- **File.** Copy [`template.md`](template.md) to `draft-<slug>.md`, the slug in lower case letters
-  and digits joined by hyphens. Until it reaches `main` the ADR is a draft: its heading and every
-  reference name it `ADR-draft-<slug>`, its index row links it as `draft-<slug>`, and no number
-  is taken ([ADR-0002](0002-decisions-verified-by-tests.md)). On the branch whose pull request
-  brings it to `main`, once that branch has taken up the current `main`,
-  [`scripts/number-adrs.sh`](../../scripts/number-adrs.sh) gives it the next free number. A
-  numbered ADR is `NNNN-short-title.md`, its `# ADR-NNNN` heading matches the filename, and the
-  numbers run `0001..N` without gaps.
+- **File.** Copy [`template.md`](template.md) to `<CAT>-<slug>.md` and head it
+  `# <CAT>-<slug>: <title>`, the category from the [list](#categories). The author picks the
+  identifier when creating the file, and it never changes or returns
+  ([NUC-adrs-are-named-by-category §1](NUC-adrs-are-named-by-category.md)).
 - **Wording.** The *Decision* and the *Enforcement* follow the writing rule of
   [`AGENTS.md` §4](../../AGENTS.md#4-working-style).
-- **Index.** The tables below change in the same commit as the ADR they describe, for
-  additions, supersessions, and status flips alike. The status is shown via the legend's bullet
-  and the ADR's `Applies to` header is mirrored verbatim in its own column. The index routes a
-  reader from a change to the decisions that bind it, so a row says what its ADR governs without
-  the file being opened. Two tables keep what a session reads apart from what it looks up: an
-  accepted or proposed ADR sits under **Binding**, a superseded or rejected one under
-  **Superseded and rejected**, and a status flip moves the row.
-- **Numbers are permanent once on `main`, until a normalization.** Between two normalizations,
-  never renumber, delete, or merge an ADR there: other ADRs, commits (`Implements ADR-NNNN`), and
-  code may reference a number. No draft reaches `main`. A branch that already carries a numbered
-  proposed ADR whose number another branch brought to `main` first gives it the next free number
-  before it merges, in every reference its own branch makes to it. Until a normalization, a
-  superseded ADR keeps its file and its body. The superseding ADR's `Supersedes` field names it
-  from the proposal on; its `Status` line stays as it is while the successor is proposed, and
-  flips to `⚪ superseded by ADR-NNNN` in the change where a human accepts the successor
-  ([`AGENTS.md` §3](../../AGENTS.md#3-adr-rules), rule 4), its index row moving with it.
+- **Index.** The tables below list the project's ADRs, grouped by category, and no `NUC-` ADR
+  ([NUC-adrs-are-named-by-category §5](NUC-adrs-are-named-by-category.md)). They change in the same
+  commit as the ADR they describe, for additions, supersessions, and status flips alike. The status
+  is shown via the legend's bullet and the ADR's `Applies to` header is mirrored verbatim in its own
+  column. The index routes a reader from a change to the decisions that bind it, so a row says what
+  its ADR governs without the file being opened. Two tables keep what a session reads apart from
+  what it looks up: an accepted or proposed ADR sits under **Binding**, a superseded or rejected one
+  under **Superseded and rejected**, and a status flip moves the row.
+- **Identifiers are permanent once on `main`.** A normalization keeps them, and only a merged or
+  split ADR takes a new one
+  ([NUC-decisions-are-proposed-then-accepted §8](NUC-decisions-are-proposed-then-accepted.md)).
+  Between two normalizations, never rename, delete, or merge an ADR there: other ADRs, commits
+  (`Implements <CAT>-<slug>`), and code cite it. A superseded ADR keeps its file and its body. The
+  superseding ADR's `Supersedes` field names it from the proposal on; its `Status` line flips to
+  `⚪ superseded by <CAT>-<slug>` in the change where a human accepts the successor
+  ([NUC-adrs-are-named-by-category §4](NUC-adrs-are-named-by-category.md)), its index row moving
+  with it.
 - **Between normalizations, sprawl is curbed by supersession, never by editing.** One ADR may
   supersede several whose decisions have grown into one. Its `Supersedes` field names each, and
   each flips its status when the superseding ADR is accepted, so the set an agent reads shrinks
-  while every number and every body stays.
-- **A normalization restates the record** ([`AGENTS.md` §3](../../AGENTS.md#3-adr-rules), rule
-  5).
+  while every identifier and every body stays.
+- **A normalization restates the record**
+  ([NUC-decisions-are-proposed-then-accepted §8](NUC-decisions-are-proposed-then-accepted.md)).
   - **Start.** The tree has no proposed ADR, no feature spec or ticket under `docs/plan/`, and
     green checks.
   - **Steps.** Three, in this order on one branch, each handed to the human and confirmed
     before the next begins: the restated specification, whose `G-n` and `Q-n` run from 1; the
     supersessions it calls for; and the restated record. The record begins once the human has
     decided each supersession. One pull request lands them, merged by a human.
-  - **Order.** The record numbers the ADRs in force `0001..N` by what they govern. The document
-    set and the ADR process come first, then the founding decisions in the order of the setup,
-    then the rest in groups. An inherited ADR takes its place like any other, and may be merged
-    with the project's own.
+  - **Identifiers.** An ADR restated alone keeps its identifier; a merged or split one takes a
+    new one. The `NUC-` files stay as the release brought them.
   - **Clauses.** Every clause of an old ADR lives on in one new ADR. The hand-off of the
     record lists each clause with the new ADR that carries it.
   - **Header.** A new ADR keeps the status of the ADRs it restates. Its `Deciders` name all of
@@ -65,20 +63,36 @@ verifies.
     its topic.
   - **References.** Each step moves its references with a map, old to new, applied by the map
     script of the `normalize` skill. The map stands in the hand-off and the
-    commit body, and in no document. A commit older than the normalization cites the numbers it
-    had then.
-- **Cite only what exists.** Every `ADR-NNNN` reference names a file already in this directory.
-  An anticipated follow-up is described by topic ("a follow-up ADR on session storage"), never by
-  a number. In Markdown, cite an ADR as a link to its own file.
+    commit body, and in no document. A commit older than the normalization cites the identifiers
+    it had then.
+- **Cite only what exists.** Every citation, `<CAT>-<slug>` or a clause `<CAT>-<slug> §n`, names a
+  file already in this directory. An anticipated follow-up is described by topic ("a follow-up ADR
+  on session storage"). What counts as a citation, and its form in Markdown, is
+  [NUC-adrs-are-named-by-category §6](NUC-adrs-are-named-by-category.md).
 
 ## Index
 
-An ADR whose `Deciders` line names the **NUC maintainer** is inherited from the template. It
-binds a derived project once its own maintainer adds their name to `Deciders` and its `Status`
-line reads `🟢 accepted` ([`AGENTS.md` §3](../../AGENTS.md#3-adr-rules)). Change an inherited
-decision by superseding it, never by editing. Once the template setup is done, check 12 of
-[`scripts/check-docs.sh`](../../scripts/check-docs.sh) fails on an inherited ADR in force that
-names no decider of the project, or that is still proposed.
+**The base:** the template's `NUC-` ADRs in this directory, each named with its blob in
+[`NUC.blobs`](NUC.blobs), as `AGENTS.md` is. They bind like any ADR in force, and a project
+extends or narrows a clause in an ADR of its own, never edits one
+([NUC-base-is-fixed §1](NUC-base-is-fixed.md)).
+
+### Categories
+
+The category of an identifier says what its decision is about
+([NUC-adrs-are-named-by-category §2](NUC-adrs-are-named-by-category.md)). The fixed ones:
+
+- **NUC** — the template's own ADRs, reserved to the template repository.
+- **SEC** — security.
+- **OPS** — build, release, deployment, and operation.
+- **API** — interfaces the system offers and consumes, adapters among them.
+
+The project's own follow here, each in the same form with one line on what it holds:
+
+- **ARCH** — the shape of the code: the core, its ports, and how the crates divide.
+- **DEV** — how the work is done: the harness, the reviews, and the development environment.
+- **ENG** — the code engines: what each draws or highlights, on what, and on which hosts.
+- **OUT** — the output formats: what a renderer writes, and the libraries it writes with.
 
 **Status legend:** 🟢 accepted · 🟡 proposed · 🔴 rejected · ⚪ superseded
 
@@ -89,27 +103,21 @@ is the table a session reads.
 
 | ADR | Title | Applies to | Status |
 |-----|-------|------------|--------|
-| [0001](0001-agent-governance-model.md) | The document set: one specification, one ADR record, one `AGENTS.md`, one overview, one glossary, one conventions file | every document that carries rules for humans or agents, `AGENTS.md` among them, the architecture overview, the glossary, the conventions, `scripts/check-docs.sh`, `scripts/sensor-binding-adrs.sh`, `scripts/sensor-plain-rules.sh`, and the map script of the `normalize` skill, `.agents/skills/normalize/remap.sh` | 🟢 accepted |
-| [0002](0002-decisions-verified-by-tests.md) | Every accepted decision and every success criterion is verified by a test that cites it, and the checks that hold the decisions are bash scripts under `scripts/` | every accepted ADR, the identifiers by which ADRs are cited, the Goals and Quality Goals of `docs/SPECIFICATION.md`, the tests that verify them, the checks and sensors under `scripts/`, and the git hooks under `.githooks/` | 🟢 accepted |
-| [0003](0003-procedures-as-skills.md) | The procedures of the rule file are Agent Skills under `.agents/skills/`, each carrying a how and no rule of its own | `.agents/skills/`, the pointers under `.claude/skills/`, and every document that describes how a procedure of `AGENTS.md` is carried out | 🟢 accepted |
-| [0004](0004-dev-container-runtime.md) | The Dev Container keeps the host daemon out of reach, its Features locked, and each project under a path of its own | `.devcontainer/`, `.vscode/settings.json`, `scripts/check-devcontainer.sh`, and everything the container pulls in | 🟢 accepted |
-| [0005](0005-template-releases.md) | The template is released as SemVer tags on `main`, and every repository names the release it carries | the tags of the template repository, its own ADRs, the **Template** section of `README.md`, check 14 of `scripts/check-docs.sh`, and the pull request that lands a release | 🟢 accepted |
-| [0006](0006-feature-layer.md) | Work larger than one session is planned in the tree as a feature spec cut into tracer-bullet tickets, files deleted when their work lands, findings outside the plan go to a backlog, and the design is revised when a spec closes or after a number of changes | every change larger than one agent session, `docs/plan/`, the spec and ticket templates of the `plan-feature` skill, the pull request template, the `Last design revision` line of `docs/ARCHITECTURE.md`, `scripts/sensor-revision-due.sh`, `scripts/sensor-plan-frontier.sh`, the claim script `.agents/skills/work-tickets/claim.sh`, `docs/backlog/`, and `scripts/sensor-backlog.sh` | 🟢 accepted |
-| [0007](0007-harness-one-agent-human-review.md) | One coding agent implements, the maintainer reviews every change, nothing runs unattended | every change, every agent session, the specification, the ADR record, and the release workflows under `.github/workflows/` | 🟢 accepted |
-| [0008](0008-toolchain-cargo-clippy-deny.md) | Cargo builds and tests Nectar, rustfmt, Clippy and cargo-deny are its first sensors, run by one script, and the user guide is the project the checks build | `Cargo.toml`, `deny.toml`, `scripts/check-build.sh`, `scripts/check-all.sh`, the `build` job of `.github/workflows/checks.yml`, the Build, Test & Run section of `README.md`, `docs/guide/`, and the tests that measure Q-2, Q-3 and Q-4 | 🟢 accepted |
-| [0009](0009-ports-and-adapters-technology.md) | A core without technology, the host's environment and the tests' dependencies included, every host-dependent effect behind a port it owns | every crate under `crates/`, the dependencies and dev-dependencies in their `Cargo.toml`, and the structural test that holds the split | 🟢 accepted |
-| [0010](0010-environment-image-features.md) | The Dev Container is a base image with Features and a setup script, and the work needs no containers | `.devcontainer/`, and every change that would have the work start or reach a container | 🟢 accepted |
-| [0011](0011-actions-pinned-by-sha.md) | The workflows reference every action by its full commit SHA, kept current by Dependabot | every `uses:` line under `.github/workflows/`, `.github/dependabot.yml`, and `scripts/check-all.sh` | 🟢 accepted |
-| [0012](0012-textmate-engine-native-only.md) | The TextMate engine runs on native hosts only, and a WebAssembly host highlights through the code engine port | `crates/textmate/`, the WebAssembly step of `scripts/check-build.sh`, and the code engines a WebAssembly shell composes | 🟢 accepted |
-| [0013](0013-rough-engine.md) | A code engine `rough` redraws an SVG in a hand-drawn style | the code engine for the language `rough` in `crates/rough/`, the input it accepts and its `data-rough-*` attributes, the shell that composes it in `crates/cli/`, and the tests that verify it | 🟢 accepted |
-| [0014](0014-roughr-usvg.md) | The rough engine sketches with `roughr` and reads SVG with `usvg` | the dependencies of `crates/rough/Cargo.toml`, the `PORTABLE` list of `crates/cli/tests/structure.rs`, the WebAssembly step of `scripts/check-build.sh`, and the fonts the rough engine draws text with | 🟢 accepted |
-| [0015](0015-rough-defaults.md) | `[engine.rough]` in `nectar.toml` sets the defaults of the rough engine | the keys of `[engine.rough]` in `nectar.toml`, how the command line hands them to the rough engine in `crates/cli/` and `crates/rough/`, and the tests that verify them | 🟢 accepted |
-| [0016](0016-single-file-build.md) | `nectar build` given a Markdown file writes its PDF next to it, without a `nectar.toml` | the command line in `crates/cli/`, its `build` command and its arguments, and the tests that verify G-10 | 🟢 accepted |
-| [0017](0017-render-command.md) | `nectar render` runs one code engine on one text | the command line in `crates/cli/`, its `render` command and its arguments, and the tests in `crates/cli/tests/render.rs` | 🟢 accepted |
-| [0018](0018-png-via-resvg.md) | A graphic becomes a PNG through resvg, with the bundled fonts only | the `png` format of `nectar render` in `crates/cli/`, the dependency on `resvg` in `crates/cli/Cargo.toml`, and the fonts it renders text with | 🟢 accepted |
-| [0019](0019-release-interface.md) | A Nectar release is archives built against glibc 2.35, their checksums and a provenance attestation for each, and the repository carries the installer that verifies them | `.github/workflows/nectar-release.yml`, `scripts/release.sh`, `release/install-nectar.sh` and the check that tests it, and every installer outside this repository that takes a Nectar release, such as the Dev Container Feature of `hivevm/features` | 🟢 accepted |
-| [0020](0020-epub-renderer.md) | An `EpubRenderer` in `nectar-html` writes an EPUB 3.3 publication for every document that enables it | `EpubRenderer` in `crates/html/`, the table `[document.epub]` of `nectar.toml`, the shell that composes the renderer in `crates/cli/`, `crates/wasm-link/`, and the tests and the check that verify G-13 | 🟢 accepted |
-| [0021](0021-epub-zip-writer.md) | A ZIP writer of our own packs the EPUB container, on `miniz_oxide` and `crc32fast` | the ZIP writer in `crates/html/`, the dependencies on `miniz_oxide` and `crc32fast` in `crates/html/Cargo.toml`, and the tests that verify the container | 🟢 accepted |
+| [SEC-actions-pinned-by-sha](SEC-actions-pinned-by-sha.md) | The workflows reference every action by its full commit SHA, kept current by Dependabot | every `uses:` line under `.github/workflows/`, `.github/dependabot.yml`, and `scripts/check-all.sh` | 🟢 accepted |
+| [OPS-cargo-clippy-deny-toolchain](OPS-cargo-clippy-deny-toolchain.md) | Cargo builds and tests Nectar, rustfmt, Clippy and cargo-deny are its first sensors, run by one script, and the user guide is the project the checks build | `Cargo.toml`, `deny.toml`, `scripts/check-build.sh`, `scripts/check-all.sh`, the `build` job of `.github/workflows/checks.yml`, the Build, Test & Run section of `README.md`, `docs/guide/`, and the tests that measure Q-2, Q-3 and Q-4 | 🟢 accepted |
+| [OPS-release-archives-attested](OPS-release-archives-attested.md) | A Nectar release is archives built against glibc 2.35, their checksums and a provenance attestation for each, and the repository carries the installer that verifies them | `.github/workflows/nectar-release.yml`, `scripts/release.sh`, `release/install-nectar.sh` and the check that tests it, and every installer outside this repository that takes a Nectar release, such as the Dev Container Feature of `hivevm/features` | 🟢 accepted |
+| [API-render-runs-one-engine](API-render-runs-one-engine.md) | `nectar render` runs one code engine on one text | the command line in `crates/cli/`, its `render` command and its arguments, and the tests in `crates/cli/tests/render.rs` | 🟢 accepted |
+| [API-rough-defaults-in-config](API-rough-defaults-in-config.md) | `[engine.rough]` in `nectar.toml` sets the defaults of the rough engine | the keys of `[engine.rough]` in `nectar.toml`, how the command line hands them to the rough engine in `crates/cli/` and `crates/rough/`, and the tests that verify them | 🟢 accepted |
+| [API-single-file-build](API-single-file-build.md) | `nectar build` given a Markdown file writes its PDF next to it, without a `nectar.toml` | the command line in `crates/cli/`, its `build` command and its arguments, and the tests that verify G-10 | 🟢 accepted |
+| [ARCH-core-owns-its-ports](ARCH-core-owns-its-ports.md) | A core without technology, the host's environment and the tests' dependencies included, every host-dependent effect behind a port it owns | every crate under `crates/`, the dependencies and dev-dependencies in their `Cargo.toml`, and the structural test that holds the split | 🟢 accepted |
+| [DEV-image-with-features](DEV-image-with-features.md) | The Dev Container is a base image with Features and a setup script, and the work needs no containers | `.devcontainer/`, and every change that would have the work start or reach a container | 🟢 accepted |
+| [DEV-one-agent-human-reviews](DEV-one-agent-human-reviews.md) | One coding agent implements, the maintainer reviews every change, nothing runs unattended | every change, every agent session, the specification, the ADR record, and the release workflows under `.github/workflows/` | 🟢 accepted |
+| [ENG-rough-on-roughr-usvg](ENG-rough-on-roughr-usvg.md) | The rough engine sketches with `roughr` and reads SVG with `usvg` | the dependencies of `crates/rough/Cargo.toml`, the `PORTABLE` list of `crates/cli/tests/structure.rs`, the WebAssembly step of `scripts/check-build.sh`, and the fonts the rough engine draws text with | 🟢 accepted |
+| [ENG-rough-redraws-svg](ENG-rough-redraws-svg.md) | A code engine `rough` redraws an SVG in a hand-drawn style | the code engine for the language `rough` in `crates/rough/`, the input it accepts and its `data-rough-*` attributes, the shell that composes it in `crates/cli/`, and the tests that verify it | 🟢 accepted |
+| [ENG-textmate-native-only](ENG-textmate-native-only.md) | The TextMate engine runs on native hosts only, and a WebAssembly host highlights through the code engine port | `crates/textmate/`, the WebAssembly step of `scripts/check-build.sh`, and the code engines a WebAssembly shell composes | 🟢 accepted |
+| [OUT-epub-renderer](OUT-epub-renderer.md) | An `EpubRenderer` in `nectar-html` writes an EPUB 3.3 publication for every document that enables it | `EpubRenderer` in `crates/html/`, the table `[document.epub]` of `nectar.toml`, the shell that composes the renderer in `crates/cli/`, `crates/wasm-link/`, and the tests and the check that verify G-13 | 🟢 accepted |
+| [OUT-own-zip-writer](OUT-own-zip-writer.md) | A ZIP writer of our own packs the EPUB container, on `miniz_oxide` and `crc32fast` | the ZIP writer in `crates/html/`, the dependencies on `miniz_oxide` and `crc32fast` in `crates/html/Cargo.toml`, and the tests that verify the container | 🟢 accepted |
+| [OUT-png-via-resvg](OUT-png-via-resvg.md) | A graphic becomes a PNG through resvg, with the bundled fonts only | the `png` format of `nectar render` in `crates/cli/`, the dependency on `resvg` in `crates/cli/Cargo.toml`, and the fonts it renders text with | 🟢 accepted |
 
 ### Superseded and rejected
 

@@ -1,7 +1,8 @@
 //! A WebAssembly module of the portable crates, built by the WebAssembly step of
 //! `scripts/check-build.sh` so that they link for `wasm32-unknown-unknown`, not only type-check
-//! (ADR-0012). A link error, such as a second `getrandom` backend beside the one `nectar-rough`
-//! registers (ADR-0014), fails that step. It is no product: nothing ships or calls it.
+//! (ENG-textmate-native-only). A link error, such as a second `getrandom` backend beside the one
+//! `nectar-rough` registers (ENG-rough-on-roughr-usvg), fails that step. It is no product: nothing
+//! ships or calls it.
 
 use std::sync::Arc;
 

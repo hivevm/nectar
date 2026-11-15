@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Builds, tests and lints Nectar (ADR-0008).
+# Builds, tests and lints Nectar (OPS-cargo-clippy-deny-toolchain).
 #
 # The one script behind the Build, Test & Run section of README.md: scripts/check-all.sh runs it
 # before a push, and the build job of .github/workflows/checks.yml runs it on Linux, macOS and
@@ -12,13 +12,13 @@
 # - a build of the user guide in docs/guide, which has to succeed where Graphviz and PlantUML
 #   are missing: their blocks stay code and are reported as warnings;
 # - a build of nectar-wasm-link for wasm32-unknown-unknown, which links the core, the renderers
-#   and the railroad and rough engines into one module (Verifies: G-8, ADR-0012), so nothing that
-#   cannot run in a browser creeps in, nectar-textmate included, which runs on native hosts only,
-#   and a link error, such as a second getrandom backend, fails it; the target comes with the
-#   toolchain set-up, and the profile wasm-link keeps the build short;
+#   and the railroad and rough engines into one module (Verifies: G-8, ENG-textmate-native-only), so
+#   nothing that cannot run in a browser creeps in, nectar-textmate included, which runs on native
+#   hosts only, and a link error, such as a second getrandom backend, fails it; the target comes
+#   with the toolchain set-up, and the profile wasm-link keeps the build short;
 # - cargo-deny against deny.toml: licences compatible with BSD-3-Clause only, the exception the
 #   specification names aside; the sources of every crate; and none of the technology crates
-#   ADR-0009 keeps out of the core and the renderers. Advisories
+#   ARCH-core-owns-its-ports keeps out of the core and the renderers. Advisories
 #   are not part of the gate.
 #
 # Needs cargo with the wasm32-unknown-unknown target, and cargo-deny, on PATH. The Dev Container
@@ -31,8 +31,15 @@
 
 set -uo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$ROOT" || exit 1
+# shellcheck source-path=SCRIPTDIR source=lib/bash.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/bash.sh"
+
+# shellcheck source-path=SCRIPTDIR source=lib/root.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/root.sh"
+usage="scripts/check-build.sh [--root <dir>]"
+enter_root "${BASH_SOURCE[0]}" "$usage" "$@"
+set -- "${ARGS[@]}"
+rest_args "${BASH_SOURCE[0]}" "$usage" 0 "$@"
 
 failed=()
 

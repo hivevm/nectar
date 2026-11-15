@@ -619,7 +619,7 @@ fn live_markdown(dir: &Path) -> (Vec<String>, Vec<String>, Vec<String>) {
     (lines, fences, front)
 }
 
-// Verifies: ADR-0008
+// Verifies: OPS-cargo-clippy-deny-toolchain
 #[test]
 fn the_guide_uses_every_feature_it_explains() {
     let guide = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/guide");
@@ -726,7 +726,7 @@ fn names(dir: &Path) -> Vec<String> {
     names
 }
 
-// Verifies: G-10, ADR-0016
+// Verifies: G-10, API-single-file-build
 #[test]
 fn a_markdown_file_builds_to_its_pdf_without_a_configuration() {
     let dir = tempfile::tempdir().unwrap();
@@ -776,7 +776,7 @@ fn a_markdown_file_builds_to_its_pdf_without_a_configuration() {
     assert_eq!(names(&notes.join("out")), ["manual.pdf", "readme.pdf"]);
 }
 
-// Verifies: G-10, ADR-0016
+// Verifies: G-10, API-single-file-build
 #[test]
 fn a_markdown_file_ignores_a_configuration_beside_it_and_stays_in_its_directory() {
     let dir = tempfile::tempdir().unwrap();
@@ -1006,7 +1006,7 @@ fn every_block_of_the_guide_website_is_in_the_epub_or_reported() {
     }
 }
 
-// Verifies: ADR-0020
+// Verifies: OUT-epub-renderer
 #[test]
 fn source_date_epoch_sets_the_time_of_an_epub() {
     let dir = tempfile::tempdir().unwrap();
@@ -1065,7 +1065,7 @@ fn source_date_epoch_sets_the_time_of_an_epub() {
     );
 }
 
-// Verifies: G-10, ADR-0020
+// Verifies: G-10, OUT-epub-renderer
 #[test]
 fn a_markdown_file_gives_no_epub_and_ignores_source_date_epoch() {
     let dir = tempfile::tempdir().unwrap();
