@@ -215,6 +215,11 @@ jobs:
       - name: Build, test and lint Nectar
         shell: bash
         run: bash scripts/check-build.sh
+      # After the parallel tests, alone, also when they failed: scripts/check-timed.sh says why.
+      - name: Run the timed tests
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: bash scripts/check-timed.sh
 
   # Verifies: G-13 — EPUBCheck, a Java program pinned by the script, judges the EPUBs from outside.
   epub:

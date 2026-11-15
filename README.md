@@ -49,26 +49,28 @@ vocabulary in [`docs/GLOSSARY.md`](docs/GLOSSARY.md).
 The Dev Container brings Rust with the `wasm32-unknown-unknown` target, cargo-deny, Graphviz and
 PlantUML, with Java 21 as the runtime of PlantUML and of EPUBCheck, which `scripts/check-epub.sh`
 fetches, and strace, under which a test traces a build on Linux. The commands run from the
-repository root; `scripts/check-build.sh` runs build, test and lint in one go, as the pre-push hook
-and the `build` job of CI do
-([OPS-cargo-clippy-deny-toolchain](docs/adr/OPS-cargo-clippy-deny-toolchain.md)):
+repository root; `scripts/check-build.sh` runs build, test and lint in one go, and
+`scripts/check-timed.sh` the timed tests after it, alone, as the pre-push hook and the `build` job
+of CI do ([OPS-cargo-clippy-deny-toolchain](docs/adr/OPS-cargo-clippy-deny-toolchain.md)):
 
 - **Build:** `cargo build --workspace`
 - **Test:** `cargo test --workspace`, then `cargo run -p nectar -- -C docs/guide build`,
   which has to succeed even where Graphviz and PlantUML are missing, and
   `cargo build --profile wasm-link --target wasm32-unknown-unknown -p nectar-wasm-link`, which
-  links the core, the renderers and the railroad and rough engines for WebAssembly
+  links the core, the renderers and the railroad and rough engines for WebAssembly; last, with
+  nothing else running, `cargo test --workspace -- --ignored --test-threads=1`, the timed tests
+  that `cargo test` leaves out, such as Q-4's rebuild in under 200 ms
 - **Lint:** `cargo fmt --all --check`,
   `cargo clippy --workspace --all-targets -- -D warnings` and
   `cargo deny --all-features check licenses bans sources`; the repository checks with
   `scripts/check-all.sh`
 - **Run:** `cargo run -p nectar -- -C docs/guide serve`, then open http://127.0.0.1:1313/
 
-The `build` job of [CI](.github/workflows/checks.yml) runs `scripts/check-build.sh` on Linux,
-macOS and Windows. A release of Nectar is a tag `nectar-vX.Y.Z`: the
-[release workflow](.github/workflows/nectar-release.yml) builds `nectar` for Linux (x86-64,
-ARM), macOS (x86-64, ARM) and Windows (x86-64) and attaches the archives, with the notices of
-the crates and their `SHA256SUMS`, to a GitHub release of that tag.
+The `build` job of [CI](.github/workflows/checks.yml) runs `scripts/check-build.sh` and then
+`scripts/check-timed.sh` on Linux, macOS and Windows. A release of Nectar is a tag
+`nectar-vX.Y.Z`: the [release workflow](.github/workflows/nectar-release.yml) builds `nectar` for
+Linux (x86-64, ARM), macOS (x86-64, ARM) and Windows (x86-64) and attaches the archives, with
+the notices of the crates and their `SHA256SUMS`, to a GitHub release of that tag.
 
 ## Usage
 

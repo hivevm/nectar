@@ -8,7 +8,7 @@
 # single run reports everything that is wrong.
 #
 # - rustfmt and Clippy, with every warning denied, rustc's dead_code lint among them;
-# - the tests of the workspace;
+# - the tests of the workspace, but the timed ones, which scripts/check-timed.sh runs alone;
 # - a build of the user guide in docs/guide, which has to succeed where Graphviz and PlantUML
 #   are missing: their blocks stay code and are reported as warnings;
 # - a build of nectar-wasm-link for wasm32-unknown-unknown, which links the core, the renderers
