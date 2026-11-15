@@ -203,6 +203,11 @@ jobs:
       - name: Install strace
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y strace
+      # The scripts stop below bash 4.4 (NUC-checks-are-bash §1), and macOS ships bash 3.2: a
+      # current bash from Homebrew comes first on the runner's PATH.
+      - name: Install a current bash
+        if: runner.os == 'macOS'
+        run: brew install bash
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
         with:
