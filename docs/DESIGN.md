@@ -239,8 +239,8 @@ refers to anything outside itself stays out. A link keeps only its text unless i
 `http`, `https` or `mailto`, a heading or a chapter. The container is packed
 by a small ZIP writer of its own, on `miniz_oxide` and `crc32fast`, with fixed times and sorted
 entries, so the same document gives the same bytes. The shell hands over the time of modification,
-from `SOURCE_DATE_EPOCH`, or a fixed one ([ADR-0020](adr/0020-epub-renderer.md),
-[ADR-0021](adr/0021-epub-zip-writer.md)).
+from `SOURCE_DATE_EPOCH`, or a fixed one ([OUT-epub-renderer](adr/OUT-epub-renderer.md),
+[OUT-own-zip-writer](adr/OUT-own-zip-writer.md)).
 
 ### PDF renderer
 
@@ -304,7 +304,7 @@ The options of both commands are listed in the [guide](guide/chapters/quick-star
 and exits non-zero when any is an error.
 
 **`nectar build <file>`** builds one Markdown file without a `nectar.toml`
-([ADR-0016](adr/0016-single-file-build.md)). The command line gives the core
+([API-single-file-build](adr/API-single-file-build.md)). The command line gives the core
 the file's directory as the project root and the default configuration with the file as its one
 document, runs only the PDF renderer and writes its PDF next to the file, or to `-o`.
 

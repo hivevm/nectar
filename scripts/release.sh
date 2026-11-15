@@ -4,20 +4,21 @@
 #
 # The one script behind .github/workflows/nectar-release.yml, a workflow that publishes rather than
 # checks and that scripts/check-all.sh names as no gate; check-all.sh still runs this script, so
-# what the release packs is checked before a tag is pushed (ADR-0002). The release itself
-# is the maintainer's (ADR-0007): the workflow runs it on a pushed tag, never this repository's
-# hooks.
+# what the release packs is checked before a tag is pushed (NUC-checks-are-bash). The release
+# itself is the maintainer's (DEV-one-agent-human-reviews): the workflow runs it on a pushed tag,
+# never this repository's hooks.
 #
 # - without a command, the check scripts/check-all.sh runs: the files every archive carries are
 #   there — LICENSE, at least one NOTICE under crates/ — and the package nectar is the command line;
-#   the workflow attests every archive by an action pinned to a commit; and release/install-nectar.sh
-#   installs an archive packed as package packs it, refuses one altered after its checksum, and
-#   refuses a target SHA256SUMS does not name; the workflow builds every Linux target on
-#   ubuntu-22.04 or ubuntu-22.04-arm, never on a *-latest runner; and the glibc floor package
-#   enforces refuses a binary that needs more than glibc 2.35, in package too, which writes no
-#   archive then; and every font, script and image a crate embeds with include_bytes! or
+#   the workflow attests every archive by an action pinned to a commit; and
+#   release/install-nectar.sh installs an archive packed as package packs it, refuses one altered
+#   after its checksum, and refuses a target SHA256SUMS does not name; the workflow builds every
+#   Linux target on ubuntu-22.04 or ubuntu-22.04-arm, never on a *-latest runner; and the glibc
+#   floor package enforces refuses a binary that needs more than glibc 2.35, in package too, which
+#   writes no archive then; and every font, script and image a crate embeds with include_bytes! or
 #   include_str! is named in the nearest NOTICE, and an archive's NOTICE carries every NOTICE of
-#   the crates, the theme's included, with the licence texts they point to (Verifies: ADR-0019);
+#   the crates, the theme's included, with the licence texts they point to
+#   (Verifies: OPS-release-archives-attested);
 # - package <target> builds nectar for the Rust target in release mode with the locked versions,
 #   fails for a Linux target whose binary needs a glibc newer than 2.35, and packs the binary,
 #   LICENSE, and the NOTICE files of the crates as one NOTICE that ends with the licence texts
@@ -36,8 +37,15 @@ set -euo pipefail
 # The newest glibc a Linux archive may need: that of ubuntu-22.04, where it is built.
 GLIBC_FLOOR=2.35
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$ROOT"
+# shellcheck source-path=SCRIPTDIR source=lib/bash.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/bash.sh"
+
+# shellcheck source-path=SCRIPTDIR source=lib/root.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/root.sh"
+usage="scripts/release.sh [--root <dir>] [package <target> | publish <directory>]"
+enter_root "${BASH_SOURCE[0]}" "$usage" "$@"
+set -- "${ARGS[@]}"
+rest_args "${BASH_SOURCE[0]}" "$usage" 2 "$@"
 
 # check — what every archive carries is in the tree.
 check() {

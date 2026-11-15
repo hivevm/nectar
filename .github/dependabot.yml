@@ -1,6 +1,6 @@
 # Keeps the GitHub Actions under .github/workflows/ current: every action is pinned by its full
-# commit SHA with the version as a comment (ADR-0011), and Dependabot raises a pull request that
-# moves the pin and its comment when an action publishes a new version.
+# commit SHA with the version as a comment (SEC-actions-pinned-by-sha), and Dependabot raises a pull
+# request that moves the pin and its comment when an action publishes a new version.
 version: 2
 updates:
   - package-ecosystem: github-actions

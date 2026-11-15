@@ -4,12 +4,12 @@
 > how they fit together. It holds no rule and no decision. It names the ADR behind each structural
 > choice; where it disagrees with an accepted ADR, the ADR is right and this document is stale. It
 > is updated in the same change as the structure it describes
-> ([ADR-0001](adr/0001-agent-governance-model.md)).
+> ([NUC-documents-are-fixed](adr/NUC-documents-are-fixed.md)).
 >
 > **Last design revision:** 2026-11-07, due after 20 changes. The revision that took the count
 > moves the date; the number is this project's to set; a sensor counts the changes outside
 > `docs/` since the commit that set the date and says when the next is due
-> ([ADR-0006](adr/0006-feature-layer.md)).
+> ([NUC-design-is-revised §4](adr/NUC-design-is-revised.md)).
 
 ## Context
 
@@ -28,12 +28,12 @@ it reads only the `[engine]` table of the `nectar.toml` that `-C` names, and not
 `-C`. Everything that crosses the boundary goes through an adapter the host plugs in: the
 project's files, images from the web, external programs for diagrams, and the browser of
 `nectar serve`; so do the threads that run the code engines side by side
-([ADR-0009](adr/0009-ports-and-adapters-technology.md)).
+([ARCH-core-owns-its-ports](adr/ARCH-core-owns-its-ports.md)).
 
 ## Building blocks
 
 The crates under `crates/`, every dependency pointing toward the core
-([ADR-0009](adr/0009-ports-and-adapters-technology.md)):
+([ARCH-core-owns-its-ports](adr/ARCH-core-owns-its-ports.md)):
 
 - **`nectar-core`** — loads the project, parses the dialect into the document model, merges the
   chapters and runs the passes; owns the ports `Files`, `Workers`, `CodeEngine`, `Renderer` and
@@ -43,8 +43,8 @@ The crates under `crates/`, every dependency pointing toward the core
 - **`nectar-html`** — the renderers for the website, the print view and the EPUB, with the built-in
   theme, and the writer of highlighted code as standalone HTML for `nectar render`. The EPUB
   renderer packs its container with a small ZIP writer of its own
-  ([ADR-0020](adr/0020-epub-renderer.md),
-  [ADR-0021](adr/0021-epub-zip-writer.md)).
+  ([OUT-epub-renderer](adr/OUT-epub-renderer.md),
+  [OUT-own-zip-writer](adr/OUT-own-zip-writer.md)).
 - **`nectar-pdf`** — the renderer for the PDF, typeset with Typst in memory.
 - **`nectar-textmate`**, **`nectar-railroad`**, **`nectar-rough`** — code engines that need
   nothing of the host. The rough engine redraws an SVG as a sketch with `roughr`, reading it with
@@ -93,5 +93,6 @@ attests every archive and publishes the release. `release/install-nectar.sh` fet
 version's archive for the host and installs it only when it matches the checksums its caller
 carries; `scripts/check-all.sh` runs `scripts/release.sh` without a command to test the packing
 and the installer before a tag is pushed
-([ADR-0019](adr/0019-release-interface.md)). The user guide in `docs/guide/` is the project the
-checks build ([ADR-0008](adr/0008-toolchain-cargo-clippy-deny.md)).
+([OPS-release-archives-attested](adr/OPS-release-archives-attested.md)). The user guide in
+`docs/guide/` is the project the checks build
+([OPS-cargo-clippy-deny-toolchain](adr/OPS-cargo-clippy-deny-toolchain.md)).
