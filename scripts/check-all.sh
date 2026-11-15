@@ -216,6 +216,11 @@ run "EPUB conformance" scripts/check-epub.sh
 run "Release" scripts/release.sh
 
 wait
+running=0
+
+# Once every check above has finished, alone: scripts/check-timed.sh says why.
+run "Timed tests" scripts/check-timed.sh
+wait
 
 failed=()
 slowest="" slowest_s=-1

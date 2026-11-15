@@ -215,6 +215,7 @@ fn next_rebuild(lines: &mpsc::Receiver<String>) -> u128 {
 
 // Verifies: Q-4
 #[test]
+#[ignore = "timed: scripts/check-timed.sh runs it alone"]
 fn a_one_line_edit_of_the_guide_rebuilds_in_under_200_ms() {
     let guide = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/guide");
     let dir = tempfile::tempdir().unwrap();
